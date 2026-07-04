@@ -1,0 +1,15 @@
+name: Repo hygiene
+
+on:
+  pull_request:
+
+jobs:
+  commit-lint-hint:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          fetch-depth: 0
+      - name: Remind about conventional commits
+        run: |
+          echo "Reminder: this repo follows Conventional Commits — see docs/COMMIT_CONVENTIONS.md"

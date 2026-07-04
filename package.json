@@ -1,0 +1,27 @@
+{
+  "name": "university-ticketing-system",
+  "private": true,
+  "version": "0.1.0",
+  "description": "Root project — orchestrates git hooks; backend and frontend are independent apps.",
+  "scripts": {
+    "prepare": "husky",
+    "setup": "bash scripts/setup.sh",
+    "dev:backend": "npm --prefix backend run dev",
+    "dev:frontend": "npm --prefix frontend run dev"
+  },
+  "devDependencies": {
+    "husky": "^9.0.11",
+    "lint-staged": "^15.2.7"
+  },
+  "lint-staged": {
+    "backend/**/*.{ts,js}": [
+      "npm --prefix backend run lint -- --fix"
+    ],
+    "frontend/**/*.{ts,tsx,js,jsx}": [
+      "npm --prefix frontend run lint -- --fix"
+    ],
+    "**/*.{md,json,yml,yaml}": [
+      "prettier --write"
+    ]
+  }
+}
