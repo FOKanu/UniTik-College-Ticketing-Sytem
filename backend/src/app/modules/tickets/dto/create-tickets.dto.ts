@@ -1,5 +1,6 @@
-// TODO: define real required/optional fields once tickets business logic is implemented.
+// Inferred from the Zod schema, which is the source of truth for this module's request shape.
 
-export interface CreateTicketsDto {
-  [key: string]: unknown;
-}
+import { z } from 'zod';
+import { createTicketsSchema } from '../schemas/tickets.schema';
+
+export type CreateTicketsDto = z.infer<typeof createTicketsSchema>;
