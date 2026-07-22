@@ -42,11 +42,13 @@ model User {
   createdAt    DateTime @default(now())
   updatedAt    DateTime @updatedAt
 
-  ticketsCreated  Ticket[]       @relation("TicketCreatedBy")
-  ticketsAssigned Ticket[]       @relation("TicketAssignedTo")
-  problemsOwned   Problem[]
-  notifications   Notification[]
-  auditLogs       AuditLog[]
+  ticketsCreated    Ticket[]           @relation("TicketCreatedBy")
+  ticketsAssigned   Ticket[]           @relation("TicketAssignedTo")
+  problemsOwned     Problem[]
+  notifications     Notification[]
+  auditLogs         AuditLog[]
+  chatConversations ChatConversation[]
+  ticketComments    TicketComment[]
 }
 
 model Ticket {
@@ -66,6 +68,9 @@ model Ticket {
   createdAt    DateTime       @default(now())
   updatedAt    DateTime       @updatedAt
   attachments  Attachment[]
+
+  escalatedFromConversations ChatConversation[]
+  comments                   TicketComment[]
 }
 
 model Attachment {
@@ -121,5 +126,35 @@ model AuditLog {
   entityType String
   entityId   String?
   metadata   Json?
+  createdAt  DateTime @default(now())
+}
+
+model ChatConversation {
+  id                String        @id @default(uuid())
+  user              User          @relation(fields: [userId], references: [id])
+  userId            String
+  escalatedTicket   Ticket?       @relation(fields: [escalatedTicketId], references: [id])
+  escalatedTicketId String?
+  messages          ChatMessage[]
+  startedAt         DateTime      @default(now())
+}
+
+model ChatMessage {
+  id             String           @id @default(uuid())
+  conversation   ChatConversation @relation(fields: [conversationId], references: [id])
+  conversationId String
+  sender         String // "user" | "bot" — TODO: consider an enum once chatbot module finalizes sender types
+  content        String
+  createdAt      DateTime         @default(now())
+}
+
+model TicketComment {
+  id         String   @id @default(uuid())
+  ticket     Ticket   @relation(fields: [ticketId], references: [id])
+  ticketId   String
+  author     User     @relation(fields: [authorId], references: [id])
+  authorId   String
+  body       String
+  isInternal Boolean  @default(false) // true = staff-only note, must never be shown to students (NEG-4)
   createdAt  DateTime @default(now())
 }
