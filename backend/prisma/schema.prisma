@@ -2,12 +2,14 @@
 // TODO: finalize field-level details per module as business logic is implemented.
 
 generator client {
-  provider = "prisma-client-js"
+  provider        = "prisma-client-js"
+  previewFeatures = ["postgresqlExtensions"]
 }
 
 datasource db {
-  provider = "postgresql"
-  url      = env("DATABASE_URL")
+  provider   = "postgresql"
+  url        = env("DATABASE_URL")
+  extensions = [vector]
 }
 
 enum Role {
@@ -89,14 +91,15 @@ model Problem {
 }
 
 model FaqEntry {
-  id          String   @id @default(uuid())
+  id          String                       @id @default(uuid())
   question    String
   answer      String
-  language    String   @default("en")
+  language    String                       @default("en")
   category    String?
   contextBlob String? // TODO: NFR-2.7.3 context engine
-  createdAt   DateTime @default(now())
-  updatedAt   DateTime @updatedAt
+  embedding   Unsupported("vector(1536)")?
+  createdAt   DateTime                     @default(now())
+  updatedAt   DateTime                     @updatedAt
 }
 
 model Notification {
