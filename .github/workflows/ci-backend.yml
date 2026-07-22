@@ -49,3 +49,4 @@ jobs:
         run: npm test -- --passWithNoTests
         env:
           DATABASE_URL: postgresql://postgres:postgres@localhost:5432/university_ticketing_test
+          JWT_SECRET: test-secret-do-not-use-in-production

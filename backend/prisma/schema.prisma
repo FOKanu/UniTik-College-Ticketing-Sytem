@@ -30,15 +30,15 @@ enum TicketPriority {
 }
 
 model User {
-  id            String    @id @default(uuid())
-  email         String    @unique
-  displayName   String
-  role          Role      @default(STUDENT)
-  department    String?
-  passwordHash  String?
-  externalId    String?   // TODO: LDAP/SSO subject id — pending OI-01
-  createdAt     DateTime  @default(now())
-  updatedAt     DateTime  @updatedAt
+  id           String   @id @default(uuid())
+  email        String   @unique
+  displayName  String
+  role         Role     @default(STUDENT)
+  department   String?
+  passwordHash String?
+  externalId   String? // TODO: LDAP/SSO subject id — pending OI-01
+  createdAt    DateTime @default(now())
+  updatedAt    DateTime @updatedAt
 
   ticketsCreated  Ticket[]       @relation("TicketCreatedBy")
   ticketsAssigned Ticket[]       @relation("TicketAssignedTo")
@@ -48,33 +48,44 @@ model User {
 }
 
 model Ticket {
-  id           String        @id @default(uuid())
+  id           String         @id @default(uuid())
   subject      String
   description  String
-  status       TicketStatus  @default(OPEN)
+  status       TicketStatus   @default(OPEN)
   priority     TicketPriority @default(MEDIUM)
-  category     String?       // TODO: set by ai module classification
+  category     String? // TODO: set by ai module classification
   department   String?
-  createdBy    User          @relation("TicketCreatedBy", fields: [createdById], references: [id])
+  createdBy    User           @relation("TicketCreatedBy", fields: [createdById], references: [id])
   createdById  String
-  assignedTo   User?         @relation("TicketAssignedTo", fields: [assignedToId], references: [id])
+  assignedTo   User?          @relation("TicketAssignedTo", fields: [assignedToId], references: [id])
   assignedToId String?
-  problem      Problem?      @relation(fields: [problemId], references: [id])
+  problem      Problem?       @relation(fields: [problemId], references: [id])
   problemId    String?
-  createdAt    DateTime      @default(now())
-  updatedAt    DateTime      @updatedAt
+  createdAt    DateTime       @default(now())
+  updatedAt    DateTime       @updatedAt
+  attachments  Attachment[]
+}
+
+model Attachment {
+  id            String   @id @default(uuid())
+  ticket        Ticket   @relation(fields: [ticketId], references: [id])
+  ticketId      String
+  filePath      String // path within storage (local disk or object storage — TBD)
+  fileType      String // pdf | png | jpg
+  fileSizeBytes Int // enforce 10MB cap (1.2.3) at the application layer
+  uploadedAt    DateTime @default(now())
 }
 
 model Problem {
-  id         String   @id @default(uuid())
-  title      String
-  rootCause  String?
-  status     String   @default("OPEN")
-  owner      User?    @relation(fields: [ownerId], references: [id])
-  ownerId    String?
-  tickets    Ticket[]
-  createdAt  DateTime @default(now())
-  updatedAt  DateTime @updatedAt
+  id        String   @id @default(uuid())
+  title     String
+  rootCause String?
+  status    String   @default("OPEN")
+  owner     User?    @relation(fields: [ownerId], references: [id])
+  ownerId   String?
+  tickets   Ticket[]
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
 }
 
 model FaqEntry {
@@ -83,20 +94,20 @@ model FaqEntry {
   answer      String
   language    String   @default("en")
   category    String?
-  contextBlob String?  // TODO: NFR-2.7.3 context engine
+  contextBlob String? // TODO: NFR-2.7.3 context engine
   createdAt   DateTime @default(now())
   updatedAt   DateTime @updatedAt
 }
 
 model Notification {
-  id         String   @id @default(uuid())
-  user       User     @relation(fields: [userId], references: [id])
-  userId     String
-  ticketId   String?
-  channel    String   @default("EMAIL")
-  message    String
-  readAt     DateTime?
-  createdAt  DateTime @default(now())
+  id        String    @id @default(uuid())
+  user      User      @relation(fields: [userId], references: [id])
+  userId    String
+  ticketId  String?
+  channel   String    @default("EMAIL")
+  message   String
+  readAt    DateTime?
+  createdAt DateTime  @default(now())
 }
 
 model AuditLog {
