@@ -6,7 +6,15 @@ on:
       - 'backend/**'
       - '.github/workflows/ci-backend.yml'
   push:
-    branches: [develop, main]
+    branches:
+      - main
+      - debugging
+      - project-manager
+      - backend
+      - database
+      - ai-rag
+      - testing
+      - 'feature/**'
     paths:
       - 'backend/**'
 

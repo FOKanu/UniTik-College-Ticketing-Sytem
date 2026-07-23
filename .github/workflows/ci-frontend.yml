@@ -6,7 +6,14 @@ on:
       - 'frontend/**'
       - '.github/workflows/ci-frontend.yml'
   push:
-    branches: [develop, main]
+    branches:
+      - main
+      - debugging
+      - project-manager
+      - frontend
+      - ai-rag
+      - testing
+      - 'feature/**'
     paths:
       - 'frontend/**'
 

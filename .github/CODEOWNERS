@@ -1,0 +1,37 @@
+# Workstream path ownership for PR reviews.
+# GitHub usernames should be updated as teammates link their accounts.
+# Path *push* enforcement is also handled by scripts/check-workstream-paths.sh (CI).
+# See docs/BRANCHING_STRATEGY.md and docs/CONTRIBUTORS.md.
+
+# Default fallback — Project Manager
+* @FOKanu
+
+# Frontend workstream
+/frontend/ @FOKanu
+/shared/ @FOKanu
+
+# Backend application code (not Prisma)
+/backend/src/ @FOKanu
+/backend/tests/ @FOKanu
+
+# Database workstream
+/backend/prisma/ @FOKanu
+/database/ @FOKanu
+
+# AI / RAG-oriented modules
+/backend/src/app/modules/ai/ @FOKanu
+/backend/src/app/modules/chatbot/ @FOKanu
+/backend/src/app/modules/knowledge-base/ @FOKanu
+/frontend/src/modules/chatbot/ @FOKanu
+/frontend/src/modules/faq/ @FOKanu
+
+# Tooling / DevOps
+/.github/ @FOKanu
+/docker/ @FOKanu
+/scripts/ @FOKanu
+/docker-compose.yml @FOKanu
+
+# Docs / contribution map
+/docs/ @FOKanu
+/CONTRIBUTING.md @FOKanu
+/CLAUDE.md @FOKanu
