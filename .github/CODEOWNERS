@@ -1,7 +1,12 @@
 # Workstream path ownership for PR reviews.
-# GitHub usernames should be updated as teammates link their accounts.
 # Path *push* enforcement is also handled by scripts/check-workstream-paths.sh (CI).
 # See docs/BRANCHING_STRATEGY.md and docs/CONTRIBUTORS.md.
+#
+# Mapped accounts (add more as teammates share @usernames):
+#   @FOKanu          — Francis Kanu (PM / tooling / AI LLM)
+#   @Laurynas36      — Laurynas Stravinskas (Database lead)
+#   @GariazhaYegor   — Yegor Gariazha (AI/RAG)
+#   @rzaest          — Izzatkhanim Yashar / Izzy (AI/RAG, KB)
 
 # Default fallback — Project Manager
 * @FOKanu
@@ -12,18 +17,17 @@
 
 # Backend application code (not Prisma)
 /backend/src/ @FOKanu
-/backend/tests/ @FOKanu
 
-# Database workstream
-/backend/prisma/ @FOKanu
-/database/ @FOKanu
+# Database workstream — Laurynas (lead)
+/backend/prisma/ @Laurynas36
+/database/ @Laurynas36
 
-# AI / RAG-oriented modules
-/backend/src/app/modules/ai/ @FOKanu
-/backend/src/app/modules/chatbot/ @FOKanu
-/backend/src/app/modules/knowledge-base/ @FOKanu
-/frontend/src/modules/chatbot/ @FOKanu
-/frontend/src/modules/faq/ @FOKanu
+# AI / RAG-oriented modules — Izzy (@rzaest), Yegor; Francis co-owns LLM/chat orchestration
+/backend/src/app/modules/ai/ @rzaest @GariazhaYegor @FOKanu
+/backend/src/app/modules/chatbot/ @rzaest @GariazhaYegor @FOKanu
+/backend/src/app/modules/knowledge-base/ @rzaest @GariazhaYegor @FOKanu
+/frontend/src/modules/chatbot/ @rzaest @FOKanu
+/frontend/src/modules/faq/ @rzaest @FOKanu
 
 # Tooling / DevOps
 /.github/ @FOKanu
