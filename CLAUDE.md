@@ -127,8 +127,8 @@ doc) — don't build other modules to depend on them yet.
   required to assert much yet since business logic is still `TODO` — CI runs `--passWithNoTests`.
 - Conventional Commits, scoped by module: `feat(tickets): ...`, `fix(auth): ...`. Full type/scope list in
   `docs/COMMIT_CONVENTIONS.md`.
-- Branching: `main` (protected) ← `develop` ← `feature/<module>-<short-description>`; `hotfix/*` branches
-  from `main`. Never commit directly to `main` or `develop`. Details in `docs/BRANCHING_STRATEGY.md`.
+- Branching: workstream / `feature/<area>-…` → `debugging` → `project-manager` → `main`. Never merge
+  straight to `main`; Debugging then PM gates are required. Details in `docs/BRANCHING_STRATEGY.md`.
 - One module/feature per PR where possible; PR description states the module, requirement ID(s) addressed
   (see the requirements-to-component table in `docs/architecture/README.md`), and what's still TODO.
 - Don't bypass the Husky pre-commit hook (`--no-verify`) except in a genuine emergency, and say so in the PR.

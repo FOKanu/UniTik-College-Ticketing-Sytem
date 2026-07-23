@@ -42,8 +42,9 @@ docker compose up --build
 Backend API: http://localhost:4000
 Frontend: http://localhost:5173
 
-See `docs/SETUP_INSTRUCTIONS.md` for local (non-Docker) setup, and `CONTRIBUTING.md` for how to pick up a
-module.
+See `docs/SETUP_INSTRUCTIONS.md` for local (non-Docker) setup, `CONTRIBUTING.md` for how to pick up a
+module, `docs/CONTRIBUTORS.md` for team ownership, and `docs/BRANCHING_STRATEGY.md` for the gated
+git flow (`debugging` → `project-manager` → `main`).
 
 ## Status
 

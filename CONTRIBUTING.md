@@ -1,7 +1,11 @@
 # Contributing
 
-This project is built by a team where **each person (or pair) owns one module** — not one shared file tree.
-Read this before writing any code.
+This project is built by a team where **each person (or pair) owns one module / workstream** — not one
+shared file tree. Read this before writing any code.
+
+**Who owns what:** see [`docs/CONTRIBUTORS.md`](docs/CONTRIBUTORS.md) (roster and layer assignments from
+the granular implementation plan). **How code reaches `main`:** see
+[`docs/BRANCHING_STRATEGY.md`](docs/BRANCHING_STRATEGY.md).
 
 ## 1. Pick a module, not a file
 
@@ -13,18 +17,21 @@ module's folder if you're fixing something genuinely cross-cutting — and flag 
 ## 2. Branching strategy
 
 ```
-main        → always deployable, protected, no direct commits
-develop     → integration branch, all feature branches merge here first
-feature/*   → one per module or task, branched from develop
-hotfix/*    → urgent fixes branched from main
+main              → always deployable / demo-ready; PM merges only
+project-manager   → PM acceptance gate
+debugging         → QA / Testing & Debugging gate (required before PM)
+frontend|backend|database|ai-rag|tooling-devops|testing
+                  → workstream branches
+feature/<area>-…  → short-lived task branches
 ```
 
-Naming: `feature/<module>-<short-description>`, e.g. `feature/tickets-crud-endpoints`,
-`feature/chatbot-intent-service`.
+Naming: `feature/<area>-<short-description>`, e.g. `feature/frontend-login-page`,
+`feature/database-attachment-indexes`.
 
-Flow: `feature/*` → PR into `develop` → review → merge → periodic release PR `develop` → `main`.
+**Required flow:** workstream / `feature/*` → PR into `debugging` → PR into `project-manager` → PR into `main`.
 
-Never commit directly to `main` or `develop`.
+Never commit directly to `main`, `project-manager`, or `debugging`. Full rules in
+`docs/BRANCHING_STRATEGY.md`.
 
 ## 3. Commit conventions
 
@@ -74,7 +81,8 @@ Frontend modules mirror this with `components/`, `pages/`, `hooks/`, `services/`
 - One module/feature per PR where possible.
 - PR description must state: what module, what requirement ID(s) it addresses (see
   `docs/architecture/README.md` requirements-to-component mapping), and what's still TODO.
-- At least one reviewer approval required before merging into `develop`.
+- PRs into `debugging` need Testing & Debugging review; PRs into `project-manager` / `main` need PM
+  approval. Do not merge straight to `main`.
 - CI (lint + typecheck + test) must pass — see `.github/workflows/`.
 
 ## 7. Getting started
