@@ -1,7 +1,3 @@
-// TODO: replace with real domain fields as the tickets module is implemented.
+import type { Ticket } from '@prisma/client';
 
-export interface Tickets {
-  id: string;
-  // TODO: add real fields for tickets
-  [key: string]: unknown;
-}
+export type Tickets = Ticket;
