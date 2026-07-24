@@ -52,22 +52,25 @@ model User {
 }
 
 model Ticket {
-  id           String         @id @default(uuid())
-  subject      String
-  description  String
-  status       TicketStatus   @default(OPEN)
-  priority     TicketPriority @default(MEDIUM)
-  category     String? // TODO: set by ai module classification
-  department   String?
-  createdBy    User           @relation("TicketCreatedBy", fields: [createdById], references: [id])
-  createdById  String
-  assignedTo   User?          @relation("TicketAssignedTo", fields: [assignedToId], references: [id])
-  assignedToId String?
-  problem      Problem?       @relation(fields: [problemId], references: [id])
-  problemId    String?
-  createdAt    DateTime       @default(now())
-  updatedAt    DateTime       @updatedAt
-  attachments  Attachment[]
+  id                   String         @id @default(uuid())
+  subject              String
+  description          String
+  status               TicketStatus   @default(OPEN)
+  priority             TicketPriority @default(MEDIUM)
+  category             String? // TODO: set by ai module classification
+  classificationSource String? // "manual" | "rule-engine" — null means not yet classified.
+  // Distinguishes a human-assigned department from an
+  // automated routing-engine guess (see NEG-6).
+  department           String?
+  createdBy            User           @relation("TicketCreatedBy", fields: [createdById], references: [id])
+  createdById          String
+  assignedTo           User?          @relation("TicketAssignedTo", fields: [assignedToId], references: [id])
+  assignedToId         String?
+  problem              Problem?       @relation(fields: [problemId], references: [id])
+  problemId            String?
+  createdAt            DateTime       @default(now())
+  updatedAt            DateTime       @updatedAt
+  attachments          Attachment[]
 
   escalatedFromConversations ChatConversation[]
   comments                   TicketComment[]
