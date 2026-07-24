@@ -17,6 +17,20 @@ const NO_MATCH: ClassificationResult = {
   classificationSource: null,
 };
 
+function escapeRegExp(value: string): string {
+  return value.replace(/[.*+?^${}()|[\]\\]/g, '\\$&');
+}
+
+// \b anchors on the phrase's first/last characters, so multi-word keywords (e.g. "air
+// conditioning") still match as a whole phrase without requiring boundaries around the
+// internal space.
+const KEYWORD_PATTERNS: Record<string, RegExp[]> = Object.fromEntries(
+  Object.entries(DEPARTMENT_KEYWORDS).map(([department, keywords]) => [
+    department,
+    keywords.map((keyword) => new RegExp(`\\b${escapeRegExp(keyword)}\\b`)),
+  ]),
+);
+
 export function classifyTicket(subject: string, description: string): ClassificationResult {
   const text = `${subject} ${description}`.toLowerCase();
 
@@ -24,8 +38,8 @@ export function classifyTicket(subject: string, description: string): Classifica
   let bestCount = 0;
   let tie = false;
 
-  for (const [department, keywords] of Object.entries(DEPARTMENT_KEYWORDS)) {
-    const count = keywords.filter((keyword) => text.includes(keyword)).length;
+  for (const [department, patterns] of Object.entries(KEYWORD_PATTERNS)) {
+    const count = patterns.filter((pattern) => pattern.test(text)).length;
 
     if (count === 0) continue;
 

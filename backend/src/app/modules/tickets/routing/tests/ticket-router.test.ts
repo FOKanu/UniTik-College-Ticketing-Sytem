@@ -46,4 +46,17 @@ describe('classifyTicket', () => {
       classificationSource: null,
     });
   });
+
+  it('routes an "account" ticket to IT without a false Maintenance tie from "ac"', () => {
+    const result = classifyTicket(
+      'Cannot access my account',
+      'I forgot my password and need help logging back into my account.',
+    );
+
+    expect(result).toEqual({
+      department: 'IT',
+      category: 'it',
+      classificationSource: 'rule-engine',
+    });
+  });
 });

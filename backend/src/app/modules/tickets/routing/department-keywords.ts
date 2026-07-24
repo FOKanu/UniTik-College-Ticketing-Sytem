@@ -21,7 +21,6 @@ export const DEPARTMENT_KEYWORDS: Record<string, string[]> = {
     'plumbing',
     'room',
     'furniture',
-    'ac',
     'air conditioning',
   ],
   Finance: [
