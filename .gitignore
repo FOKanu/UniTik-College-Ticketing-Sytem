@@ -28,6 +28,13 @@ Thumbs.db
 !.vscode/extensions.json
 .idea/
 
+# Cursor / MCP local config (machine-specific; do not commit)
+.cursor/mcp.json
+.cursor/**/mcp.json
+mcp.json
+.mcp.json
+.mcp/
+
 # prisma
 backend/prisma/dev.db
 
