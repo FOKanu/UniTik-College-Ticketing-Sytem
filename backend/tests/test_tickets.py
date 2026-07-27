@@ -2,6 +2,10 @@ import uuid
 
 import pytest
 
+from app.core.security import hash_password
+from app.db.base import Role
+from app.db.session import async_session_factory
+from app.models import User
 from tests.conftest import integration
 
 
@@ -12,22 +16,36 @@ async def test_list_tickets_requires_auth(client):
 
 
 async def _register_and_login(client, *, role: str, department: str | None = None):
-    """Test helper: register a fresh user via the real /auth endpoints and log
-    them in, returning (token, user_id). Using the real endpoints (rather than
-    inserting rows directly) means this test exercises the same code path a
-    real client would."""
+    """Create a fresh user and return (token, user_id).
+
+    Students go through the public /auth/register path. Staff/admin are inserted
+    directly because self-registration only allows STUDENT.
+    """
     email = f"{role.lower()}-{uuid.uuid4().hex[:8]}@stud.university.edu"
     password = "demo1234!"
-    register_body = {
-        "email": email,
-        "password": password,
-        "displayName": f"Test {role.title()}",
-        "role": role,
-    }
-    if department:
-        register_body["department"] = department
-    register_res = await client.post("/api/v1/auth/register", json=register_body)
-    assert register_res.status_code == 201, register_res.text
+
+    if role == "STUDENT":
+        register_body = {
+            "email": email,
+            "password": password,
+            "displayName": f"Test {role.title()}",
+            "role": role,
+        }
+        if department:
+            register_body["department"] = department
+        register_res = await client.post("/api/v1/auth/register", json=register_body)
+        assert register_res.status_code == 201, register_res.text
+    else:
+        async with async_session_factory() as db:
+            user = User(
+                email=email,
+                displayName=f"Test {role.title()}",
+                role=Role(role),
+                department=department,
+                passwordHash=hash_password(password),
+            )
+            db.add(user)
+            await db.commit()
 
     login_res = await client.post(
         "/api/v1/auth/login", json={"email": email, "password": password}
