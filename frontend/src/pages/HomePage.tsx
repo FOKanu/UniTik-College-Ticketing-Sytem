@@ -14,7 +14,7 @@ export function HomePage() {
 
   return (
     <div className="space-y-6">
-      <h1 className="text-2xl font-semibold text-uts-text">University Support Ticketing</h1>
+      <h1 className="text-2xl font-semibold text-uts-text">TicketHub</h1>
       <p className="text-uts-nav">
         FastAPI foundation is running. Feature slices: auth, tickets, chat, and FAQ are available
         from the navigation once signed in.

@@ -5,7 +5,13 @@
     "module": "ESNext",
     "moduleResolution": "bundler",
     "allowSyntheticDefaultImports": true,
-    "strict": true
+    "strict": true,
+    // "composite" projects must emit something, but we don't want that emit
+    // landing next to vite.config.ts (that's what created the stray
+    // vite.config.js / vite.config.d.ts files). Redirect it to a gitignored
+    // build-cache folder instead — `npm run build` still type-checks the
+    // config file, it just no longer writes compiled output into src control.
+    "outDir": "./.tsc-cache/node"
   },
   "include": ["vite.config.ts"]
 }

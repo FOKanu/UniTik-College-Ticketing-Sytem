@@ -9,11 +9,16 @@ export function Layout() {
     <div className="min-h-screen flex flex-col">
       <header className="bg-uts-nav text-white px-6 py-3 flex items-center justify-between">
         <Link to="/" className="font-semibold text-lg">
-          University Ticketing
+          TicketHub
         </Link>
         <nav className="flex gap-4 text-sm items-center">
           {user ? (
             <>
+              {user.role === 'STUDENT' && (
+                <Link to="/dashboard" className="hover:text-brand-sky">
+                  Dashboard
+                </Link>
+              )}
               <Link to="/tickets" className="hover:text-brand-sky">
                 Tickets
               </Link>
@@ -23,7 +28,12 @@ export function Layout() {
               <Link to="/faq" className="hover:text-brand-sky">
                 FAQ
               </Link>
-              <span className="opacity-90">{user.displayName}</span>
+              <span className="opacity-90">
+                {user.displayName}{' '}
+                <span className="text-xs uppercase tracking-wide opacity-70">
+                  ({user.role})
+                </span>
+              </span>
               <button
                 type="button"
                 onClick={clearSession}
@@ -33,9 +43,14 @@ export function Layout() {
               </button>
             </>
           ) : (
-            <Link to="/login" className="text-brand-sky hover:underline">
-              Sign in
-            </Link>
+            <>
+              <Link to="/login" className="text-brand-sky hover:underline">
+                Sign in
+              </Link>
+              <Link to="/register" className="text-brand-sky hover:underline">
+                Sign up
+              </Link>
+            </>
           )}
         </nav>
       </header>
