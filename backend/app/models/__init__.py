@@ -13,6 +13,10 @@ if TYPE_CHECKING:
     pass
 
 
+def _now() -> datetime:
+    return datetime.now()
+
+
 class User(Base):
     __tablename__ = "User"
 
@@ -29,7 +33,7 @@ class User(Base):
         DateTime(timezone=False), server_default=func.now(), nullable=False
     )
     updatedAt: Mapped[datetime] = mapped_column(
-        DateTime(timezone=False), server_default=func.now(), onupdate=func.now(), nullable=False
+        DateTime(timezone=False), default=_now, onupdate=_now, nullable=False
     )
 
     tickets_created: Mapped[list["Ticket"]] = relationship(
@@ -72,7 +76,7 @@ class Ticket(Base):
         DateTime(timezone=False), server_default=func.now(), nullable=False
     )
     updatedAt: Mapped[datetime] = mapped_column(
-        DateTime(timezone=False), server_default=func.now(), onupdate=func.now(), nullable=False
+        DateTime(timezone=False), default=_now, onupdate=_now, nullable=False
     )
 
     created_by: Mapped["User"] = relationship(
@@ -116,7 +120,7 @@ class Problem(Base):
         DateTime(timezone=False), server_default=func.now(), nullable=False
     )
     updatedAt: Mapped[datetime] = mapped_column(
-        DateTime(timezone=False), server_default=func.now(), onupdate=func.now(), nullable=False
+        DateTime(timezone=False), default=_now, onupdate=_now, nullable=False
     )
 
     owner: Mapped[Optional["User"]] = relationship("User", back_populates="problems_owned")
@@ -137,7 +141,7 @@ class FaqEntry(Base):
         DateTime(timezone=False), server_default=func.now(), nullable=False
     )
     updatedAt: Mapped[datetime] = mapped_column(
-        DateTime(timezone=False), server_default=func.now(), onupdate=func.now(), nullable=False
+        DateTime(timezone=False), default=_now, onupdate=_now, nullable=False
     )
 
 
