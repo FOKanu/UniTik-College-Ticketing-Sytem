@@ -1,0 +1,21 @@
+@tailwind base;
+@tailwind components;
+@tailwind utilities;
+
+:root {
+  --uts-steel: #2574a9;
+  --uts-sky: #4fb4ec;
+  --uts-cornflower: #5b9bd5;
+  --uts-nav: #8d8d8d;
+  --uts-text: #333333;
+  --uts-bg: #ffffff;
+  --uts-muted: #d1d5db;
+}
+
+body {
+  margin: 0;
+  min-height: 100vh;
+  background-color: var(--uts-bg);
+  color: var(--uts-text);
+  font-family: system-ui, -apple-system, 'Segoe UI', sans-serif;
+}

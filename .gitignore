@@ -46,3 +46,6 @@ coverage/
 *.tsbuildinfo
 .eslintcache
 .venv/
+**/__pycache__/
+*.py[cod]
+*.egg-info/

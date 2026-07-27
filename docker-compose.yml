@@ -29,7 +29,7 @@ services:
     env_file:
       - ./backend/.env
     environment:
-      DATABASE_URL: postgresql://${POSTGRES_USER:-uts_user}:${POSTGRES_PASSWORD:-uts_password}@postgres:5432/${POSTGRES_DB:-university_ticketing}
+      DATABASE_URL: postgresql+asyncpg://${POSTGRES_USER:-uts_user}:${POSTGRES_PASSWORD:-uts_password}@postgres:5432/${POSTGRES_DB:-university_ticketing}
     ports:
       - "127.0.0.1:4000:4000"
     depends_on:
@@ -37,7 +37,6 @@ services:
         condition: service_healthy
     volumes:
       - ./backend:/app
-      - /app/node_modules
 
   frontend:
     build:

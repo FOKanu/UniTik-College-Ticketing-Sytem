@@ -1,32 +1,25 @@
 # Workstream path ownership for PR reviews.
 # Path *push* enforcement is also handled by scripts/check-workstream-paths.sh (CI).
 # See docs/BRANCHING_STRATEGY.md and docs/CONTRIBUTORS.md.
-#
-# Mapped accounts (add more as teammates share @usernames):
-#   @FOKanu          — Francis Kanu (PM / tooling / AI LLM)
-#   @Laurynas36      — Laurynas Stravinskas (Database lead)
-#   @GariazhaYegor   — Yegor Gariazha (AI/RAG)
-#   @rzaest          — Izzatkhanim Yashar / Izzy (AI/RAG, KB)
 
-# Default fallback — Project Manager
 * @FOKanu
 
-# Frontend workstream
 /frontend/ @FOKanu
-/shared/ @FOKanu
 
-# Backend application code (not Prisma)
-/backend/src/ @FOKanu
+# FastAPI application code (not Alembic/models)
+/backend/app/ @FOKanu
 
 # Database workstream — Laurynas (lead)
-/backend/prisma/ @Laurynas36
-/database/ @Laurynas36
+/backend/alembic/ @Laurynas36
+/backend/app/models/ @Laurynas36
+/backend/scripts/ @Laurynas36
 
-# AI / RAG-oriented modules — Izzy (@rzaest), Yegor; Francis co-owns LLM/chat orchestration
-/backend/src/app/modules/ai/ @rzaest @GariazhaYegor @FOKanu
-/backend/src/app/modules/chatbot/ @rzaest @GariazhaYegor @FOKanu
-/backend/src/app/modules/knowledge-base/ @rzaest @GariazhaYegor @FOKanu
-/frontend/src/modules/chatbot/ @rzaest @FOKanu
+# AI / RAG — chat + KB API slices
+/backend/app/api/v1/chat.py @rzaest @GariazhaYegor @FOKanu
+/backend/app/api/v1/kb.py @rzaest @GariazhaYegor @FOKanu
+/backend/app/services/chat.py @rzaest @GariazhaYegor @FOKanu
+/backend/app/services/kb.py @rzaest @GariazhaYegor @FOKanu
+/frontend/src/modules/chat/ @rzaest @FOKanu
 /frontend/src/modules/faq/ @rzaest @FOKanu
 
 # Tooling / DevOps
@@ -39,3 +32,6 @@
 /docs/ @FOKanu
 /CONTRIBUTING.md @FOKanu
 /CLAUDE.md @FOKanu
+
+# Archive is read-only — changes require tooling-devops + PM approval
+/archive/ @FOKanu

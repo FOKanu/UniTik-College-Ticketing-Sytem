@@ -1,0 +1,42 @@
+from typing import Annotated
+
+from fastapi import APIRouter, Depends
+
+from app.core.deps import DbSession, require_roles
+from app.core.responses import success_response
+from app.db.base import Role
+from app.models import User
+from app.schemas.kb import FaqCreate, FaqSearchRequest
+from app.services import kb as kb_service
+
+router = APIRouter(prefix="/kb", tags=["knowledge-base"])
+
+StaffOrAdmin = Annotated[User, Depends(require_roles(Role.STAFF, Role.ADMIN))]
+
+
+@router.get("/faq")
+async def list_faq(db: DbSession):
+    entries = await kb_service.list_faq(db)
+    return success_response([kb_service.faq_to_response(e).model_dump() for e in entries])
+
+
+@router.get("/faq/{faq_id}")
+async def get_faq(db: DbSession, faq_id: str):
+    entry = await kb_service.get_faq(db, faq_id)
+    return success_response(kb_service.faq_to_response(entry).model_dump())
+
+
+@router.post("/faq")
+async def create_faq(
+    db: DbSession,
+    body: FaqCreate,
+    _user: StaffOrAdmin,
+):
+    entry = await kb_service.create_faq(db, body)
+    return success_response(kb_service.faq_to_response(entry).model_dump(), status_code=201)
+
+
+@router.post("/search")
+async def search_faq(db: DbSession, body: FaqSearchRequest):
+    results = await kb_service.search_faq(db, body.query, body.limit)
+    return success_response([r.model_dump() for r in results])
