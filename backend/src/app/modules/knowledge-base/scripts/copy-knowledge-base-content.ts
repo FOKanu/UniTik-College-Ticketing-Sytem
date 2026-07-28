@@ -2,6 +2,7 @@ import {
   copyFileSync,
   mkdirSync,
   readdirSync,
+  rmSync,
   statSync,
 } from 'fs';
 import { basename, join, resolve } from 'path';
@@ -38,6 +39,7 @@ export function copyKnowledgeBaseContent(
     throw new Error('Canonical knowledge-base Markdown files are incomplete.');
   }
 
+  rmSync(destinationDirectory, { recursive: true, force: true });
   mkdirSync(destinationDirectory, { recursive: true });
   for (const fileName of markdownFiles) {
     copyFileSync(join(sourceDirectory, fileName), join(destinationDirectory, fileName));

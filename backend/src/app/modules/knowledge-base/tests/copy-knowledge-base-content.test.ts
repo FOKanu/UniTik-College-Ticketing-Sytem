@@ -55,17 +55,35 @@ describe('copyKnowledgeBaseContent', () => {
     ).toThrow('Canonical knowledge-base content directory is missing.');
   });
 
-  it('rejects incomplete canonical Markdown without populating the destination', () => {
+  it('removes stale generated files before copying canonical Markdown', () => {
     const source = join(temporaryDirectory, 'source');
     const destination = join(temporaryDirectory, 'destination');
     mkdirSync(source);
+    mkdirSync(destination);
+    for (const fileName of canonicalFiles) {
+      writeFileSync(join(source, fileName), `# ${fileName}\n`);
+    }
+    writeFileSync(join(destination, 'extra.md'), 'stale Markdown');
+    writeFileSync(join(destination, 'marker.txt'), 'stale generated file');
+
+    copyKnowledgeBaseContent(source, destination);
+
+    expect(readdirSync(destination).sort()).toEqual([...canonicalFiles].sort());
+  });
+
+  it('preserves the destination when canonical Markdown is incomplete', () => {
+    const source = join(temporaryDirectory, 'source');
+    const destination = join(temporaryDirectory, 'destination');
+    mkdirSync(source);
+    mkdirSync(destination);
     for (const fileName of canonicalFiles.slice(0, 3)) {
       writeFileSync(join(source, fileName), `# ${fileName}\n`);
     }
+    writeFileSync(join(destination, 'marker.txt'), 'must remain');
 
     expect(() => copyKnowledgeBaseContent(source, destination)).toThrow(
       'Canonical knowledge-base Markdown files are incomplete.',
     );
-    expect(existsSync(destination)).toBe(false);
+    expect(readdirSync(destination)).toEqual(['marker.txt']);
   });
 });

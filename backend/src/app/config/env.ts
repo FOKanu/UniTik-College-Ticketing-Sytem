@@ -20,8 +20,6 @@ const envSchema = z.object({
   // AI provider — optional until a provider is chosen.
   AI_PROVIDER: z.string().optional(),
   AI_API_KEY: z.string().optional(),
-  EMBEDDING_SERVICE_URL: z.string().url().default('http://localhost:8001/embed'),
-  EMBEDDING_TIMEOUT_MS: z.coerce.number().int().positive().default(10000),
 });
 
 const parsed = envSchema.safeParse(process.env);
