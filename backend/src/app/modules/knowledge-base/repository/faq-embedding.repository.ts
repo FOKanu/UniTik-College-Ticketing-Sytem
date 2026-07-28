@@ -1,5 +1,8 @@
+import { Prisma } from '@prisma/client';
 import { prisma } from '../../../database/prisma';
 import { validateEmbeddingVector } from '../../ai/embeddings/embedding-vector.validator';
+
+const KNOWLEDGE_BASE_TRANSACTION_TIMEOUT_MS = 30_000;
 
 export interface FaqEmbeddingRecord {
   id: string;
@@ -11,11 +14,29 @@ export interface FaqEmbeddingRecord {
   embedding: number[];
 }
 
-export async function upsertFaqEmbedding(record: FaqEmbeddingRecord): Promise<void> {
-  const embedding = validateEmbeddingVector(record.embedding);
-  const vectorString = `[${embedding.join(',')}]`;
+interface PreparedFaqEmbeddingRecord {
+  record: FaqEmbeddingRecord;
+  vectorString: string;
+}
 
-  await prisma.$executeRaw`
+type RawSqlClient = Pick<Prisma.TransactionClient, '$executeRaw'>;
+
+function prepareFaqEmbeddingRecord(
+  record: FaqEmbeddingRecord,
+): PreparedFaqEmbeddingRecord {
+  const embedding = validateEmbeddingVector(record.embedding);
+  return {
+    record,
+    vectorString: `[${embedding.join(',')}]`,
+  };
+}
+
+async function executeFaqEmbeddingUpsert(
+  client: RawSqlClient,
+  prepared: PreparedFaqEmbeddingRecord,
+): Promise<void> {
+  const { record, vectorString } = prepared;
+  await client.$executeRaw`
     INSERT INTO "FaqEntry" (id, question, answer, category, language, "contextBlob", embedding, "createdAt", "updatedAt")
     VALUES (
       ${record.id},
@@ -37,4 +58,31 @@ export async function upsertFaqEmbedding(record: FaqEmbeddingRecord): Promise<vo
       embedding = EXCLUDED.embedding,
       "updatedAt" = now()
   `;
+}
+
+export async function upsertFaqEmbedding(record: FaqEmbeddingRecord): Promise<void> {
+  await executeFaqEmbeddingUpsert(prisma, prepareFaqEmbeddingRecord(record));
+}
+
+export async function upsertFaqEmbeddingsAtomically(
+  records: FaqEmbeddingRecord[],
+): Promise<void> {
+  if (records.length === 0) {
+    return;
+  }
+
+  // Validate and serialize every vector before asking Prisma to open a transaction.
+  const preparedRecords = records.map(prepareFaqEmbeddingRecord);
+
+  await prisma.$transaction(
+    async (transaction) => {
+      for (const prepared of preparedRecords) {
+        await executeFaqEmbeddingUpsert(transaction, prepared);
+      }
+    },
+    {
+      // Seventy-five parameterized upserts may exceed Prisma's 5-second interactive default.
+      timeout: KNOWLEDGE_BASE_TRANSACTION_TIMEOUT_MS,
+    },
+  );
 }

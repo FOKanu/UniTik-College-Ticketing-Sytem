@@ -135,11 +135,14 @@ Embedding input and `contextBlob` use the same deterministic JSON retrieval cont
 stable ID, department, audience, language, question, related phrasings, keywords, answer, and escalation
 guidance. Arrays retain canonical Markdown order. The pgvector dimension is fixed at 1536.
 
+Full rebuild generates and validates every embedding before database writes begin. Prepared FAQ records are
+then written in one database transaction: provider failure leaves the database untouched, while any
+database-write failure rejects and rolls back the rebuild. Embedding generation itself is not transactional.
+
 The canonical source remains `src/app/modules/knowledge-base/content/*.md`. `npm run build` compiles
 TypeScript and then copies only the four canonical Markdown files to
 `dist/src/app/modules/knowledge-base/content`, which is the location resolved by the compiled ingestion
 service.
 
-Content hashing, unchanged-entry skipping, provider/model version tracking, transaction policy,
-partial-success continuation, concurrency/rate limiting, similarity retrieval, and RAG generation remain
-deferred decisions.
+Content hashing, unchanged-entry skipping, provider/model version tracking, concurrency/rate limiting,
+similarity retrieval, and RAG generation remain deferred decisions.

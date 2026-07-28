@@ -8,6 +8,7 @@ import { EmbeddingsService } from '../../ai/embeddings/embeddings';
 import {
   FaqEmbeddingRecord,
   upsertFaqEmbedding,
+  upsertFaqEmbeddingsAtomically,
 } from '../repository/faq-embedding.repository';
 import { logger } from '../../../shared/logger/logger';
 
@@ -22,14 +23,14 @@ interface KnowledgeBaseIngestionDependencies {
   loadCorpus: typeof loadKnowledgeBaseCorpus;
   validateCorpus: typeof validateKnowledgeBaseCorpus;
   embed: (text: string) => Promise<{ vector: number[] }>;
-  upsert: (record: FaqEmbeddingRecord) => Promise<void>;
+  upsertAll: (records: FaqEmbeddingRecord[]) => Promise<void>;
 }
 
 const defaultDependencies: KnowledgeBaseIngestionDependencies = {
   loadCorpus: loadKnowledgeBaseCorpus,
   validateCorpus: validateKnowledgeBaseCorpus,
   embed: (text) => embeddingsService.embed(text),
-  upsert: upsertFaqEmbedding,
+  upsertAll: upsertFaqEmbeddingsAtomically,
 };
 
 export function buildEmbeddingInput(entry: KnowledgeBaseContentEntry): string {
@@ -76,10 +77,15 @@ export async function rebuildKnowledgeBase(
 
   const documents = dependencies.loadCorpus(CONTENT_DIRECTORY);
   const entries = dependencies.validateCorpus(documents);
+  const records: FaqEmbeddingRecord[] = [];
 
   for (const entry of entries) {
     const { vector } = await dependencies.embed(buildEmbeddingInput(entry));
-    await dependencies.upsert(buildFaqEmbeddingRecord(entry, vector));
+    records.push(buildFaqEmbeddingRecord(entry, vector));
+  }
+
+  if (records.length > 0) {
+    await dependencies.upsertAll(records);
   }
 
   const result = { processedCount: entries.length };
