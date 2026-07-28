@@ -1,4 +1,5 @@
 import { prisma } from '../../../database/prisma';
+import { validateEmbeddingVector } from '../../ai/embeddings/embedding-vector.validator';
 
 export interface FaqEmbeddingRecord {
   id: string;
@@ -11,7 +12,8 @@ export interface FaqEmbeddingRecord {
 }
 
 export async function upsertFaqEmbedding(record: FaqEmbeddingRecord): Promise<void> {
-  const vectorString = `[${record.embedding.join(',')}]`;
+  const embedding = validateEmbeddingVector(record.embedding);
+  const vectorString = `[${embedding.join(',')}]`;
 
   await prisma.$executeRaw`
     INSERT INTO "FaqEntry" (id, question, answer, category, language, "contextBlob", embedding, "createdAt", "updatedAt")
