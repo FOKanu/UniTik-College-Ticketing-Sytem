@@ -121,9 +121,25 @@ Tests live in `tests/knowledge-base-content.parser.test.ts`. From `backend/`, ru
 npx jest src/app/modules/knowledge-base/tests/knowledge-base-content.parser.test.ts --runInBand
 ```
 
-### Deliberate integration boundary
+### Manual embedding ingestion
 
-This content stage does not implement database ingestion, `contextBlob` generation, embeddings, pgvector
-writes, retrieval, or RAG. TypeScript compilation also does not automatically copy Markdown files into
-`dist`; an asset-copy and runtime-loading strategy must be decided only when runtime integration is
-separately authorized.
+Canonical ingestion is an explicit administrative operation; it is not an API route and does not run during
+normal application startup. Configure `EMBEDDING_SERVICE_URL` and `EMBEDDING_TIMEOUT_MS`, ensure PostgreSQL
+and the embedding service are available, then run from `backend/`:
+
+```bash
+npm run knowledge-base:rebuild
+```
+
+Embedding input and `contextBlob` use the same deterministic JSON retrieval context in this fixed order:
+stable ID, department, audience, language, question, related phrasings, keywords, answer, and escalation
+guidance. Arrays retain canonical Markdown order. The pgvector dimension is fixed at 1536.
+
+The canonical source remains `src/app/modules/knowledge-base/content/*.md`. `npm run build` compiles
+TypeScript and then copies only the four canonical Markdown files to
+`dist/src/app/modules/knowledge-base/content`, which is the location resolved by the compiled ingestion
+service.
+
+Content hashing, unchanged-entry skipping, provider/model version tracking, transaction policy,
+partial-success continuation, concurrency/rate limiting, similarity retrieval, and RAG generation remain
+deferred decisions.
