@@ -51,9 +51,32 @@ ranking. Also extracted `frontend/src/modules/tickets/types.ts` — `TicketsPage
 and the new `DashboardPage` had each been redefining their own local `Ticket` interface.
 Also added dev-only ("import.meta.env.DEV" gated) quick-fill buttons on `LoginPage` for the real
 seeded demo accounts from `backend/scripts/seed.py` (password `demo1234` for all) — not an auth
-bypass, still goes through real `/auth/login`. Remaining screens (Tickets, Ticket Detail, Chat,
-Queue/Resolution, and the not-yet-backed staff screens) still use the plain pre-Figma styling and
-are next._
+bypass, still goes through real `/auth/login`._
+
+_2026-07-29: completed the Figma port for every screen with real backend backing. `Layout.tsx` is
+now the shared app shell from the wireframes (dark Mdh brand block, 220px gradient sidebar with
+role-specific nav and active-item highlight, top bar with page title + EN/bell/logout, floating AI
+bubble); auth pages render shell-less. New/redesigned pages: `TicketsPage` (table layout with
+status/department filters, search, client-side pagination — serves as student "My Tickets" AND staff
+"Ticket Queue", node 1:3/1:8), `CreateTicketPage` at `/tickets/new` (category + priority pills;
+selected category is sent as both `category` and `department` for routing; attachments dropzone
+rendered disabled — no upload endpoint, node 1:4/23:2), `TicketDetailPage` (meta sidebar with status
+timeline + conversation bubbles; staff variant adds status select + reassign panel, node 1:5/1:9),
+`ChatPage` (bubbles, suggested-topic quick sends, real escalate-to-ticket that navigates to the
+created ticket, node 1:6), `StaffDashboardPage` at `/staff` (node 1:7 — stat cards + My Queue +
+CSS bar chart of tickets-by-department, all derived from GET /tickets; **"SLA Breaches" replaced
+with "Unassigned"** since no SLA engine exists), FaqPage header restyle (doubles as staff
+"Knowledge Base", 23:3 — its "Knowledge Gaps" AI panel omitted, needs an endpoint). Staff land on
+`/staff` after login. Shared helpers split into `tickets/ui.tsx` (chips) and `tickets/format.ts`
+(labels/colors/relative time). Still unbuilt: Analytics (23:4, no aggregation endpoints),
+Notifications, Profile — nav items render disabled._
+
+_2026-07-29 (follow-up): `/` no longer shows the old health-check landing page — it now redirects
+(signed-out → `/login`, student → `/dashboard`, staff → `/staff`); the health-check page moved to
+`/status` for developers. Polish pass beyond the wireframes: page background softened to `#F7F8FA`
+(`--uts-bg`) so white cards read as raised surfaces, `shadow-sm` on cards/auth forms, the tickets
+table wrapped in a card, sidebar got a right border + nav hover/transition states, font smoothing
+enabled._
 
 ## Vertical slice layout
 

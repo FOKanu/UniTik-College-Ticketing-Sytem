@@ -18,9 +18,14 @@ DEMO_PASSWORD = "demo1234"
 
 async def seed() -> None:
     async with async_session_factory() as db:
-        existing = await db.execute(select(User).limit(1))
+        # Check specifically for the demo student, not "any user" — otherwise a
+        # single self-registered account (via the Sign Up page) would make this
+        # script skip forever and the demo accounts would never get created.
+        existing = await db.execute(
+            select(User).where(User.email == "jordan.alvarez@student.university.edu")
+        )
         if existing.scalar_one_or_none():
-            print("Database already seeded — skipping.")
+            print("Demo accounts already seeded — skipping.")
             return
 
         admin = User(
@@ -89,7 +94,9 @@ async def seed() -> None:
         wifi_ticket = Ticket(
             id=str(uuid.uuid4()),
             subject="Lab WiFi outage in Biology building",
-            description="WiFi has been dropping every few minutes in the second-floor labs since Monday.",
+            description=(
+                "WiFi has been dropping every few minutes in the second-floor labs since Monday."
+            ),
             status=TicketStatus.IN_PROGRESS,
             department="Biology",
             category="Network",

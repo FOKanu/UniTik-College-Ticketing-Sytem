@@ -8,7 +8,9 @@
   --uts-cornflower: #5b9bd5;
   --uts-nav: #8d8d8d;
   --uts-text: #333333;
-  --uts-bg: #ffffff;
+  /* Soft off-white page background so white cards read as raised surfaces
+     (the wireframes are flat white; this is a deliberate polish step). */
+  --uts-bg: #f7f8fa;
   --uts-muted: #d1d5db;
 }
 
@@ -18,4 +20,5 @@ body {
   background-color: var(--uts-bg);
   color: var(--uts-text);
   font-family: system-ui, -apple-system, 'Segoe UI', sans-serif;
+  -webkit-font-smoothing: antialiased;
 }

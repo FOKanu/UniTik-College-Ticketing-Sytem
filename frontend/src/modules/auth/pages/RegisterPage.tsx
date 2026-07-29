@@ -58,8 +58,8 @@ export function RegisterPage() {
   };
 
   return (
-    <div className="flex justify-center py-10">
-      <div className="w-full max-w-[440px] bg-uts-bg border border-[#dedede] rounded-xl p-10">
+    <div className="flex justify-center py-16">
+      <div className="w-full max-w-[440px] bg-white border border-[#dedede] rounded-xl p-10 shadow-sm">
         <h1 className="text-xl font-semibold text-uts-text text-center">TicketHub</h1>
         <p className="text-[13px] text-uts-text text-center mt-1 mb-6">Create your account</p>
 
@@ -129,7 +129,7 @@ export function RegisterPage() {
           </button>
 
           <div className="relative h-px bg-uts-nav mt-1">
-            <span className="absolute -top-2.5 left-1/2 -translate-x-1/2 bg-uts-bg px-2 text-[11px] text-uts-nav">
+            <span className="absolute -top-2.5 left-1/2 -translate-x-1/2 bg-white px-2 text-[11px] text-uts-nav">
               or
             </span>
           </div>

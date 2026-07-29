@@ -12,7 +12,7 @@ export default {
         uts: {
           nav: '#8D8D8D',
           text: '#333333',
-          bg: '#FFFFFF',
+          bg: '#F7F8FA',
           muted: '#D1D5DB',
         },
       },

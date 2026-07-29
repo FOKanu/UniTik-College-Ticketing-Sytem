@@ -12,6 +12,11 @@ API_PREFIX = "/api/v1"
 
 def create_app() -> FastAPI:
     settings = get_settings()
+    local_frontend_origins = {
+        settings.cors_origin,
+        "http://localhost:5173",
+        "http://127.0.0.1:5173",
+    }
     app = FastAPI(
         title="University Support Ticketing System",
         version="0.2.0",
@@ -21,7 +26,7 @@ def create_app() -> FastAPI:
 
     app.add_middleware(
         CORSMiddleware,
-        allow_origins=[settings.cors_origin],
+        allow_origins=sorted(local_frontend_origins),
         allow_credentials=True,
         allow_methods=["*"],
         allow_headers=["*"],

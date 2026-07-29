@@ -3,6 +3,8 @@ import { Link, Navigate } from 'react-router-dom';
 
 import { apiClient } from '../../../lib/api-client';
 import { useAuth } from '../../../store/auth.store';
+import { relativeTime } from '../../tickets/format';
+import { DepartmentChip, StatusChip } from '../../tickets/ui';
 import type { Ticket } from '../../tickets/types';
 
 interface FaqEntry {
@@ -54,7 +56,7 @@ export function DashboardPage() {
   }, []);
 
   if (!token) return <Navigate to="/login" replace />;
-  if (user?.role !== 'STUDENT') return <Navigate to="/tickets" replace />;
+  if (user?.role !== 'STUDENT') return <Navigate to="/staff" replace />;
 
   const openCount = tickets.filter((t) => t.status === 'OPEN').length;
   const inProgressCount = tickets.filter((t) => t.status === 'IN_PROGRESS').length;
@@ -86,7 +88,7 @@ export function DashboardPage() {
       </div>
 
       <div className="grid grid-cols-[1fr_360px] gap-4 items-start">
-        <div className="bg-white border border-uts-muted rounded-lg">
+        <div className="bg-white border border-uts-muted rounded-lg shadow-sm">
           <div className="px-4 py-3 border-b border-uts-muted">
             <h2 className="text-[16px] font-semibold text-uts-text">Recent Tickets</h2>
           </div>
@@ -104,8 +106,8 @@ export function DashboardPage() {
                   </span>
                 </div>
                 <div className="flex gap-2">
-                  {t.department && <Chip tone="neutral">{t.department}</Chip>}
-                  <Chip tone={statusTone(t.status)}>{statusLabel(t.status)}</Chip>
+                  {t.department && <DepartmentChip>{t.department}</DepartmentChip>}
+                  <StatusChip status={t.status} />
                 </div>
               </Link>
             ))}
@@ -116,7 +118,7 @@ export function DashboardPage() {
         </div>
 
         <div className="space-y-4">
-          <div className="bg-white border border-uts-muted rounded-lg">
+          <div className="bg-white border border-uts-muted rounded-lg shadow-sm">
             <div className="px-4 py-3 border-b border-uts-muted">
               <h2 className="text-[16px] font-semibold text-uts-text">Suggested Articles</h2>
             </div>
@@ -159,61 +161,10 @@ export function DashboardPage() {
 
 function StatCard({ label, value }: { label: string; value: number }) {
   return (
-    <div className="bg-brand-steel border border-[#dedede] rounded-lg p-4">
+    <div className="bg-brand-steel border border-[#dedede] rounded-lg shadow-sm p-4">
       <p className="text-[12px] font-medium text-white">{label}</p>
       <p className="text-2xl font-semibold text-white">{value}</p>
     </div>
   );
 }
 
-function statusLabel(status: Ticket['status']): string {
-  if (status === 'IN_PROGRESS') return 'In Progress';
-  if (status === 'OPEN') return 'Open';
-  if (status === 'RESOLVED') return 'Resolved';
-  return 'Closed';
-}
-
-// Maps a ticket status to a chip color "tone" — kept separate from the
-// display label above so a relabel doesn't accidentally change the color.
-function statusTone(status: Ticket['status']): 'open' | 'progress' | 'resolved' | 'neutral' {
-  if (status === 'OPEN') return 'open';
-  if (status === 'IN_PROGRESS') return 'progress';
-  if (status === 'RESOLVED') return 'resolved';
-  return 'neutral';
-}
-
-function Chip({
-  tone,
-  children,
-}: {
-  tone: 'open' | 'progress' | 'resolved' | 'neutral';
-  children: string;
-}) {
-  const textColor =
-    tone === 'open'
-      ? 'text-[#ad3e3e]'
-      : tone === 'progress'
-        ? 'text-[#e4b600]'
-        : tone === 'resolved'
-          ? 'text-[#3a6133]'
-          : 'text-[#525252]';
-  return (
-    <span
-      className={`inline-flex items-center rounded-full border border-[#c7c7c7] bg-brand-cornflower/35 px-2.5 py-0.5 text-[11px] font-semibold ${textColor}`}
-    >
-      {children}
-    </span>
-  );
-}
-
-function relativeTime(isoDate: string): string {
-  const diffMs = Date.now() - new Date(isoDate).getTime();
-  const minutes = Math.floor(diffMs / 60_000);
-  if (minutes < 60) return `${Math.max(minutes, 0)}m ago`;
-  const hours = Math.floor(minutes / 60);
-  if (hours < 24) return `${hours}h ago`;
-  const days = Math.floor(hours / 24);
-  if (days < 7) return `${days}d ago`;
-  const weeks = Math.floor(days / 7);
-  return `${weeks}w ago`;
-}
