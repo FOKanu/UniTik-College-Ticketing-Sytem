@@ -12,9 +12,11 @@ import { useAuth } from '../store/auth.store';
  * Signed-out pages (Sign In / Sign Up) render without any shell, exactly
  * like the auth frames in Figma.
  *
- * Disabled affordances (EN language switcher, Notifications, Profile) are
- * in the design but have no backend/routes yet — they render grayed-out
- * with a title explaining why, consistent with how LoginPage handles SSO.
+ * Disabled affordances (EN language switcher, Profile) are in the design
+ * but have no backend/routes yet — they render grayed-out with a title
+ * explaining why, consistent with how LoginPage handles SSO.
+ * Notifications now has a real route (see modules/notifications), currently
+ * backed by mock data until the backend exposes a /notifications API.
  */
 
 interface NavItem {
@@ -27,7 +29,7 @@ const STUDENT_NAV: NavItem[] = [
   { label: 'My Tickets', to: '/tickets' },
   { label: 'AI Assistant', to: '/chat' },
   { label: 'FAQ', to: '/faq' },
-  { label: 'Notifications' },
+  { label: 'Notifications', to: '/notifications' },
   { label: 'Profile' },
 ];
 
@@ -37,7 +39,7 @@ const STAFF_NAV: NavItem[] = [
   { label: 'Create Ticket', to: '/tickets/new' },
   { label: 'Knowledge Base', to: '/faq' },
   { label: 'Analytics' },
-  { label: 'Notifications' },
+  { label: 'Notifications', to: '/notifications' },
   { label: 'Profile' },
 ];
 
@@ -49,6 +51,7 @@ function pageTitle(pathname: string, isStaff: boolean): string {
   if (pathname.startsWith('/tickets')) return isStaff ? 'Ticket Queue' : 'My Tickets';
   if (pathname.startsWith('/chat')) return 'AI Assistant';
   if (pathname.startsWith('/faq')) return isStaff ? 'Knowledge Base' : 'FAQ';
+  if (pathname.startsWith('/notifications')) return 'Notifications';
   return 'TicketHub';
 }
 
