@@ -3,10 +3,21 @@ from sqlalchemy.ext.asyncio import AsyncSession
 
 from app.core.config import get_settings
 from app.core.exceptions import ConflictError, UnauthorizedError
-from app.core.security import create_access_token, decode_access_token, hash_password, verify_password
+from app.core.security import (
+    create_access_token,
+    decode_access_token,
+    hash_password,
+    verify_password,
+)
 from app.db.base import Role
 from app.models import User
-from app.schemas.auth import AuthTokenResponse, LoginRequest, RefreshRequest, RegisterRequest, UserResponse
+from app.schemas.auth import (
+    AuthTokenResponse,
+    LoginRequest,
+    RefreshRequest,
+    RegisterRequest,
+    UserResponse,
+)
 
 
 async def login(db: AsyncSession, data: LoginRequest) -> AuthTokenResponse:

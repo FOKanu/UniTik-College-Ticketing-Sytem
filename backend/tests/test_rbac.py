@@ -1,10 +1,10 @@
 import pytest
 
-from tests.conftest import integration
 from app.core.security import hash_password
 from app.db.base import Role
 from app.db.session import async_session_factory
 from app.models import User
+from tests.conftest import integration
 
 
 async def _register_and_login(client, *, role: str, department: str | None = None):
