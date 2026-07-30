@@ -7,6 +7,7 @@ import { ChatPage } from '../modules/chat/pages/ChatPage';
 import { DashboardPage } from '../modules/dashboard/pages/DashboardPage';
 import { StaffDashboardPage } from '../modules/dashboard/pages/StaffDashboardPage';
 import { FaqPage } from '../modules/faq/pages/FaqPage';
+import { NotificationsPage } from '../modules/notifications/pages/NotificationsPage';
 import { CreateTicketPage } from '../modules/tickets/pages/CreateTicketPage';
 import { TicketDetailPage } from '../modules/tickets/pages/TicketDetailPage';
 import { TicketsPage } from '../modules/tickets/pages/TicketsPage';
@@ -42,6 +43,7 @@ export function AppRouter() {
             <Route path="tickets/:id" element={<TicketDetailPage />} />
             <Route path="chat" element={<ChatPage />} />
             <Route path="faq" element={<FaqPage />} />
+            <Route path="notifications" element={<NotificationsPage />} />
             <Route path="*" element={<Navigate to="/" replace />} />
           </Route>
         </Routes>
