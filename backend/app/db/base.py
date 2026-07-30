@@ -31,3 +31,26 @@ class TicketPriority(StrEnum):
     LOW = "LOW"
     MEDIUM = "MEDIUM"
     HIGH = "HIGH"
+
+
+class FaqVisibility(StrEnum):
+    """Who may see a knowledge-base article.
+
+    STUDENTS_AND_AI — listed on the student "FAQ & Resources" page and used by
+                      the AI assistant when answering.
+    AI_ONLY         — internal context (runbooks, staff-only detail). The AI may
+                      read it; students must never see it.
+    ANNOUNCEMENT    — like STUDENTS_AND_AI, but pinned to the top of the student
+                      page. Used for policy updates.
+    """
+
+    STUDENTS_AND_AI = "STUDENTS_AND_AI"
+    AI_ONLY = "AI_ONLY"
+    ANNOUNCEMENT = "ANNOUNCEMENT"
+
+
+class FaqStatus(StrEnum):
+    """Draft articles are invisible to students regardless of visibility."""
+
+    DRAFT = "DRAFT"
+    PUBLISHED = "PUBLISHED"
