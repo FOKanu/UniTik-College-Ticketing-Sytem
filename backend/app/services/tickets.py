@@ -16,10 +16,11 @@ from app.schemas.tickets import (
 async def list_tickets(db: AsyncSession, user: User) -> list[Ticket]:
     if user.role == Role.STUDENT:
         result = await db.execute(select(Ticket).where(Ticket.createdById == user.id))
+    elif user.role == Role.STAFF:
+        result = await db.execute(select(Ticket).where(Ticket.department == user.department))
     else:
         result = await db.execute(select(Ticket))
     return list(result.scalars().all())
-
 
 async def get_ticket(db: AsyncSession, ticket_id: str, user: User) -> Ticket:
     result = await db.execute(select(Ticket).where(Ticket.id == ticket_id))
@@ -28,6 +29,8 @@ async def get_ticket(db: AsyncSession, ticket_id: str, user: User) -> Ticket:
         raise NotFoundError("Ticket not found")
     if user.role == Role.STUDENT and ticket.createdById != user.id:
         raise ForbiddenError("Students may only view their own tickets")
+    if user.role == Role.STAFF and ticket.department != user.department:
+        raise ForbiddenError("Staff may only view tickets in their department")
     return ticket
 
 
