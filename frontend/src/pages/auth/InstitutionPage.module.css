@@ -1,0 +1,320 @@
+.shell {
+  min-height: 100vh;
+  display: grid;
+  grid-template-columns: minmax(280px, 42%) 1fr;
+  background: #fff;
+}
+
+.skipLink {
+  position: absolute;
+  left: -9999px;
+  top: 0;
+  background: #fff;
+  color: var(--neutral-900);
+  padding: 0.5rem 1rem;
+  z-index: 100;
+  border-radius: 8px;
+}
+
+.skipLink:focus {
+  left: 0.75rem;
+  top: 0.75rem;
+}
+
+.brandPanel {
+  background: #0f3145;
+  color: #fff;
+  padding: 2rem 2.25rem 1.75rem;
+  display: flex;
+  flex-direction: column;
+  gap: 2.5rem;
+  min-height: 100vh;
+}
+
+.brandTop {
+  display: flex;
+  align-items: center;
+  gap: 0.75rem;
+}
+
+.brandMark {
+  width: 40px;
+  height: 40px;
+  border-radius: 10px;
+  background: var(--brand-600);
+  display: grid;
+  place-items: center;
+  font-size: 0.8rem;
+  font-weight: 800;
+  letter-spacing: 0.02em;
+}
+
+.brandName {
+  font-size: 1.05rem;
+  font-weight: 700;
+  letter-spacing: -0.01em;
+}
+
+.brandBody {
+  flex: 1;
+  max-width: 28rem;
+}
+
+.brandBody h1 {
+  margin: 0;
+  font-size: clamp(1.75rem, 2.8vw, 2.35rem);
+  line-height: 1.15;
+  letter-spacing: -0.03em;
+  font-weight: 700;
+  color: #fff;
+}
+
+.brandBody > p {
+  margin: 1rem 0 0;
+  color: rgba(255, 255, 255, 0.72);
+  font-size: 0.95rem;
+  line-height: 1.55;
+}
+
+.features {
+  list-style: none;
+  margin: 1.75rem 0 0;
+  padding: 0;
+  display: grid;
+  gap: 0.85rem;
+}
+
+.features li {
+  display: flex;
+  align-items: flex-start;
+  gap: 0.65rem;
+  color: rgba(255, 255, 255, 0.9);
+  font-size: 0.95rem;
+  font-weight: 500;
+}
+
+.features li svg {
+  flex-shrink: 0;
+  margin-top: 0.15rem;
+  color: var(--brand-400, #5ba3d0);
+}
+
+.brandFooter {
+  margin: 0;
+  color: rgba(255, 255, 255, 0.45);
+  font-size: 0.8rem;
+}
+
+.main {
+  display: flex;
+  flex-direction: column;
+  min-height: 100vh;
+  min-width: 0;
+  background: #fff;
+}
+
+.langRow {
+  display: flex;
+  justify-content: flex-end;
+  padding: 1.25rem 1.75rem 0;
+}
+
+.content {
+  flex: 1;
+  display: flex;
+  flex-direction: column;
+  width: min(520px, 100%);
+  margin: 0 auto;
+  padding: 1.5rem 1.75rem 2rem;
+}
+
+.header h2 {
+  margin: 0;
+  font-size: clamp(1.65rem, 2.4vw, 2rem);
+  letter-spacing: -0.03em;
+  color: var(--neutral-900);
+}
+
+.header p {
+  margin: 0.45rem 0 0;
+  color: var(--neutral-500);
+  font-size: 0.95rem;
+}
+
+.search {
+  margin-top: 1.5rem;
+  display: flex;
+  align-items: center;
+  gap: 0.65rem;
+  border: 1px solid var(--neutral-200);
+  border-radius: 12px;
+  padding: 0.75rem 0.9rem;
+  background: #fff;
+  color: var(--neutral-400);
+}
+
+.search:focus-within {
+  border-color: var(--brand-600);
+  box-shadow: 0 0 0 3px rgba(37, 116, 169, 0.16);
+}
+
+.search input {
+  flex: 1;
+  border: none;
+  outline: none;
+  background: transparent;
+  font: inherit;
+  font-size: 0.95rem;
+  color: var(--neutral-900);
+  min-width: 0;
+}
+
+.search input::placeholder {
+  color: var(--neutral-400);
+}
+
+.listSection {
+  margin-top: 1.75rem;
+  flex: 1;
+}
+
+.listLabel {
+  margin: 0 0 0.75rem;
+  font-size: 0.7rem;
+  font-weight: 700;
+  letter-spacing: 0.08em;
+  text-transform: uppercase;
+  color: var(--neutral-400);
+}
+
+.list {
+  list-style: none;
+  margin: 0;
+  padding: 0;
+  display: grid;
+  gap: 0.55rem;
+}
+
+.card,
+.cardActive {
+  width: 100%;
+  display: flex;
+  align-items: center;
+  gap: 0.85rem;
+  border: 1.5px solid var(--neutral-200);
+  background: #fff;
+  border-radius: 12px;
+  padding: 0.85rem 0.95rem;
+  cursor: pointer;
+  text-align: left;
+  font: inherit;
+  color: var(--neutral-800);
+  transition:
+    border-color 0.15s ease,
+    background 0.15s ease,
+    box-shadow 0.15s ease;
+}
+
+.card:hover {
+  border-color: var(--brand-300);
+  background: var(--brand-50);
+}
+
+.cardActive {
+  border-color: var(--brand-600);
+  background: #fff;
+  box-shadow: 0 0 0 1px var(--brand-600);
+}
+
+.card:focus-visible,
+.cardActive:focus-visible {
+  outline: none;
+  border-color: var(--brand-600);
+  box-shadow: 0 0 0 3px rgba(37, 116, 169, 0.2);
+}
+
+.badge {
+  width: 42px;
+  height: 42px;
+  border-radius: 10px;
+  color: #fff;
+  display: grid;
+  place-items: center;
+  font-size: 0.65rem;
+  font-weight: 800;
+  letter-spacing: 0.02em;
+  flex-shrink: 0;
+}
+
+.copy {
+  flex: 1;
+  min-width: 0;
+}
+
+.copy strong {
+  display: block;
+  font-size: 0.95rem;
+  font-weight: 650;
+  color: var(--neutral-900);
+}
+
+.copy small {
+  display: block;
+  margin-top: 0.15rem;
+  color: var(--neutral-500);
+  font-size: 0.8rem;
+}
+
+.chevron {
+  color: var(--neutral-400);
+  flex-shrink: 0;
+}
+
+.cardActive .chevron {
+  color: var(--brand-600);
+}
+
+.empty {
+  margin: 1rem 0 0;
+  color: var(--neutral-500);
+  font-size: 0.9rem;
+}
+
+.help {
+  margin: 1.75rem 0 0;
+  color: var(--neutral-400);
+  font-size: 0.8rem;
+  line-height: 1.45;
+}
+
+@media (max-width: 900px) {
+  .shell {
+    grid-template-columns: 1fr;
+  }
+
+  .brandPanel {
+    min-height: auto;
+    padding: 1.5rem 1.35rem 1.35rem;
+    gap: 1.5rem;
+  }
+
+  .brandBody h1 {
+    font-size: 1.55rem;
+  }
+
+  .features {
+    margin-top: 1.15rem;
+  }
+
+  .brandFooter {
+    display: none;
+  }
+
+  .main {
+    min-height: auto;
+  }
+
+  .content {
+    padding-top: 0.75rem;
+  }
+}
