@@ -105,17 +105,30 @@ Skip none of these gates for normal work.
 
 Contributors must push only files that belong to the branch they are working on. CI fails otherwise.
 
+**Updated 2026-07-29:** this table described the old Express + Prisma layout (`backend/src/**`,
+`backend/prisma/**`, `database/**`) — none of those paths exist since the FastAPI v2 migration. It now
+matches `scripts/check-workstream-paths.sh`, which is the enforcing source of truth.
+
 | Branch / `feature/<area>-*` | Allowed paths (plus shared docs*) |
 | --- | --- |
-| `frontend` | `frontend/**`, `shared/**` |
-| `backend` | `backend/src/**`, `backend/tests/**`, backend config (`package.json`, tsconfig, eslint, …) — **not** `backend/prisma/**` |
-| `database` | `backend/prisma/**`, `database/**` |
-| `ai-rag` | `backend/.../modules/{ai,chatbot,knowledge-base}/**`, `frontend/.../modules/{chatbot,faq}/**` |
-| `tooling-devops` | `.github/**`, `docker/**`, `docker-compose.yml`, `scripts/**`, root `package.json`, `.husky/**`, prettier/editorconfig |
-| `testing` | `**/*.test.ts(x)`, `**/tests/**`, jest/vitest config, `frontend/src/test-setup.ts` |
+| `frontend` | `frontend/**` |
+| `backend` | `backend/app/**`, `backend/tests/**`, `backend/pyproject.toml`, `backend/.env.example` |
+| `database` | `backend/alembic/**`, `backend/alembic.ini`, `backend/app/models/**`, `backend/app/db/**`, `backend/scripts/**` |
+| `ai-rag` | `backend/app/{api/v1,services,schemas}/{chat,kb}.py`, `frontend/src/modules/{chat,faq}/**` |
+| `tooling-devops` | `.github/**`, `docker/**`, `docker-compose.yml`, `scripts/**`, root `package.json`, `.husky/**`, prettier/editorconfig, `archive/**`, and all of `backend/**` + `frontend/**` |
+| `testing` | `**/*.test.ts(x)`, `**/tests/**`, vitest config, `frontend/src/test-setup.ts` |
 | `debugging` / `project-manager` / `main` | Any paths (integration gates) |
 
 \*Always allowed on workstreams: `docs/**`, `README.md`, `CONTRIBUTING.md`, `CLAUDE.md`, `.gitignore`.
+
+### Cross-area features
+
+`backend` and `database` overlap deliberately: `backend` owns all of `backend/app/**` (including
+`models/` and `db/`), while `database` owns migrations, seed and the schema files. A change that
+adds a table *and* the API to read it therefore spans both — that is expected. Per the Rules above,
+land it either as sequential PRs (`database` first, then `backend`, then `frontend`) or as one
+coordinated PR with a named owner and a checklist. A single `feature/<area>-*` branch cannot pass
+the guard for genuinely cross-area work, so agree the approach with the PM before starting.
 
 Local check before push:
 

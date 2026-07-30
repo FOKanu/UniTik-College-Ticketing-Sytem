@@ -63,7 +63,12 @@ case "$AREA" in
     ;;
   database)
     ALLOWED+=('^backend/alembic/')
+    ALLOWED+=('^backend/alembic\.ini$')
     ALLOWED+=('^backend/app/models/')
+    # SQLAlchemy declarative Base and the schema-level enums (Role, TicketStatus,
+    # FaqVisibility, …) live here. They are schema, not API, so the database
+    # workstream owns them.
+    ALLOWED+=('^backend/app/db/')
     ALLOWED+=('^backend/scripts/')
     ;;
   ai-rag)
