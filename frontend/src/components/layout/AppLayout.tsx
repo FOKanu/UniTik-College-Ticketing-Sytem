@@ -114,6 +114,13 @@ export function AppLayout({ children }: { children?: ReactNode }) {
     }
   })
   const [drawerOpen, setDrawerOpen] = useState(false)
+  const [drawerPath, setDrawerPath] = useState(location.pathname)
+
+  // Close mobile drawer when the route changes (adjust state during render).
+  if (drawerPath !== location.pathname) {
+    setDrawerPath(location.pathname)
+    if (drawerOpen) setDrawerOpen(false)
+  }
 
   useEffect(() => {
     try {
@@ -122,10 +129,6 @@ export function AppLayout({ children }: { children?: ReactNode }) {
       /* ignore */
     }
   }, [collapsed])
-
-  useEffect(() => {
-    setDrawerOpen(false)
-  }, [location.pathname])
 
   const navItems = navForRole(user?.role)
   const homePath = homeForRole(user?.role)

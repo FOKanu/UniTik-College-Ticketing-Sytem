@@ -21,6 +21,7 @@ export function useDialogFocus({
 
     const container = containerRef.current
     const previousFocus = document.activeElement as HTMLElement | null
+    const trigger = triggerRef.current
 
     const focusable = Array.from(
       container.querySelectorAll<HTMLElement>(FOCUSABLE),
@@ -51,8 +52,8 @@ export function useDialogFocus({
     document.addEventListener('keydown', onKeyDown)
     return () => {
       document.removeEventListener('keydown', onKeyDown)
-      if (triggerRef.current) {
-        triggerRef.current.focus()
+      if (trigger) {
+        trigger.focus()
       } else {
         previousFocus?.focus()
       }
