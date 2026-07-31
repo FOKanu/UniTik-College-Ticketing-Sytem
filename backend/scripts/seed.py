@@ -11,9 +11,18 @@ from sqlalchemy import select
 from app.core.security import hash_password
 from app.db.base import Role, TicketStatus
 from app.db.session import async_session_factory
-from app.models import Attachment, Problem, Ticket, User
+from app.models import Attachment, Department, Problem, Ticket, User
 
 DEMO_PASSWORD = "demo1234"
+
+DEPARTMENT_NAMES = [
+    "IT Administration",
+    "IT Support — Tier 1",
+    "IT Support — Tier 2",
+    "Computer Science",
+    "Biology",
+    "Mechanical Engineering",
+]
 
 
 async def seed() -> None:
@@ -28,12 +37,18 @@ async def seed() -> None:
             print("Demo accounts already seeded — skipping.")
             return
 
+        departments = {
+            name: Department(id=str(uuid.uuid4()), name=name) for name in DEPARTMENT_NAMES
+        }
+        db.add_all(departments.values())
+        await db.flush()
+
         admin = User(
             id=str(uuid.uuid4()),
             email="elena.voss@university.edu",
             displayName="Elena Voss",
             role=Role.ADMIN,
-            department="IT Administration",
+            departmentId=departments["IT Administration"].id,
             passwordHash=hash_password(DEMO_PASSWORD),
         )
         staff_tier1 = User(
@@ -41,7 +56,7 @@ async def seed() -> None:
             email="marcus.whitfield@university.edu",
             displayName="Marcus Whitfield",
             role=Role.STAFF,
-            department="IT Support — Tier 1",
+            departmentId=departments["IT Support — Tier 1"].id,
             passwordHash=hash_password(DEMO_PASSWORD),
         )
         staff_tier2 = User(
@@ -49,7 +64,7 @@ async def seed() -> None:
             email="priya.nandakumar@university.edu",
             displayName="Priya Nandakumar",
             role=Role.STAFF,
-            department="IT Support — Tier 2",
+            departmentId=departments["IT Support — Tier 2"].id,
             passwordHash=hash_password(DEMO_PASSWORD),
         )
         student_jordan = User(
@@ -57,7 +72,7 @@ async def seed() -> None:
             email="jordan.alvarez@student.university.edu",
             displayName="Jordan Alvarez",
             role=Role.STUDENT,
-            department="Computer Science",
+            departmentId=departments["Computer Science"].id,
             passwordHash=hash_password(DEMO_PASSWORD),
         )
         student_sophie = User(
@@ -65,7 +80,7 @@ async def seed() -> None:
             email="sophie.tan@student.university.edu",
             displayName="Sophie Tan",
             role=Role.STUDENT,
-            department="Biology",
+            departmentId=departments["Biology"].id,
             passwordHash=hash_password(DEMO_PASSWORD),
         )
         student_liam = User(
@@ -73,7 +88,7 @@ async def seed() -> None:
             email="liam.oconnor@student.university.edu",
             displayName="Liam O'Connor",
             role=Role.STUDENT,
-            department="Mechanical Engineering",
+            departmentId=departments["Mechanical Engineering"].id,
             passwordHash=hash_password(DEMO_PASSWORD),
         )
         db.add_all(
@@ -86,7 +101,8 @@ async def seed() -> None:
             subject="Cannot access course portal",
             description="Login page redirects back to itself after entering valid credentials.",
             status=TicketStatus.OPEN,
-            department="Computer Science",
+            departmentId=departments["Computer Science"].id,
+            classificationSource="manual",
             category="Access",
             createdById=student_jordan.id,
             assignedToId=staff_tier1.id,
@@ -98,7 +114,8 @@ async def seed() -> None:
                 "WiFi has been dropping every few minutes in the second-floor labs since Monday."
             ),
             status=TicketStatus.IN_PROGRESS,
-            department="Biology",
+            departmentId=departments["Biology"].id,
+            classificationSource="manual",
             category="Network",
             createdById=student_sophie.id,
             assignedToId=staff_tier2.id,
@@ -108,7 +125,8 @@ async def seed() -> None:
             subject="Grade appeal not reflected in transcript",
             description="Approved grade change from last semester still shows the old grade.",
             status=TicketStatus.RESOLVED,
-            department="Mechanical Engineering",
+            departmentId=departments["Mechanical Engineering"].id,
+            classificationSource="manual",
             category="Academic Records",
             createdById=student_liam.id,
             assignedToId=staff_tier1.id,
@@ -118,7 +136,8 @@ async def seed() -> None:
             subject="Intermittent VPN disconnects",
             description="VPN connection drops every 10-15 minutes when working from off campus.",
             status=TicketStatus.IN_PROGRESS,
-            department="Computer Science",
+            departmentId=departments["Computer Science"].id,
+            classificationSource="manual",
             category="Network",
             createdById=student_jordan.id,
             assignedToId=staff_tier2.id,
@@ -155,7 +174,7 @@ async def seed() -> None:
         db.add(attachment)
         await db.commit()
         print(
-            "Seed complete: 6 users, 5 tickets, 1 problem, 1 attachment. "
+            "Seed complete: 6 departments, 6 users, 5 tickets, 1 problem, 1 attachment. "
             f"Demo password: {DEMO_PASSWORD}"
         )
 
