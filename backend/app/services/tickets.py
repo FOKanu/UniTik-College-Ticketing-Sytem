@@ -2,7 +2,7 @@ from sqlalchemy import select
 from sqlalchemy.ext.asyncio import AsyncSession
 
 from app.core.exceptions import ForbiddenError, NotFoundError
-from app.db.base import Role
+from app.db.base import Role, TicketStatus
 from app.models import Ticket, TicketComment, User
 from app.schemas.tickets import (
     CommentCreate,
@@ -79,9 +79,17 @@ async def list_comments(
 async def add_comment(
     db: AsyncSession, ticket_id: str, user: User, data: CommentCreate
 ) -> TicketComment:
-    await get_ticket(db, ticket_id, user)
+    ticket = await get_ticket(db, ticket_id, user)
     if user.role == Role.STUDENT and data.isInternal:
         raise ForbiddenError("Students cannot create internal comments")
+
+    # Business rule (see docs/architecture/README.md §8 "Reopen-on-reply"):
+    # a student replying to a Resolved ticket re-opens it so it re-surfaces in
+    # the owning department's queue. Staff replies never trigger this — only
+    # a student-initiated comment on a Resolved ticket does.
+    if user.role == Role.STUDENT and ticket.status == TicketStatus.RESOLVED:
+        ticket.status = TicketStatus.OPEN
+
     comment = TicketComment(
         ticketId=ticket_id,
         authorId=user.id,
