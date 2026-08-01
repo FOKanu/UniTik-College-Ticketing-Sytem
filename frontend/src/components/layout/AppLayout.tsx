@@ -19,6 +19,7 @@ import {
   IconUser,
 } from '@/components/ui/icons'
 import { useAuthStore } from '@/stores/authStore'
+import { useInstitutionStore } from '@/stores/institutionStore'
 import type { UserRole } from '@/types'
 import styles from './AppLayout.module.css'
 
@@ -69,8 +70,11 @@ function homeForRole(role: UserRole | null | undefined): string {
   return ROUTES.dashboard
 }
 
-function portalLabel(role: UserRole | null | undefined): string {
-  if (role === 'admin') return 'ADMIN · MEDIADESIGN HOCHSCHULE'
+function portalLabel(
+  role: UserRole | null | undefined,
+  institutionName: string,
+): string {
+  if (role === 'admin') return `ADMIN · ${institutionName.toUpperCase()}`
   if (role === 'agent') return 'STAFF PORTAL · IT SUPPORT'
   return 'STUDENT PORTAL'
 }
@@ -105,6 +109,7 @@ function pageTitle(pathname: string): string {
 
 export function AppLayout({ children }: { children?: ReactNode }) {
   const user = useAuthStore((s) => s.user)
+  const institution = useInstitutionStore((s) => s.institution)
   const location = useLocation()
   const [collapsed, setCollapsed] = useState(() => {
     try {
@@ -194,11 +199,11 @@ export function AppLayout({ children }: { children?: ReactNode }) {
       >
         <div className={styles.brandRow}>
           <Link to={homePath} className={styles.brand}>
-            <span className={styles.logo}>MDH</span>
+            <span className={styles.logo}>{institution.short}</span>
             {!collapsed ? (
               <span className={styles.brandText}>
-                <strong>MediaDesign</strong>
-                <small>Hochschule</small>
+                <strong>{institution.name}</strong>
+                <small>TicketHub</small>
               </span>
             ) : null}
           </Link>
@@ -220,7 +225,9 @@ export function AppLayout({ children }: { children?: ReactNode }) {
               <LanguageSelector />
             </div>
           ) : null}
-          <p className={styles.portal}>{portalLabel(user?.role)}</p>
+          <p className={styles.portal}>
+            {portalLabel(user?.role, institution.name)}
+          </p>
           {!collapsed && user ? (
             <Link to={ROUTES.profile} className={styles.userCard}>
               <Avatar
@@ -258,7 +265,7 @@ export function AppLayout({ children }: { children?: ReactNode }) {
             </button>
             <div>
               <h1 className={styles.pageTitle}>{title}</h1>
-              <p className={styles.institution}>MediaDesign Hochschule</p>
+              <p className={styles.institution}>{institution.name}</p>
             </div>
           </div>
           <div className={styles.topRight}>
