@@ -61,7 +61,7 @@ async def test_student_reply_reopens_resolved_ticket(client):
     """Confirms docs/architecture/README.md §8 "Reopen-on-reply": a student
     commenting on their own Resolved ticket flips it back to Open. A staff
     reply to the same ticket must NOT trigger this."""
-    student_token, _ = await _register_and_login(client, role="STUDENT")
+    student_token, _ = await _register_and_login(client, role="STUDENT",department="Testing")
     staff_token, _ = await _register_and_login(client, role="STAFF", department="IT")
 
     student_headers = {"Authorization": f"Bearer {student_token}"}
