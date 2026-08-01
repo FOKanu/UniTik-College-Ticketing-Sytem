@@ -1,0 +1,83 @@
+.page {
+  display: grid;
+  gap: 1rem;
+  max-width: 920px;
+}
+
+.header h1 {
+  margin: 0;
+  font-size: 1.75rem;
+  letter-spacing: -0.03em;
+}
+
+.header p {
+  margin: 0.3rem 0 0;
+  color: var(--color-text-muted);
+}
+
+.banner {
+  background: var(--color-info-bg);
+  border: 1px solid var(--brand-200);
+  border-radius: var(--radius-md);
+  padding: 0.85rem 1rem;
+  color: var(--brand-800);
+  font-size: 0.9rem;
+  line-height: 1.45;
+}
+
+.banner a {
+  color: var(--brand-700);
+  font-weight: 700;
+  text-decoration: none;
+}
+
+.banner a:hover {
+  text-decoration: underline;
+  text-underline-offset: 2px;
+}
+
+.form {
+  display: grid;
+  grid-template-columns: 1fr 1.2fr auto;
+  gap: 0.65rem;
+  align-items: end;
+  background: var(--color-surface);
+  border: 1px solid var(--color-border);
+  border-radius: var(--radius-lg);
+  padding: 1rem;
+  box-shadow: var(--shadow-card);
+}
+
+.tableWrap {
+  background: var(--color-surface);
+  border: 1px solid var(--color-border);
+  border-radius: var(--radius-lg);
+  overflow: auto;
+  box-shadow: var(--shadow-card);
+}
+
+.table {
+  width: 100%;
+  border-collapse: collapse;
+}
+
+.table th,
+.table td {
+  text-align: left;
+  padding: 0.85rem 1rem;
+  border-bottom: 1px solid var(--color-border);
+}
+
+.table th {
+  background: var(--color-surface-muted);
+  color: var(--color-text-muted);
+  font-size: 0.75rem;
+  text-transform: uppercase;
+  letter-spacing: 0.04em;
+}
+
+@media (max-width: 800px) {
+  .form {
+    grid-template-columns: 1fr;
+  }
+}

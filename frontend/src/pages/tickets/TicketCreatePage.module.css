@@ -1,0 +1,93 @@
+.page {
+  max-width: 1100px;
+}
+
+.layout {
+  display: grid;
+  grid-template-columns: minmax(0, 1.4fr) minmax(240px, 0.7fr);
+  gap: var(--space-5);
+  align-items: start;
+}
+
+.formCard {
+  background: var(--neutral-0);
+  border: 1px solid var(--neutral-200);
+  border-radius: var(--radius-lg);
+  box-shadow: var(--shadow-card);
+  padding: var(--space-6) var(--space-5);
+}
+
+.formCard h1 {
+  margin: 0;
+  font-size: var(--text-h1);
+  letter-spacing: -0.02em;
+}
+
+.formCard header p {
+  margin: var(--space-2) 0 0;
+  color: var(--neutral-500);
+  font-size: var(--text-body);
+}
+
+.form {
+  margin-top: var(--space-5);
+  display: flex;
+  flex-direction: column;
+  gap: var(--space-4);
+}
+
+.apiError {
+  margin: 0;
+  color: var(--color-danger);
+  font-size: var(--text-small);
+  font-weight: 600;
+}
+
+.actions {
+  display: flex;
+  gap: var(--space-3);
+  flex-wrap: wrap;
+  padding-top: var(--space-2);
+}
+
+.aiCard {
+  background: #0f3145;
+  color: #fff;
+  border-radius: var(--radius-lg);
+  padding: var(--space-5);
+  box-shadow: var(--shadow-card);
+}
+
+.aiIcon {
+  width: 40px;
+  height: 40px;
+  border-radius: var(--radius-md);
+  background: rgba(255, 255, 255, 0.16);
+  display: grid;
+  place-items: center;
+  margin-bottom: var(--space-3);
+}
+
+.aiCard h2 {
+  margin: 0;
+  font-size: var(--text-h3);
+  color: #fff;
+}
+
+.aiCard p {
+  margin: var(--space-2) 0 var(--space-4);
+  opacity: 0.92;
+  font-size: var(--text-small);
+  line-height: 1.45;
+}
+
+.aiCard :global(a) {
+  background: #fff;
+  color: #0f3145;
+}
+
+@media (max-width: 900px) {
+  .layout {
+    grid-template-columns: 1fr;
+  }
+}

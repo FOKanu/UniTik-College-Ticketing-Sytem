@@ -1,0 +1,240 @@
+.page {
+  display: grid;
+  gap: var(--space-5);
+}
+
+.header {
+  display: flex;
+  justify-content: space-between;
+  align-items: flex-start;
+  gap: var(--space-4);
+}
+
+.header h1 {
+  margin: 0;
+  font-size: var(--text-h1);
+  letter-spacing: -0.02em;
+}
+
+.header p {
+  margin: var(--space-2) 0 0;
+  color: var(--neutral-500);
+  font-size: var(--text-body);
+}
+
+.stats {
+  display: grid;
+  grid-template-columns: repeat(3, minmax(0, 1fr));
+  gap: var(--space-4);
+}
+
+.stats article {
+  background: var(--neutral-0);
+  border: 1px solid var(--neutral-200);
+  border-top: 3px solid transparent;
+  border-radius: var(--radius-lg);
+  box-shadow: var(--shadow-card);
+  padding: var(--space-4) var(--space-5);
+  display: flex;
+  flex-direction: column;
+  gap: var(--space-2);
+}
+
+.statOpen {
+  border-top-color: var(--brand-600);
+}
+
+.statProgress {
+  border-top-color: #c4922a;
+}
+
+.statResolved {
+  border-top-color: #1b6e3c;
+}
+
+.stats span {
+  font-size: var(--text-small);
+  font-weight: 600;
+  color: var(--neutral-500);
+}
+
+.stats strong {
+  font-size: var(--text-display);
+  letter-spacing: -0.03em;
+  color: var(--neutral-900);
+  font-weight: 700;
+}
+
+.grid {
+  display: grid;
+  grid-template-columns: minmax(0, 1.55fr) minmax(260px, 0.85fr);
+  gap: var(--space-4);
+  align-items: start;
+}
+
+.panel {
+  background: var(--neutral-0);
+  border: 1px solid var(--neutral-200);
+  border-radius: var(--radius-lg);
+  box-shadow: var(--shadow-card);
+  padding: var(--space-5);
+}
+
+.panelHead {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  gap: var(--space-3);
+  margin-bottom: var(--space-4);
+}
+
+.panelHead h2,
+.panel > h2 {
+  margin: 0;
+  font-size: var(--text-h3);
+  font-weight: 600;
+}
+
+.panel > h2 {
+  margin-bottom: var(--space-4);
+}
+
+.panelHead a {
+  color: var(--brand-600);
+  font-weight: 600;
+  font-size: var(--text-small);
+  text-decoration: none;
+}
+
+.panelHead a:hover {
+  text-decoration: underline;
+  text-underline-offset: 2px;
+}
+
+.empty {
+  margin: 0;
+  color: var(--neutral-500);
+  font-size: var(--text-body);
+}
+
+.list {
+  list-style: none;
+  margin: 0;
+  padding: 0;
+  display: grid;
+  gap: var(--space-2);
+}
+
+.item {
+  display: block;
+  text-decoration: none;
+  color: inherit;
+  padding: var(--space-3) var(--space-4);
+  border-radius: var(--radius-md);
+  border: 1px solid transparent;
+  background: var(--neutral-50);
+  transition:
+    background 0.15s ease,
+    border-color 0.15s ease;
+}
+
+.item:hover {
+  background: var(--brand-50);
+  border-color: var(--brand-200);
+}
+
+.itemTop {
+  display: flex;
+  justify-content: space-between;
+  gap: var(--space-3);
+}
+
+.itemTop strong {
+  font-size: var(--text-body);
+  font-weight: 600;
+}
+
+.itemTop time {
+  color: var(--neutral-500);
+  font-size: var(--text-caption);
+  white-space: nowrap;
+}
+
+.badges {
+  margin-top: var(--space-2);
+  display: flex;
+  gap: var(--space-2);
+  flex-wrap: wrap;
+}
+
+.aside {
+  display: grid;
+  gap: var(--space-4);
+}
+
+.articles {
+  list-style: none;
+  margin: 0;
+  padding: 0;
+  display: grid;
+}
+
+.articles a {
+  display: flex;
+  justify-content: space-between;
+  align-items: flex-start;
+  gap: var(--space-3);
+  text-decoration: none;
+  padding: var(--space-3) 0;
+  border-bottom: 1px solid var(--neutral-200);
+  font-size: var(--text-body);
+  font-weight: 500;
+  color: var(--neutral-800);
+}
+
+.articles li:last-child a {
+  border-bottom: none;
+  padding-bottom: 0;
+}
+
+.articles a:hover {
+  color: var(--brand-600);
+}
+
+.articles a span {
+  color: var(--brand-600);
+  font-weight: 700;
+}
+
+.aiCard {
+  background: #0f3145;
+  color: #fff;
+  border-radius: var(--radius-lg);
+  padding: var(--space-5);
+  box-shadow: var(--shadow-card);
+}
+
+.aiCard h2 {
+  margin: 0;
+  font-size: var(--text-h3);
+  color: #fff;
+}
+
+.aiCard p {
+  margin: var(--space-2) 0 var(--space-4);
+  opacity: 0.92;
+  font-size: var(--text-small);
+  line-height: 1.45;
+}
+
+.aiCard :global(a) {
+  background: #fff;
+  color: #0f3145;
+}
+
+@media (max-width: 960px) {
+  .stats,
+  .grid {
+    grid-template-columns: 1fr;
+  }
+}
