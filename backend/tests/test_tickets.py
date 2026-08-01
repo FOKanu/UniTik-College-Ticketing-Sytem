@@ -41,7 +41,7 @@ async def _register_and_login(client, *, role: str, department: str | None = Non
                 email=email,
                 displayName=f"Test {role.title()}",
                 role=Role(role),
-                department=department,
+                department=department(name=department) if department else None,
                 passwordHash=hash_password(password),
             )
             db.add(user)

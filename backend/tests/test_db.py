@@ -3,7 +3,7 @@ from sqlalchemy import select
 
 from app.db.base import Role
 from app.db.session import async_session_factory
-from app.models import Ticket, User
+from app.models import Department, Ticket, User
 from tests.conftest import integration
 
 
@@ -15,7 +15,7 @@ async def test_db_user_ticket_roundtrip():
             email="pytest@student.university.edu",
             displayName="Pytest User",
             role=Role.STUDENT,
-            department="Testing",
+            department=Department(name="Testing"),
         )
         db.add(user)
         await db.flush()
