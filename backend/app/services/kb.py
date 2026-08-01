@@ -82,3 +82,30 @@ async def search_faq_vector(
 
 def faq_to_response(entry: FaqEntry) -> FaqResponse:
     return FaqResponse.model_validate(entry)
+
+
+async def upsert_faq_entry(
+    db: AsyncSession,
+    *,
+    id: str,
+    question: str,
+    answer: str,
+    language: str,
+    category: str | None,
+    context_blob: str | None,
+    embedding: list[float],
+) -> FaqEntry:
+    """Administrative upsert used by the ingestion script only — not exposed via the API."""
+    result = await db.execute(select(FaqEntry).where(FaqEntry.id == id))
+    entry = result.scalar_one_or_none()
+    if entry is None:
+        entry = FaqEntry(id=id)
+        db.add(entry)
+
+    entry.question = question
+    entry.answer = answer
+    entry.language = language
+    entry.category = category
+    entry.contextBlob = context_blob
+    entry.embedding = embedding
+    return entry
