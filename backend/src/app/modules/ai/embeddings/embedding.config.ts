@@ -8,7 +8,7 @@ export interface EmbeddingConfig {
 }
 
 export const EMBEDDING_CONFIG: EmbeddingConfig = {
-  endpoint: env.EMBEDDING_SERVICE_URL,
+  endpoint: (env as any ).EMBEDDING_SERVICE_URL,
   dimensions: EMBEDDING_DIMENSIONS,
-  timeoutMs: env.EMBEDDING_TIMEOUT_MS,
+  timeoutMs: (env as any).EMBEDDING_TIMEOUT_MS,
 };
