@@ -1,0 +1,38 @@
+.avatar {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  border-radius: 50%;
+  object-fit: cover;
+  flex-shrink: 0;
+}
+
+.sm {
+  width: 32px;
+  height: 32px;
+  font-size: 0.7rem;
+}
+
+.md {
+  width: 36px;
+  height: 36px;
+  font-size: 0.75rem;
+}
+
+.lg {
+  width: 48px;
+  height: 48px;
+  font-size: 0.9rem;
+}
+
+.xl {
+  width: 88px;
+  height: 88px;
+  font-size: 1.65rem;
+}
+
+.fallback {
+  background: var(--brand-600);
+  color: #fff;
+  font-weight: 700;
+}

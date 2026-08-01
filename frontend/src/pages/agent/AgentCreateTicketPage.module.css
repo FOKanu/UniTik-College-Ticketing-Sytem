@@ -1,0 +1,119 @@
+.page {
+  max-width: 1100px;
+}
+
+.layout {
+  display: grid;
+  grid-template-columns: 1.4fr 0.75fr;
+  gap: 1rem;
+  align-items: start;
+}
+
+.formCard {
+  background: #fff;
+  border: 1px solid var(--color-border);
+  border-radius: 12px;
+  padding: 1.3rem;
+}
+
+.formCard h1 {
+  margin: 0;
+  font-size: 1.5rem;
+}
+
+.formCard header p {
+  margin: 0.35rem 0 0;
+  color: var(--color-text-muted);
+}
+
+.form {
+  margin-top: 1.2rem;
+  display: grid;
+  gap: 0.95rem;
+}
+
+.fieldset {
+  border: none;
+  margin: 0;
+  padding: 0;
+}
+
+.fieldset legend {
+  font-size: 0.85rem;
+  font-weight: 700;
+  margin-bottom: 0.45rem;
+}
+
+.fieldsetError {
+  margin: 0.35rem 0 0;
+  font-size: 0.8rem;
+  color: var(--color-danger);
+  font-weight: 600;
+}
+
+.pills {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 0.4rem;
+}
+
+.pill,
+.pillActive {
+  border: 1px solid var(--color-border);
+  background: #fff;
+  border-radius: var(--radius-pill);
+  padding: 0.45rem 0.85rem;
+  font: inherit;
+  font-weight: 600;
+  font-size: 0.85rem;
+  cursor: pointer;
+}
+
+.pillActive {
+  background: var(--color-primary);
+  border-color: var(--color-primary);
+  color: #fff;
+}
+
+.chip {
+  display: inline-flex;
+  align-self: start;
+  background: var(--color-primary-soft);
+  color: var(--color-primary-deep);
+  border-radius: var(--radius-pill);
+  padding: 0.35rem 0.75rem;
+  font-size: 0.85rem;
+  font-weight: 700;
+}
+
+.actions {
+  display: flex;
+  gap: 0.5rem;
+}
+
+.info {
+  background: var(--color-primary);
+  color: #fff;
+  border-radius: 12px;
+  padding: 1.2rem;
+}
+
+.info h2 {
+  margin: 0 0 0.75rem;
+  font-size: 1.05rem;
+}
+
+.info ul {
+  margin: 0;
+  padding-left: 1.1rem;
+  display: grid;
+  gap: 0.55rem;
+  opacity: 0.95;
+  line-height: 1.4;
+}
+
+@media (max-width: 900px) {
+  .layout {
+    grid-template-columns: 1fr;
+  }
+}
