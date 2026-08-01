@@ -1,1 +1,2 @@
-# Python dependencies for local tooling (project frontend/backend are Node-based).
+# Backend dependencies (see backend/pyproject.toml for canonical list)
+# Use: cd backend && pip install -e ".[dev]"

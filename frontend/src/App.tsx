@@ -1,10 +1,16 @@
-import { AppProviders } from './app/providers';
-import { AppRouter } from './app/router';
+import { AppRouter } from '@/app/AppRouter'
+import { ErrorBoundary } from '@/components/errors'
 
 export default function App() {
   return (
-    <AppProviders>
+    <ErrorBoundary
+      onError={(error) => {
+        if (import.meta.env.DEV) {
+          console.error('Unhandled app error:', error)
+        }
+      }}
+    >
       <AppRouter />
-    </AppProviders>
-  );
+    </ErrorBoundary>
+  )
 }

@@ -118,3 +118,20 @@ These are access-control rules, not components — they must be enforced in midd
 - **Structured logging**: `backend/src/app/shared/logger` — every module logs through this, never `console.log`.
 - **Global error handling**: `backend/src/app/middleware/error-handler.middleware.ts` catches
   `AppError` subclasses thrown anywhere and formats a consistent JSON error response.
+
+## 8. Ticket lifecycle rules (confirmed via wireframe review)
+
+Two behaviors surfaced while reviewing the ticket-portal wireframes, owned by the `tickets` module
+(relates to the existing NFR-1.1.2 / NFR-1.1.3 mapping in §2 — no new requirement ID assigned here, flag to
+the team if one should be minted):
+
+- **Reopen-on-reply.** If a student adds a reply/comment to a ticket whose status is `Resolved`, the ticket
+  engine must transition it back to `Open` (not silently stay `Resolved`) and re-surface it in the owning
+  department's queue for staff review. This is a student-initiated transition — staff replies to a resolved
+  ticket do not reopen it.
+- **Department reassignment, decoupled from resolution.** Staff need a way to correct a ticket that was
+  routed to the wrong department: reassign both the `department_id` and the specific assignee (not just
+  round-robin within the current department), matched against which employees belong to which department.
+  Submitting a reassignment must support **"keep open"** as a distinct outcome from resolving — moving a
+  ticket to the right department/person is not the same action as closing it, and the API/UI must not force
+  a status change to `Resolved` when the intent is only to redirect ownership.

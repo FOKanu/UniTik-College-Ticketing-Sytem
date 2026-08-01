@@ -11,26 +11,26 @@ Statuses in the Miro plan are the live source of truth for task progress; this d
 
 ## Roster
 
-| Name | Primary focus | Also contributes to |
-| --- | --- | --- |
-| **Francis** | Project Manager; AI/RAG LLM + chatbot; Tooling/DevOps | Frontend design system / API client / chat UI; chat schema; git gates |
-| **Milena** | Frontend (student portal, design system) | Auth pages; notifications UI; file storage (with Laurynas); FE lint tooling |
-| **Alen** | Frontend (student portal, design system) | Auth guard (with Kinga); state management; a11y / responsive |
-| **Shahnas** | Frontend (staff / admin); Backend tickets & SLA | Departments router; notifications; SLA breach views |
-| **Arshdeep** | Frontend (staff / admin) | Staff queue, ticket actions, admin analytics UI |
-| **Kinga** | Backend auth, JWT, RBAC | Auth pages / guards (FE); users router; secrets; auth security tests |
-| **Laurynas** | Database; Backend ticket routing & engines | Departments / tickets / SLA; migrations; seed (with Khan) |
-| **Izzy** | Knowledge base; AI/RAG retrieval | KB routers & schema; FAQ UI (with Francis); RAG debug views |
-| **Agrima** | Knowledge base; AI/RAG ingestion | Chunking, embedding upsert, re-ranking |
-| **Yegor** | AI/RAG embeddings & search | Embedding model config; similarity search |
-| **Khan** | Testing & QA lead | E2E / integration / RAG quality tests; seed data; merge conflict support |
-| **Shahriar** | Testing (E2E, load) | Critical-path Playwright/Cypress; load tests |
-| **Anmol** | Testing (API integration) | Backend integration tests |
-| **Vivek** | Debugging / observability; logging | Structured logs; Sentry; API contract tests; correlation IDs |
-| **Adrian** | Debugging / observability | Tracing, health checks, LLM cost views, debug admin UIs; git control |
-| **Sunil** | Debugging / monitoring | Uptime checks; OpenTelemetry (with Adrian) |
+| Name | GitHub | Primary focus | Also contributes to |
+| --- | --- | --- | --- |
+| **Francis Kanu** | [@FOKanu](https://github.com/FOKanu) | Project Manager; AI/RAG LLM + chatbot; Tooling/DevOps | Frontend design system / API client / chat UI; chat schema; git gates |
+| **Milena** | *TBD* | Frontend (student portal, design system) | Auth pages; notifications UI; file storage (with Laurynas); FE lint tooling |
+| **Alen** | *TBD* | Frontend (student portal, design system) | Auth guard (with Kinga); state management; a11y / responsive |
+| **Shahnas** | *TBD* | Frontend (staff / admin); Backend tickets & SLA | Departments router; notifications; SLA breach views |
+| **Arshdeep** | *TBD* | Frontend (staff / admin) | Staff queue, ticket actions, admin analytics UI |
+| **Kinga** | *TBD* | Backend auth, JWT, RBAC | Auth pages / guards (FE); users router; secrets; auth security tests |
+| **Laurynas Stravinskas** | [@Laurynas36](https://github.com/Laurynas36) | **Database (lead)**; Backend ticket routing & engines | Departments / tickets / SLA; migrations; seed (with Khan) |
+| **Izzatkhanim Yashar (Izzy)** | [@rzaest](https://github.com/rzaest) | Knowledge base; **AI/RAG** retrieval | KB routers & schema; FAQ UI (with Francis); RAG debug views |
+| **Agrima** | *TBD* | Knowledge base; AI/RAG ingestion | Chunking, embedding upsert, re-ranking |
+| **Yegor Gariazha** | [@GariazhaYegor](https://github.com/GariazhaYegor) | **AI/RAG** embeddings & search | Embedding model config; similarity search |
+| **Khan** | *TBD* | Testing & QA lead | E2E / integration / RAG quality tests; seed data; merge conflict support |
+| **Shahriar** | *TBD* | Testing (E2E, load) | Critical-path Playwright/Cypress; load tests |
+| **Anmol** | *TBD* | Testing (API integration) | Backend integration tests |
+| **Vivek** | *TBD* | Debugging / observability; logging | Structured logs; Sentry; API contract tests; correlation IDs |
+| **Adrian** | *TBD* | Debugging / observability | Tracing, health checks, LLM cost views, debug admin UIs; git control |
+| **Sunil** | *TBD* | Debugging / monitoring | Uptime checks; OpenTelemetry (with Adrian) |
 
-`TBD` owners in the granular plan remain unassigned until claimed on the board.
+`TBD` GitHub usernames: send invite by email and/or reply with `@username` so we can update [`.github/CODEOWNERS`](../.github/CODEOWNERS).
 
 ---
 
@@ -42,8 +42,8 @@ Maps people to the long-lived branches in [`BRANCHING_STRATEGY.md`](BRANCHING_ST
 | --- | --- | --- |
 | `frontend` | Milena, Alen, Shahnas, Arshdeep, Francis | Pages, components, auth UX, chatbot UI, FE a11y |
 | `backend` | Kinga, Laurynas, Shahnas, Francis, Izzy, Agrima | Routers, middleware, engines, chat/KB APIs |
-| `database` | Laurynas (lead); Kinga, Izzy, Francis, Khan | ERD, Prisma/migrations, seed, vector index schema |
-| `ai-rag` | Francis, Izzy, Agrima, Yegor | Chunking, embeddings, retrieval, prompts, LLM, escalation |
+| `database` | **Laurynas (@Laurynas36)** (lead); Kinga, Izzy, Francis, Khan | ERD, Prisma/migrations, seed, vector index schema |
+| `ai-rag` | Francis (@FOKanu), **Izzy (@rzaest)**, Agrima, **Yegor (@GariazhaYegor)** | Chunking, embeddings, retrieval, prompts, LLM, escalation |
 | `tooling-devops` | Francis (lead); Kinga, Milena, Alen, Vivek, Adrian, Sunil | Branching, CI/CD, Docker, secrets, lint, monitoring |
 | `testing` | Khan (lead); Shahriar, Anmol, Vivek; + feature owners | Unit, component, E2E, integration, RAG/security tests |
 | `debugging` | Adrian, Vivek, Sunil, Khan, Francis | QA integration gate; observability; conflict resolution |
