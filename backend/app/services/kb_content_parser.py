@@ -188,7 +188,12 @@ def load_corpus(directory: Path) -> list[KnowledgeBaseDocument]:
 
 
 def normalize_question(question: str) -> str:
-    return re.sub(r"[^a-z0-9]+", " ", question.lower()).strip()
+    q = question.strip().lower()
+    q = q.replace("\u2018", "'").replace("\u2019", "'")  # curly single quotes -> straight
+    q = q.replace("\u201c", '"').replace("\u201d", '"')  # curly double quotes -> straight
+    q = re.sub(r"\s+", " ", q)  # collapse whitespace
+    q = re.sub(r"[.!?]+$", "", q)  # strip only trailing sentence punctuation
+    return q.strip()
 
 
 def validate_corpus(documents: list[KnowledgeBaseDocument]) -> list[KnowledgeBaseEntry]:
