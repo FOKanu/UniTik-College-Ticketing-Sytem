@@ -17,15 +17,13 @@ university. Replace with real content before any production use.
 
 ## Provenance
 
-These documents were authored against the v1 Express/Prisma scaffold, alongside a TypeScript parser and
-embedding-ingestion pipeline. The FastAPI rewrite archived that scaffold, so the pipeline no longer applies,
-but the corpus and its format are implementation-independent and carried forward unchanged here.
+These documents were authored against the v1 Express/Prisma scaffold and carried forward unchanged. The
+active ingestion implementation is Python on FastAPI's SQLAlchemy/Alembic backend, with PostgreSQL and
+pgvector storage.
 
 The v1 TypeScript implementation (parser, ingestion service, embedding validator, and their tests) is
-preserved on the `archive/ai-rag-embedding-ingestion-v1` tag. Consult it as a reference when porting
-ingestion to Python; do not merge it, as it targets `backend/src/`, which no longer exists.
-
-Ingestion into `FaqEntry` has **not** been ported yet. Nothing reads these files at runtime today.
+preserved on the `archive/ai-rag-embedding-ingestion-v1` tag. It remains a behavioral reference only; its
+`backend/src/` code belongs to the archived stack.
 
 ## Authoring format
 
@@ -75,9 +73,9 @@ To add a FAQ, append it to the appropriate department file, use the next sequent
 required section, provide at least one bullet under both `Related phrasings` and `Keywords`, and increment
 the front-matter `entryCount`. Never reuse or renumber an existing ID — they are referenced by ingested rows.
 
-## Validation rules for a future ingester
+## Validation rules
 
-The v1 parser enforced these corpus-wide invariants. A Python port should preserve them:
+The Python parser preserves these corpus-wide invariants from the v1 implementation:
 
 - canonical filenames and departments, matching the table above
 - entry count per document equal to front-matter `entryCount`
@@ -87,7 +85,7 @@ The v1 parser enforced these corpus-wide invariants. A Python port should preser
 
 ## Retrieval context
 
-Embedding input and `FaqEntry.contextBlob` were built from the same deterministic JSON context, in this
+Embedding input and `FaqEntry.contextBlob` are built from the same deterministic JSON context, in this
 fixed field order:
 
 1. stable ID
@@ -100,12 +98,40 @@ fixed field order:
 8. answer
 9. escalation guidance
 
-Arrays retain canonical Markdown order. The pgvector column is fixed at 1536 dimensions
-(`FaqEntry.embedding`), so the embedding model must match that width.
+Arrays retain canonical Markdown order. `contextBlob` is the persisted, inspectable serialized retrieval
+context; it is distinct from the numeric embedding stored in the native SQLAlchemy `Vector(1536)` column.
+
+## Embedding service contract
+
+Provider and model selection remain unresolved. The current implementation uses the configured generic HTTP
+endpoint and does not assert that a particular provider or model has been selected. It sends:
+
+```json
+{"input": "<contextBlob>"}
+```
+
+and requires a response shaped as:
+
+```json
+{"embedding": [/* exactly 1536 finite numeric values */]}
+```
+
+Set `EMBEDDING_SERVICE_URL` for the administrative process. Do not put credentials in its query string.
 
 ## Ingestion semantics
 
-Ingestion was an explicit administrative operation — never an API route, and never run at application
-startup. A full rebuild generated and validated every embedding before any database write, then wrote all
-prepared records in a single transaction: provider failure left the database untouched, and any write
-failure rolled the whole rebuild back. Embedding generation itself was not transactional.
+Ingestion is an explicit administrative operation. From `backend/`, invoke it as:
+
+```bash
+python -m scripts.ingest_kb
+```
+
+It is never an API route and does not run automatically at FastAPI startup. The script parses all four
+canonical files and generates and validates all 75 embeddings before opening a database session. A provider
+failure therefore leaves the database untouched. It then inserts missing `FaqEntry` rows or updates matching
+IDs through normal SQLAlchemy ORM behavior, using one session and one commit. A database failure rolls the
+transaction back.
+
+Ingestion is deliberately insert/update-only. Records absent from Markdown are not removed, and stale-record
+reconciliation remains a future design decision. The Markdown corpus is canonical for the IDs it contains,
+not currently an instruction to delete every other FAQ row.

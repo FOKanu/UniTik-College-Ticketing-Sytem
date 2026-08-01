@@ -36,9 +36,9 @@ async def search_faq(db: AsyncSession, query: str, limit: int = 5) -> list[FaqSe
     """Text search fallback when embeddings are not yet populated."""
     pattern = f"%{query}%"
     result = await db.execute(
-        select(FaqEntry).where(
-            FaqEntry.question.ilike(pattern) | FaqEntry.answer.ilike(pattern)
-        ).limit(limit)
+        select(FaqEntry)
+        .where(FaqEntry.question.ilike(pattern) | FaqEntry.answer.ilike(pattern))
+        .limit(limit)
     )
     entries = list(result.scalars().all())
     return [
@@ -95,7 +95,7 @@ async def upsert_faq_entry(
     context_blob: str | None,
     embedding: list[float],
 ) -> FaqEntry:
-    """Administrative upsert used by the ingestion script only — not exposed via the API."""
+    """Insert or update one corpus entry without committing or deleting stale rows."""
     result = await db.execute(select(FaqEntry).where(FaqEntry.id == id))
     entry = result.scalar_one_or_none()
     if entry is None:
