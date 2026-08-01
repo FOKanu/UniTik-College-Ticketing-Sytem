@@ -1,3 +1,9 @@
+jest.mock('../embeddings/embeddings', () => ({
+  EmbeddingsService: jest.fn().mockImplementation(() => ({
+    embed: jest.fn(),
+  })),
+}));
+
 import { AiService } from '../service/ai.service';
 
 describe('AiService (scaffold)', () => {
