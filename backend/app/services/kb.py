@@ -36,9 +36,9 @@ async def search_faq(db: AsyncSession, query: str, limit: int = 5) -> list[FaqSe
     """Text search fallback when embeddings are not yet populated."""
     pattern = f"%{query}%"
     result = await db.execute(
-        select(FaqEntry).where(
-            FaqEntry.question.ilike(pattern) | FaqEntry.answer.ilike(pattern)
-        ).limit(limit)
+        select(FaqEntry)
+        .where(FaqEntry.question.ilike(pattern) | FaqEntry.answer.ilike(pattern))
+        .limit(limit)
     )
     entries = list(result.scalars().all())
     return [
@@ -82,3 +82,30 @@ async def search_faq_vector(
 
 def faq_to_response(entry: FaqEntry) -> FaqResponse:
     return FaqResponse.model_validate(entry)
+
+
+async def upsert_faq_entry(
+    db: AsyncSession,
+    *,
+    id: str,
+    question: str,
+    answer: str,
+    language: str,
+    category: str | None,
+    context_blob: str | None,
+    embedding: list[float],
+) -> FaqEntry:
+    """Insert or update one corpus entry without committing or deleting stale rows."""
+    result = await db.execute(select(FaqEntry).where(FaqEntry.id == id))
+    entry = result.scalar_one_or_none()
+    if entry is None:
+        entry = FaqEntry(id=id)
+        db.add(entry)
+
+    entry.question = question
+    entry.answer = answer
+    entry.language = language
+    entry.category = category
+    entry.contextBlob = context_blob
+    entry.embedding = embedding
+    return entry
