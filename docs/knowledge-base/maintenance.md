@@ -165,11 +165,11 @@ How do I replace a lost student ID card?
 
 ### Answer
 
-Report it lost in the portal so the old card is deactivated immediately. Collect a replacement from the Maintenance desk for a $15 fee.
+Sign in at https://portal.university.example, select Profile, then Access Card, and choose Report Lost to deactivate the card immediately. Select Request Replacement and follow the identity-verification steps. For temporary access or technical problems, open https://portal.university.example/support/it.
 
 ### Escalation
 
-Contact Maintenance if you believe your card was stolen and used.
+Email it-support@university.example if immediate deactivation, replacement, or temporary access fails.
 
 ### Related phrasings
 

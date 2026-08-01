@@ -652,11 +652,11 @@ How do I request an official transcript?
 
 ### Answer
 
-Request a transcript under Documents and choose digital or printed format. Official transcripts are stamped and signed before release.
+Registrar owns official transcript requests. Open https://portal.university.example/registrar/transcripts, choose electronic or printed delivery, verify your personal details, enter the recipient information, and submit. Electronic requests are normally processed within one business day; printed requests are normally prepared within three business days.
 
 ### Escalation
 
-Contact Academics if you need an expedited transcript.
+Email registrar@university.example if the request remains pending beyond the stated processing time.
 
 ### Related phrasings
 

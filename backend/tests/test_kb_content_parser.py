@@ -5,6 +5,8 @@ from pathlib import Path
 import pytest
 
 from app.services.kb_content_parser import (
+    CANONICAL_FILES,
+    TOTAL_CANONICAL_ENTRIES,
     load_corpus,
     normalize_question,
     parse_knowledge_base_document,
@@ -19,11 +21,13 @@ def canonical_text():
     return (CORPUS_DIR / "finance.md").read_text(encoding="utf-8")
 
 
-def test_all_canonical_files_parse_to_75_unique_entries():
+def test_all_canonical_files_parse_to_derived_unique_entry_total():
     documents = load_corpus(CORPUS_DIR)
     entries = validate_corpus(documents)
-    assert [len(document.entries) for document in documents] == [30, 15, 15, 15]
-    assert len(entries) == len({entry.id for entry in entries}) == 75
+    assert [len(document.entries) for document in documents] == [
+        spec[2] for spec in CANONICAL_FILES.values()
+    ]
+    assert len(entries) == len({entry.id for entry in entries}) == TOTAL_CANONICAL_ENTRIES
 
 
 def test_verified_question_normalization_is_preserved():
@@ -95,7 +99,7 @@ def test_sequential_gap_and_duplicate_normalized_question_fail():
 
 def test_unexpected_filename_and_document_count_fail():
     documents = load_corpus(CORPUS_DIR)
-    with pytest.raises(ValueError, match="exactly 4 documents"):
+    with pytest.raises(ValueError, match=f"exactly {len(CANONICAL_FILES)} documents"):
         validate_corpus(documents[:-1])
     unexpected = deepcopy(documents)
     unexpected[0].file_path = "unexpected.md"

@@ -3,6 +3,7 @@ from types import SimpleNamespace
 import pytest
 
 from app.services import kb as kb_service
+from app.services.kb_content_parser import TOTAL_CANONICAL_ENTRIES
 from scripts import ingest_kb
 
 
@@ -113,11 +114,11 @@ async def test_database_failure_rolls_back(monkeypatch):
 def test_cli_success(monkeypatch, capsys):
     def succeed(coroutine):
         coroutine.close()
-        return 75
+        return TOTAL_CANONICAL_ENTRIES
 
     monkeypatch.setattr(ingest_kb.asyncio, "run", succeed)
     assert ingest_kb.main() == 0
-    assert "75 FAQ entries inserted or updated" in capsys.readouterr().out
+    assert f"{TOTAL_CANONICAL_ENTRIES} FAQ entries inserted or updated" in capsys.readouterr().out
 
 
 def test_cli_failure_is_sanitized(monkeypatch, capsys):
