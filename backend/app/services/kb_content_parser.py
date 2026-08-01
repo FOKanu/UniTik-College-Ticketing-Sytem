@@ -12,6 +12,8 @@ CANONICAL_FILES = {
     "finance.md": ("Finance", "faq-finance-", 15),
     "it-support.md": ("IT Support", "faq-it-support-", 15),
     "maintenance.md": ("Maintenance", "faq-maintenance-", 15),
+    "registrar.md": ("Registrar", "faq-registrar-", 24),
+    "housing.md": ("Housing", "faq-housing-", 14),
 }
 
 REQUIRED_SECTIONS = ["Question", "Answer", "Escalation", "Related phrasings", "Keywords"]

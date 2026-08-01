@@ -1,7 +1,7 @@
 # Knowledge-base corpus
 
 The canonical, human-editable FAQ source for the KB/chat slices. One Markdown document per supported
-department, 75 entries total.
+department, 113 entries total.
 
 | File             | Department  | ID prefix          | Entries |
 | ---------------- | ----------- | ------------------ | ------: |
@@ -9,9 +9,13 @@ department, 75 entries total.
 | `finance.md`     | Finance     | `faq-finance-`     |      15 |
 | `it-support.md`  | IT Support  | `faq-it-support-`  |      15 |
 | `maintenance.md` | Maintenance | `faq-maintenance-` |      15 |
+| `registrar.md`   | Registrar   | `faq-registrar-`   |      24 |
+| `housing.md`     | Housing     | `faq-housing-`     |      14 |
 
 All entries are `status: synthetic-draft` — synthetic data written by the team, not content supplied by the
-university. Replace with real content before any production use.
+university. Replace with real content before any production use. The `registrar.md` and `housing.md`
+documents were written as synthetic FAQs derived from the team's University of Rochester reference doc
+(Izzy/Kinga), covering the Registrar and Housing departments.
 
 **Requirement IDs:** NFR-1.1.4, NFR-2.7.3 (context engine)
 
