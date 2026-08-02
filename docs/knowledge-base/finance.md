@@ -20,11 +20,11 @@ When is the tuition fee payment deadline?
 
 ### Answer
 
-Check the payment deadline listed in your student portal under Fees. Pay through the portal or by bank transfer before the due date to avoid late fees.
+Open https://portal.university.example/finance, select Account and Deadlines, and choose the term. Review the invoice due date and pay through the listed synthetic payment methods before that date to avoid the published late-payment process.
 
 ### Escalation
 
-Contact Finance if the deadline is unclear or missing from your account.
+Email finance@university.example if the deadline or invoice is missing from your account.
 
 ### Related phrasings
 
@@ -213,27 +213,27 @@ Contact Finance to formally dispute the late fee.
 
 ### Question
 
-What are the bank transfer details for tuition payment?
+How can a parent or sponsor pay my tuition?
 
 ### Answer
 
-Bank account details are listed under Payment Methods in the Finance section. Always include your student ID as the payment reference.
+Finance owns third-party tuition payments. Open https://portal.university.example/finance, select Third-Party Payments, and have the student authorize the payer by entering the payer's name, email, access scope, and expiration date. The payer then follows the secure payment instructions sent by the university service.
 
 ### Escalation
 
-Contact Finance if you need updated banking details.
+Email finance@university.example if authorization, invoice access, or payment submission fails.
 
 ### Related phrasings
 
-- Bank details
-- Wire transfer info
-- Account number for tuition
+- Parent tuition payment
+- Sponsor payment access
+- Authorize a third-party payer
 
 ### Keywords
 
-- bank transfer
-- payment methods
-- account
+- third-party payment
+- parent
+- tuition
 
 ---
 
@@ -273,11 +273,11 @@ How do I pay my housing or dormitory fee?
 
 ### Answer
 
-Housing fees are paid in the same portal under Housing Payments. Choose your payment method and confirm before the due date.
+Finance owns housing charges and payments. Open https://portal.university.example/finance, select Housing Charges, choose the term and invoice, review the due date, select a listed payment method, and confirm. Housing manages contracts and assignments but does not process payments.
 
 ### Escalation
 
-Contact Finance if housing fees are not listed on your account.
+Email finance@university.example if a housing charge, due date, or completed payment is missing.
 
 ### Related phrasings
 

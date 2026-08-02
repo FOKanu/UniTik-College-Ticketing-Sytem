@@ -11,7 +11,10 @@ CANONICAL_FILES = {
     "finance.md": ("Finance", "faq-finance-", 15),
     "it-support.md": ("IT Support", "faq-it-support-", 15),
     "maintenance.md": ("Maintenance", "faq-maintenance-", 15),
+    "registrar.md": ("Registrar", "faq-registrar-", 55),
+    "housing.md": ("Housing", "faq-housing-", 53),
 }
+TOTAL_CANONICAL_ENTRIES = sum(spec[2] for spec in CANONICAL_FILES.values())
 REQUIRED_METADATA = ("department", "audience", "language", "status", "source", "entryCount")
 REQUIRED_SECTIONS = ("Question", "Answer", "Escalation", "Related phrasings", "Keywords")
 
@@ -247,6 +250,8 @@ def validate_corpus(documents: list[KnowledgeBaseDocument]) -> list[KnowledgeBas
                 raise ValueError(f"duplicate normalized question across corpus: '{entry.question}'")
             seen_questions.add(normalized)
             all_entries.append(entry)
-    if len(all_entries) != 75:
-        raise ValueError(f"corpus: expected exactly 75 entries, found {len(all_entries)}")
+    if len(all_entries) != TOTAL_CANONICAL_ENTRIES:
+        raise ValueError(
+            f"corpus: expected exactly {TOTAL_CANONICAL_ENTRIES} entries, found {len(all_entries)}"
+        )
     return all_entries

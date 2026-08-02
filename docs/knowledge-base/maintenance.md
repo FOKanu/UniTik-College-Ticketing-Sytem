@@ -165,11 +165,11 @@ How do I replace a lost student ID card?
 
 ### Answer
 
-Report it lost in the portal so the old card is deactivated immediately. Collect a replacement from the Maintenance desk for a $15 fee.
+Sign in at https://portal.university.example, select Profile, then Access Card, and choose Report Lost to deactivate the card immediately. Select Request Replacement and follow the identity-verification steps. For temporary access or technical problems, open https://portal.university.example/support/it.
 
 ### Escalation
 
-Contact Maintenance if you believe your card was stolen and used.
+Email it-support@university.example if immediate deactivation, replacement, or temporary access fails.
 
 ### Related phrasings
 
@@ -339,11 +339,11 @@ How do I report a maintenance problem in my dormitory room?
 
 ### Answer
 
-Submit a residence maintenance request with your building and room number. Non urgent repairs are completed within 5 business days.
+Open https://portal.university.example/maintenance/housing, select Routine Repair, and provide the residential community and room, issue category, description, permission to enter, availability, and photos when useful. Maintenance acknowledges routine requests within one business day and normally assesses them within three business days.
 
 ### Escalation
 
-Contact Maintenance directly for water, gas, or electrical faults.
+For active flooding, exposed electrical hazards, loss of essential heat, or an unsecured door, select Emergency on the same page. Email maintenance@university.example with the request number if no routine acknowledgement arrives within one business day.
 
 ### Related phrasings
 

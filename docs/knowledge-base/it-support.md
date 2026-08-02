@@ -20,11 +20,11 @@ I forgot my university password.
 
 ### Answer
 
-Select “Forgot password” and enter your university email. A password-reset link will be sent to you; follow it to create a new password.
+Open https://portal.university.example/support/it, select Password Reset, enter your university email, complete identity verification, and follow the reset instructions. Then sign in to the Student Portal at https://portal.university.example with the new password.
 
 ### Escalation
 
-Contact IT Support if the password reset does not work.
+Email it-support@university.example if identity verification or the password reset fails.
 
 ### Related phrasings
 
@@ -48,23 +48,23 @@ How do I connect to the campus Wi-Fi?
 
 ### Answer
 
-Select the eduroam network and log in with your full university email. Use your normal account password, not a separate Wi-Fi code.
+Open https://portal.university.example/support/it and select Campus Wi-Fi. Choose your device type, connect to the university wireless network named in the guide, authenticate with your Student Portal account, and accept the university network certificate when its details match the guide.
 
 ### Escalation
 
-Contact IT Support if the network rejects your login.
+Email it-support@university.example with the device type, location, time, and error if the network rejects the login.
 
 ### Related phrasings
 
 - Wi-Fi not working
 - How to get internet
-- Cannot connect to eduroam
+- Cannot connect to university Wi-Fi
 
 ### Keywords
 
 - wifi
 - internet
-- eduroam
+- university wireless
 - network
 
 ---
@@ -77,11 +77,11 @@ How do I set up my university email on my phone?
 
 ### Answer
 
-Add an Exchange account in your mail app using your full university address. Sign in with your normal password when prompted.
+Open https://portal.university.example/support/it and select University Email. Choose your device and mail application, enter your full university email, use the listed automatic account settings, and complete multi-factor authentication when prompted.
 
 ### Escalation
 
-Contact IT Support if the account will not sync.
+Email it-support@university.example with the device type and error if the account will not sync.
 
 ### Related phrasings
 
@@ -159,26 +159,26 @@ Contact IT Support if your print job does not appear in the queue.
 
 ### Question
 
-How do I get free Microsoft Office as a student?
+How do I get the university productivity software as a student?
 
 ### Answer
 
-Sign in at office.com with your university email to download the full suite. The license stays active while you are enrolled.
+Open https://portal.university.example/support/it and select Student Software. Choose Productivity Suite, verify active enrollment with your Student Portal account, and follow the installation instructions for your device. The synthetic university license remains active while you are eligible.
 
 ### Escalation
 
-Contact IT Support if the license will not activate.
+Email it-support@university.example with the device type and activation error if the license will not activate.
 
 ### Related phrasings
 
 - Free software
-- Get Word and Excel
-- Office 365 license
+- Get writing and spreadsheet software
+- Productivity-suite license
 
 ### Keywords
 
 - software
-- office
+- productivity suite
 - license
 - download
 
@@ -192,11 +192,11 @@ How do I access university systems from off-campus?
 
 ### Answer
 
-Install the university VPN client from the IT downloads page. Sign in with your normal university login to connect.
+Open https://portal.university.example/support/it and select Remote Access. Choose your device, install the university remote-access client, sign in with your Student Portal account, and complete multi-factor authentication.
 
 ### Escalation
 
-Contact IT Support if the VPN will not connect.
+Email it-support@university.example with the device type and error if remote access will not connect.
 
 ### Related phrasings
 
@@ -217,25 +217,25 @@ Contact IT Support if the VPN will not connect.
 
 ### Question
 
-How do I set up two-factor authentication?
+How do I set up multi-factor authentication?
 
 ### Answer
 
-Go to the account security page and add the authenticator app. Scan the code shown and enter the six-digit code to confirm.
+Open https://portal.university.example/support/it, select Multi-Factor Authentication, sign in with your Student Portal account, choose an approved authentication method, register the device, and complete the verification prompt. Save the recovery options shown after enrollment.
 
 ### Escalation
 
-Contact IT Support if you lost the device holding your authenticator.
+Email it-support@university.example if enrollment fails or a lost device prevents account access.
 
 ### Related phrasings
 
-- 2FA setup
+- MFA setup
 - Multi-factor authentication
 - Authenticator app
 
 ### Keywords
 
-- 2fa
+- multi-factor authentication
 - mfa
 - authentication
 - security
@@ -246,15 +246,15 @@ Contact IT Support if you lost the device holding your authenticator.
 
 ### Question
 
-The student portal will not load.
+The Student Portal will not load.
 
 ### Answer
 
-Clear your browser cache and try a different browser. Check the IT status page for any reported outage.
+Open https://portal.university.example/support/it and select Service Status to check for an outage. If none is reported, reload https://portal.university.example, clear cached site data, disable unsupported browser extensions, and try a supported browser or another network.
 
 ### Escalation
 
-Contact IT Support if the portal is still down after trying another browser.
+Email it-support@university.example with the time, browser, network, and error if the Student Portal still fails.
 
 ### Related phrasings
 
