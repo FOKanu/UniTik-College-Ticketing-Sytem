@@ -8,6 +8,7 @@ import logging
 import time
 from collections.abc import AsyncIterator, Iterable
 
+import httpx
 from openai import APIConnectionError, APIStatusError, AsyncOpenAI, OpenAIError
 
 from app.ai.llm_config import ResolvedLLMConfig, get_llm_config
@@ -16,7 +17,8 @@ from app.ai.prompts import ChatMode, mode_settings, system_prompt
 logger = logging.getLogger(__name__)
 
 HEALTH_CACHE_TTL_SECONDS = 10.0
-HEALTH_TIMEOUT_SECONDS = 3.0
+# Funnel/proxy round-trips are slower than local Ollama; keep this above a few seconds.
+HEALTH_TIMEOUT_SECONDS = 15.0
 
 THINK_OPEN = "<think>"
 THINK_CLOSE = "</think>"
@@ -85,11 +87,15 @@ def _get_client(config: ResolvedLLMConfig) -> AsyncOpenAI:
     key = (config.base_url, config.api_key, config.timeout)
     client = _clients.get(key)
     if client is None:
+        # Ignore HTTP(S)_PROXY from the environment. Cursor/dev shells often inject a
+        # local proxy that breaks outbound HTTPS to Tailscale Funnel / cloud LLMs.
+        http_client = httpx.AsyncClient(trust_env=False, timeout=config.timeout)
         client = AsyncOpenAI(
             base_url=config.base_url,
             api_key=config.api_key,
             timeout=config.timeout,
             max_retries=1,
+            http_client=http_client,
         )
         _clients[key] = client
     return client
@@ -218,6 +224,7 @@ async def check_llm_health(force: bool = False) -> dict:
             "modelAvailable": config.model in available if available else None,
         }
     except Exception as exc:  # noqa: BLE001 — health must never raise
+        logger.warning("LLM health check failed: %s: %s", type(exc).__name__, exc)
         result |= {"status": "offline", "error": str(_wrap_error(exc, config))}
 
     _health_cache = (now, result)

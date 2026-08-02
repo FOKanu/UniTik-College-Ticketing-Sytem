@@ -31,8 +31,9 @@ services:
       - ./backend/.env
     environment:
       DATABASE_URL: postgresql+asyncpg://${POSTGRES_USER:-uts_user}:${POSTGRES_PASSWORD:-uts_password}@postgres:5432/${POSTGRES_DB:-university_ticketing}
-      # The SSH tunnel to the GPU box lives on the host, not in this container.
-      OLLAMA_OPENAI_BASE_URL: ${OLLAMA_OPENAI_BASE_URL:-http://host.docker.internal:11434/v1}
+      # Team default: public Tailscale Funnel → Caddy Bearer → Ollama.
+      # Override in backend/.env for on-box loopback development.
+      OLLAMA_OPENAI_BASE_URL: ${OLLAMA_OPENAI_BASE_URL:-https://muc-a-3099.tail129a23.ts.net/v1}
     extra_hosts:
       - "host.docker.internal:host-gateway"
     ports:

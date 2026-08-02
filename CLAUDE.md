@@ -42,6 +42,8 @@ Docker: `docker compose up --build` — Postgres (pgvector), backend, frontend.
 
 `app/ai/` is the only place that talks to a model provider (Ollama / OpenAI / Gemini, all
 via the OpenAI protocol). Switch with `LLM_PROVIDER`; see `docs/LLM_INTEGRATION.md`.
+Team default for Ollama is the public Tailscale Funnel URL in `backend/.env.example`
+(`https://muc-a-3099.tail129a23.ts.net/v1`) plus a Bearer `OLLAMA_API_KEY`.
 Chat replies stream over SSE from `POST /api/v1/chat/conversations/{id}/messages/stream`.
 
 API envelope (unchanged from v1): `{ success, data }` / `{ success: false, error: { message } }`.

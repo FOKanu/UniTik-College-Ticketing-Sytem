@@ -20,24 +20,22 @@ Browser ──► FastAPI /api/v1/chat/… ──► app/ai/client.py ──► 
 | `frontend/src/hooks/useAssistantChat.ts` | Shared chat state for the page and the widget |
 | `frontend/src/lib/api/chat.ts` | Typed client, SSE parser |
 
-## Default setup: Ollama on the GPU server
+## Default setup: public Funnel URL (team / prototype)
 
-Ollama binds to the GPU server's loopback interface, so it is not reachable across the
-network as-is. Forward the port from your machine:
-
-```bash
-ssh -N -L 11434:127.0.0.1:11434 rtx5090
-```
-
-Leave that running. Then `backend/.env`:
+The GPU workstation exposes an OpenAI-compatible Ollama API through **Tailscale Funnel**
+(HTTPS) with a Caddy Bearer check in front of loopback Ollama. Teammates do **not** need
+Tailscale, SSH, or a local Ollama install — only these `backend/.env` values:
 
 ```bash
 LLM_PROVIDER=ollama
-OLLAMA_OPENAI_BASE_URL=http://127.0.0.1:11434/v1
-OLLAMA_API_KEY=ollama
+OLLAMA_OPENAI_BASE_URL=https://muc-a-3099.tail129a23.ts.net/v1
+OLLAMA_API_KEY=<from print-credentials.sh PUBLIC section on the GPU box>
 OLLAMA_MODEL=qwen3:8b
 OLLAMA_KEEP_ALIVE=10m
 ```
+
+Copy `backend/.env.example` → `backend/.env` and paste the real API key. Requests without
+a valid `Authorization: Bearer …` key receive `401` from the proxy.
 
 Confirm the backend can see it:
 
@@ -45,25 +43,32 @@ Confirm the backend can see it:
 curl -s localhost:4000/api/v1/chat/health | python3 -m json.tool
 ```
 
-`"status": "online"` means you are good. `"offline"` means the tunnel is down or Ollama
-is not running — the UI shows an "LLM server offline" banner in that state.
+`"status": "online"` means you are good. `"offline"` usually means the Funnel/proxy is
+down, the GPU box is off, or `OLLAMA_API_KEY` is missing/wrong — the UI shows an
+"LLM server offline" banner in that state.
+
+Smoke-test the public endpoint directly (no app required):
+
+```bash
+curl -sS https://muc-a-3099.tail129a23.ts.net/v1/models \
+  -H "Authorization: Bearer $OLLAMA_API_KEY"
+```
 
 ### Running the backend in Docker
 
-The tunnel lives on the host, not inside the container. `docker-compose.yml` already sets
-`OLLAMA_OPENAI_BASE_URL=http://host.docker.internal:11434/v1` and maps
-`host.docker.internal` to the host gateway, so `docker compose up` works with the same
-tunnel open.
+`docker-compose.yml` defaults `OLLAMA_OPENAI_BASE_URL` to the same Funnel URL. Put the
+Bearer key in `backend/.env` (`OLLAMA_API_KEY`); compose loads that file.
 
-### If Ollama listens on all interfaces
+### Optional: local Ollama on the GPU host only
 
-If you set `OLLAMA_HOST=0.0.0.0` on the GPU server, you can skip the tunnel and point
-straight at the Tailscale address — but then anyone on the tailnet can use the model:
+When developing **on** the GPU workstation itself, you may override:
 
 ```bash
-OLLAMA_OPENAI_BASE_URL=http://100.94.185.71:11434/v1
+OLLAMA_OPENAI_BASE_URL=http://127.0.0.1:11434/v1
+OLLAMA_API_KEY=ollama
 ```
 
+SSH port-forwarding (`ssh -N -L 11434:…`) is no longer required for teammates.
 ## Switching providers
 
 Every provider speaks the OpenAI chat-completions protocol, so only env vars change.
