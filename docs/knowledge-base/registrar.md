@@ -475,7 +475,7 @@ Email registrar@university.example if an organization needs clarification about 
 ### Question
 What counts as full-time enrollment?
 ### Answer
-The current full-time credit thresholds for undergraduate, graduate, and special programs are published at https://portal.university.example/registrar/enrollment-verification. Open Enrollment Definitions and choose your academic level. Official status is calculated from registered credits after census and may differ for approved reduced-load arrangements.
+Open Enrollment Definitions at https://portal.university.example/registrar/enrollment-verification. Undergraduate students are full-time at 12 or more credits in a standard term; graduate students are full-time at 9 or more credits. An approved reduced-load or dissertation-status arrangement may be certified as full-time when the academic program records that status before census.
 ### Escalation
 Email registrar@university.example with your term and academic level if your displayed status conflicts with the published definition.
 ### Related phrasings
@@ -491,7 +491,7 @@ Email registrar@university.example with your term and academic level if your dis
 ### Question
 What counts as part-time enrollment?
 ### Answer
-Open Enrollment Definitions at https://portal.university.example/registrar/enrollment-verification and choose your academic level. Part-time status applies when registered credits fall below the published full-time threshold, unless an approved academic rule assigns another status. Changes can affect aid, billing, or immigration requirements, so consult the responsible office before reducing credits.
+Open Enrollment Definitions at https://portal.university.example/registrar/enrollment-verification. Undergraduate students registered for fewer than 12 credits and graduate students registered for fewer than 9 credits in a standard term are part-time unless an approved reduced-load or dissertation-status rule applies. Consult Academics and Finance before reducing credits because progress and aid may change.
 ### Escalation
 Email registrar@university.example if your official status does not match your registered credits after census.
 ### Related phrasings
@@ -731,7 +731,7 @@ Email registrar@university.example for help identifying the correct FERPA reques
 ### Question
 What is directory information?
 ### Answer
-The categories the university treats as directory information are listed at https://portal.university.example/registrar/privacy under Directory Information. The page also explains permitted disclosures and consequences of restriction. Categories are not disclosed when another privacy rule applies.
+At https://portal.university.example/registrar/privacy, Directory Information lists the student's name, university email, program, academic level, enrollment status, honors, and awarded degrees as directory information. Student ID numbers, grades, class schedules, addresses, phone numbers, and disciplinary records are not directory information. A privacy restriction can limit otherwise permitted disclosure.
 ### Escalation
 Email registrar@university.example before restricting directory information if you need help understanding impacts on honors, verification, or publications.
 ### Related phrasings

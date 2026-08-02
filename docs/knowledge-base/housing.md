@@ -507,7 +507,7 @@ Email housing@university.example for an accessibility-related guest arrangement 
 ### Question
 Are overnight visitors allowed?
 ### Answer
-Overnight-visitor limits, registration steps, and blackout dates are listed at https://portal.university.example/housing/handbook under Guests and Visitors. When permitted, register the visitor through the Student Portal, obtain roommate consent, and provide visit dates and emergency contact details. Consecutive and term limits prevent unauthorized residency.
+At https://portal.university.example/housing/handbook under Guests and Visitors, overnight guests are limited to three consecutive nights and eight nights per resident in a 30-day period. Obtain every roommate's consent and register the guest through the Student Portal with visit dates and emergency contact details. Overnight visits are suspended during move-in, final-examination quiet periods, and building closures.
 ### Escalation
 Email housing@university.example before the visit if the visitor needs an accessibility arrangement or the registration option is unavailable.
 ### Related phrasings
@@ -523,7 +523,7 @@ Email housing@university.example before the visit if the visitor needs an access
 ### Question
 When are quiet hours?
 ### Answer
-Community quiet hours and round-the-clock courtesy expectations are published at https://portal.university.example/housing/handbook under Noise. During quiet hours, sound must not be audible outside the room; during final examinations, extended hours may apply. Speak with the neighbor or Resident Assistant when safe.
+Quiet hours are 10:00 PM to 8:00 AM Sunday through Thursday and midnight to 9:00 AM Friday and Saturday, as published at https://portal.university.example/housing/handbook under Noise. Twenty-four-hour quiet hours begin on the study day before final examinations. Courtesy hours apply at all times, and sound must not unreasonably disrupt others.
 ### Escalation
 Email housing@university.example if repeated noise continues after residential staff intervention.
 ### Related phrasings
@@ -539,7 +539,7 @@ Email housing@university.example if repeated noise continues after residential s
 ### Question
 What items are prohibited in residence halls?
 ### Answer
-The current prohibited-items list is at https://portal.university.example/housing/handbook under Safety and Prohibited Items. It covers fire hazards, weapons, unsafe appliances, fuel, unapproved cooking devices, and items that obstruct exits. Review the list before purchasing or bringing an item; prohibited property may be removed under the stated process.
+At https://portal.university.example/housing/handbook under Safety and Prohibited Items, candles, incense, open flames, weapons, fireworks, fuel, exposed-heating-element appliances, personal network routers, ceiling hangings, and items blocking doors, windows, sprinklers, or exits are prohibited. Cooking appliances are allowed only in designated kitchens unless the handbook explicitly lists the appliance for bedrooms.
 ### Escalation
 Email housing@university.example with the exact product description before move-in if you are unsure whether it is allowed.
 ### Related phrasings
@@ -635,7 +635,7 @@ Email housing@university.example with dimensions and materials if approval is re
 ### Question
 Are pets allowed in university housing?
 ### Answer
-Only the limited pets described at https://portal.university.example/housing/handbook under Animals are allowed, subject to container, care, roommate, and community rules. Unauthorized animals may not visit or stay temporarily. Service and approved assistance animals follow separate accommodation processes.
+At https://portal.university.example/housing/handbook under Animals, residents may keep one small aquarium of fish in a tank no larger than 20 liters. Other pets, visiting animals, and animals kept temporarily are prohibited. Trained service animals and approved assistance animals follow the separate accommodation processes at https://portal.university.example/housing/accommodations.
 ### Escalation
 Email housing@university.example before bringing any animal if its status is uncertain.
 ### Related phrasings
