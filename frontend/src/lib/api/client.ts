@@ -6,6 +6,9 @@ import { ApiError, toApiError } from './errors'
 
 const baseURL = import.meta.env.VITE_API_BASE_URL || '/api'
 
+/** Exposed for callers that bypass axios, e.g. SSE streaming over fetch. */
+export const apiBaseUrl = baseURL
+
 export const apiClient = axios.create({
   baseURL,
   headers: {
@@ -64,13 +67,53 @@ apiClient.interceptors.response.use(
   },
 )
 
-export function isMockDataSource(): boolean {
-  return import.meta.env.VITE_DATA_SOURCE !== 'api'
+/**
+ * Data-source modes:
+ * - `mock`   — full fixture UI (no FastAPI). Safe default for design work.
+ * - `hybrid` — live auth + chat + tickets (LLM path); mock notifications /
+ *              knowledge fixtures for slices the backend does not own yet.
+ * - `api`    — everything talks to FastAPI; unfinished slices degrade empty.
+ */
+export type DataSourceMode = 'mock' | 'hybrid' | 'api'
+
+export function getDataSourceMode(): DataSourceMode {
+  const raw = String(import.meta.env.VITE_DATA_SOURCE ?? 'mock').toLowerCase()
+  if (raw === 'api' || raw === 'hybrid') return raw
+  return 'mock'
 }
 
-/** Small delay so mock mode feels async like a real API */
+/** True only in pure fixture mode — every module uses local mocks. */
+export function isMockDataSource(): boolean {
+  return getDataSourceMode() === 'mock'
+}
+
+export function usesLiveAuth(): boolean {
+  return getDataSourceMode() !== 'mock'
+}
+
+export function usesLiveChat(): boolean {
+  return getDataSourceMode() !== 'mock'
+}
+
+export function usesLiveTickets(): boolean {
+  // Tickets have a backend slice; keep them live whenever auth is live so
+  // chat→ticket escalation shows up under My Tickets.
+  return getDataSourceMode() !== 'mock'
+}
+
+/** Notifications have no backend slice — prefer fixtures outside pure api. */
+export function usesMockNotifications(): boolean {
+  return getDataSourceMode() !== 'api'
+}
+
+/** Knowledge/FAQ keeps rich fixtures outside pure api mode. */
+export function usesMockKnowledge(): boolean {
+  return getDataSourceMode() !== 'api'
+}
+
+/** Small delay so fixture-backed calls feel async like a real API. */
 export async function mockLatency(ms = 280): Promise<void> {
-  if (!isMockDataSource()) return
+  if (getDataSourceMode() === 'api') return
   await new Promise((resolve) => setTimeout(resolve, ms))
 }
 

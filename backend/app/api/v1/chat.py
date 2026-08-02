@@ -1,11 +1,36 @@
-from fastapi import APIRouter
+import json
+from collections.abc import AsyncIterator
+from typing import Any
 
+from fastapi import APIRouter
+from fastapi.encoders import jsonable_encoder
+from fastapi.responses import StreamingResponse
+
+from app.ai import LLMUnavailableError, check_llm_health, stream_chat_completion
 from app.core.deps import CurrentUser, DbSession
 from app.core.responses import success_response
-from app.schemas.chat import ConversationResponse, MessageCreate, MessageResponse
+from app.db.session import async_session_factory
+from app.schemas.chat import (
+    ConversationResponse,
+    EscalatedTicket,
+    EscalateResponse,
+    MessageCreate,
+    MessageResponse,
+)
 from app.services import chat as chat_service
 
 router = APIRouter(prefix="/chat", tags=["chat"])
+
+SSE_HEADERS = {
+    "Cache-Control": "no-cache",
+    "Connection": "keep-alive",
+    # Stops nginx buffering the stream into one lump.
+    "X-Accel-Buffering": "no",
+}
+
+
+def _sse(event: str, data: Any) -> str:
+    return f"event: {event}\ndata: {json.dumps(jsonable_encoder(data))}\n\n"
 
 
 @router.post("/conversations")
@@ -46,12 +71,53 @@ async def send_message(
     )
 
 
+@router.post("/conversations/{conversation_id}/messages/stream")
+async def stream_message(
+    db: DbSession, user: CurrentUser, conversation_id: str, body: MessageCreate
+):
+    """Token-by-token reply over SSE. Auth and ownership are checked up front."""
+    user_msg, prompt = await chat_service.start_user_turn(db, conversation_id, user, body)
+    user_payload = MessageResponse.model_validate(user_msg).model_dump()
+
+    async def event_stream() -> AsyncIterator[str]:
+        yield _sse("start", {"userMessage": user_payload})
+
+        parts: list[str] = []
+        try:
+            async for delta in stream_chat_completion(prompt, body.mode):
+                parts.append(delta)
+                yield _sse("token", {"delta": delta})
+        except LLMUnavailableError as exc:
+            yield _sse("error", {"message": str(exc)})
+
+        # The request-scoped session is already closed by the time the body
+        # streams, so the reply is persisted on a session this generator owns.
+        async with async_session_factory() as session:
+            bot_msg = await chat_service.finish_bot_turn(
+                session, conversation_id, "".join(parts).strip()
+            )
+            bot_payload = MessageResponse.model_validate(bot_msg).model_dump()
+
+        yield _sse("done", {"botMessage": bot_payload})
+
+    return StreamingResponse(event_stream(), media_type="text/event-stream", headers=SSE_HEADERS)
+
+
+@router.get("/health")
+async def chat_llm_health():
+    return success_response(await check_llm_health())
+
+
 @router.post("/conversations/{conversation_id}/escalate")
 async def escalate(db: DbSession, user: CurrentUser, conversation_id: str):
-    conversation, ticket = await chat_service.escalate_to_ticket(db, conversation_id, user)
-    return success_response(
-        {
-            "conversation": ConversationResponse.model_validate(conversation).model_dump(),
-            "ticketId": ticket.id,
-        }
+    result = await chat_service.escalate_to_ticket(db, conversation_id, user)
+    payload = EscalateResponse(
+        conversation=ConversationResponse.model_validate(result.conversation),
+        ticketId=result.ticket.id,
+        ticket=EscalatedTicket.model_validate(result.ticket),
+        alreadyEscalated=result.already_escalated,
+        botMessage=(
+            MessageResponse.model_validate(result.bot_message) if result.bot_message else None
+        ),
     )
+    return success_response(payload.model_dump())

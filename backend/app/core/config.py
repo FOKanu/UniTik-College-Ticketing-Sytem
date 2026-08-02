@@ -12,8 +12,7 @@ class Settings(BaseSettings):
     jwt_secret: str = "replace-me-with-a-strong-secret"
     jwt_expires_in: int = 86400
     cors_origin: str = "http://localhost:5173"
-    ai_provider: str = ""
-    ai_api_key: str = ""
+    # LLM settings live in app.ai.llm_config
 
     @property
     def is_development(self) -> bool:
