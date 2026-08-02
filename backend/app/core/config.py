@@ -8,7 +8,9 @@ class Settings(BaseSettings):
 
     environment: str = "development"
     port: int = 4000
-    database_url: str = "postgresql+asyncpg://uts_user:uts_password@localhost:5432/university_ticketing"
+    database_url: str = (
+        "postgresql+asyncpg://uts_user:uts_password@localhost:5432/university_ticketing"
+    )
     jwt_secret: str = "replace-me-with-a-strong-secret"
     jwt_expires_in: int = 86400
     cors_origin: str = "http://localhost:5173"

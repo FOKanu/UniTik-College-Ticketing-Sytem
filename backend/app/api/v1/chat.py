@@ -52,15 +52,11 @@ async def list_conversations(db: DbSession, user: CurrentUser):
 @router.get("/conversations/{conversation_id}/messages")
 async def list_messages(db: DbSession, user: CurrentUser, conversation_id: str):
     messages = await chat_service.list_messages(db, conversation_id, user)
-    return success_response(
-        [MessageResponse.model_validate(m).model_dump() for m in messages]
-    )
+    return success_response([MessageResponse.model_validate(m).model_dump() for m in messages])
 
 
 @router.post("/conversations/{conversation_id}/messages")
-async def send_message(
-    db: DbSession, user: CurrentUser, conversation_id: str, body: MessageCreate
-):
+async def send_message(db: DbSession, user: CurrentUser, conversation_id: str, body: MessageCreate):
     user_msg, bot_msg = await chat_service.send_message(db, conversation_id, user, body)
     return success_response(
         {

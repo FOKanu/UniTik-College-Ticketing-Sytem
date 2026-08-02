@@ -47,9 +47,7 @@ async def list_conversations(db: AsyncSession, user: User) -> list[ChatConversat
     return list(result.scalars().all())
 
 
-async def get_conversation(
-    db: AsyncSession, conversation_id: str, user: User
-) -> ChatConversation:
+async def get_conversation(db: AsyncSession, conversation_id: str, user: User) -> ChatConversation:
     result = await db.execute(
         select(ChatConversation).where(ChatConversation.id == conversation_id)
     )
@@ -61,9 +59,7 @@ async def get_conversation(
     return conversation
 
 
-async def list_messages(
-    db: AsyncSession, conversation_id: str, user: User
-) -> list[ChatMessage]:
+async def list_messages(db: AsyncSession, conversation_id: str, user: User) -> list[ChatMessage]:
     await get_conversation(db, conversation_id, user)
     result = await db.execute(
         select(ChatMessage)
@@ -163,8 +159,10 @@ async def escalate_to_ticket(
     suggestion = await suggest_ticket_fields(transcript)
 
     ticket = Ticket(
-        subject=suggestion.subject if suggestion else fallback_subject(
-            [(m.sender, m.content) for m in messages]
+        subject=(
+            suggestion.subject
+            if suggestion
+            else fallback_subject([(m.sender, m.content) for m in messages])
         ),
         description=f"Escalated from the AI assistant chat.\n\n{transcript}",
         status=TicketStatus.OPEN,

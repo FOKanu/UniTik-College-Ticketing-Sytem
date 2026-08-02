@@ -76,9 +76,7 @@ async def seed() -> None:
             department="Mechanical Engineering",
             passwordHash=hash_password(DEMO_PASSWORD),
         )
-        db.add_all(
-            [admin, staff_tier1, staff_tier2, student_jordan, student_sophie, student_liam]
-        )
+        db.add_all([admin, staff_tier1, staff_tier2, student_jordan, student_sophie, student_liam])
         await db.flush()
 
         portal_ticket = Ticket(

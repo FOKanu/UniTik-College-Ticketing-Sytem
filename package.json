@@ -15,6 +15,7 @@
   },
   "lint-staged": {
     "backend/**/*.py": [
+      "bash -c 'cd backend && black .'",
       "bash -c 'cd backend && ruff check --fix'"
     ],
     "frontend/**/*.{ts,tsx,js,jsx}": [
