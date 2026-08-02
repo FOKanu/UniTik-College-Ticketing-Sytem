@@ -69,7 +69,11 @@ async def test_student_reply_reopens_resolved_ticket(client):
 
     create_res = await client.post(
         "/api/v1/tickets",
-        json={"subject": "VPN issue", "description": "Cannot connect off-campus"},
+        json={
+            "subject": "VPN issue",
+            "description": "Cannot connect off-campus",
+            "department": "IT",
+        },
         headers=student_headers,
     )
     assert create_res.status_code == 201, create_res.text
