@@ -136,6 +136,20 @@ export function post<T>(url: string, data?: unknown, config?: AxiosRequestConfig
   return apiRequest<T>({ ...config, method: 'POST', url, data })
 }
 
+/** Multipart POST — lets the browser/axios set the boundary (do not force JSON). */
+export function postForm<T>(url: string, form: FormData, config?: AxiosRequestConfig) {
+  return apiRequest<T>({
+    ...config,
+    method: 'POST',
+    url,
+    data: form,
+    headers: {
+      ...config?.headers,
+      'Content-Type': 'multipart/form-data',
+    },
+  })
+}
+
 export function patch<T>(url: string, data?: unknown, config?: AxiosRequestConfig) {
   return apiRequest<T>({ ...config, method: 'PATCH', url, data })
 }
