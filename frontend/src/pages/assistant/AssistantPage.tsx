@@ -3,6 +3,7 @@ import type { FormEvent } from 'react'
 import { ButtonLink, Button, Input } from '@/components/ui'
 import { IconAlert, IconSend } from '@/components/ui/icons'
 import { CitationBlock } from '@/components/chat/CitationBlock'
+import { TicketActionCard } from '@/components/chat/TicketActionCard'
 import { ROUTES, ticketDetailPath } from '@/app/routes'
 import { useAssistantChat } from '@/hooks'
 import { usesLiveChat } from '@/lib/api'
@@ -25,10 +26,17 @@ export function AssistantPage() {
     error,
     health,
     llmOffline,
-    escalate,
+    proposeCreate,
+    proposeUpdate,
+    proposeComment,
+    beginEditAction,
+    saveEditAction,
+    cancelEditAction,
+    cancelAction,
+    confirmAction,
     isEscalating,
     ticket,
-    canEscalate,
+    canProposeCreate,
   } = useAssistantChat({
     greeting: 'Hi! Ask anything about academics, IT, finance, or maintenance.',
   })
@@ -130,9 +138,19 @@ export function AssistantPage() {
                     <CitationBlock
                       citations={msg.citations ?? []}
                       retrievalWeak={msg.retrievalWeak}
-                      canEscalate={canEscalate}
+                      canEscalate={canProposeCreate}
                       isEscalating={isEscalating}
-                      onEscalate={() => void escalate()}
+                      onEscalate={() => proposeCreate()}
+                    />
+                  ) : null}
+                  {msg.role === 'assistant' && msg.action ? (
+                    <TicketActionCard
+                      action={msg.action}
+                      onConfirm={() => void confirmAction(msg.action!.id)}
+                      onCancel={() => cancelAction(msg.action!.id)}
+                      onBeginEdit={() => beginEditAction(msg.action!.id)}
+                      onSaveEdit={saveEditAction}
+                      onCancelEdit={() => cancelEditAction(msg.action!.id)}
                     />
                   ) : null}
                 </article>
@@ -179,37 +197,67 @@ export function AssistantPage() {
                 <h2>Ticket created</h2>
                 <p className={styles.ticketSubject}>{ticket.subject}</p>
                 <p>
-                  A support agent will follow up there. The full conversation is
-                  attached.
+                  A support agent will follow up there. You can still add a
+                  comment from chat.
                 </p>
-                <ButtonLink
-                  to={ticketDetailPath(ticket.id)}
-                  variant="secondary"
-                >
-                  View ticket
-                </ButtonLink>
+                <div className={styles.escalateActions}>
+                  <ButtonLink
+                    to={ticketDetailPath(ticket.id)}
+                    variant="secondary"
+                  >
+                    View ticket
+                  </ButtonLink>
+                  <Button
+                    variant="secondary"
+                    disabled={isEscalating}
+                    onClick={() =>
+                      proposeComment({
+                        ticketId: ticket.id,
+                        ticketLabel: ticket.subject,
+                      })
+                    }
+                  >
+                    Add comment
+                  </Button>
+                </div>
               </>
             ) : (
               <>
                 <h2>Still stuck?</h2>
                 <p>
-                  {canEscalate
-                    ? 'Turn this conversation into a support ticket. The transcript comes with it.'
-                    : 'Ask a question first, then you can escalate the conversation to a ticket.'}
+                  {canProposeCreate
+                    ? 'Propose a support ticket from this conversation. You will review it before it is filed.'
+                    : 'Ask a question first, then you can propose a ticket from the chat.'}
                 </p>
-                {canEscalate ? (
+                <div className={styles.escalateActions}>
+                  {canProposeCreate ? (
+                    <Button
+                      variant="secondary"
+                      disabled={isEscalating}
+                      onClick={() => proposeCreate()}
+                    >
+                      Propose ticket
+                    </Button>
+                  ) : (
+                    <ButtonLink to={ROUTES.ticketNew} variant="secondary">
+                      Create Ticket
+                    </ButtonLink>
+                  )}
                   <Button
                     variant="secondary"
                     disabled={isEscalating}
-                    onClick={() => void escalate()}
+                    onClick={() => proposeUpdate()}
                   >
-                    {isEscalating ? 'Creating ticket…' : 'Escalate to Ticket'}
+                    Update ticket
                   </Button>
-                ) : (
-                  <ButtonLink to={ROUTES.ticketNew} variant="secondary">
-                    Create Ticket
-                  </ButtonLink>
-                )}
+                  <Button
+                    variant="secondary"
+                    disabled={isEscalating}
+                    onClick={() => proposeComment()}
+                  >
+                    Add comment
+                  </Button>
+                </div>
               </>
             )}
           </section>

@@ -1,12 +1,19 @@
 import { useCallback, useEffect, useRef, useState } from 'react'
 import {
   chatApi,
+  ticketsApi,
   usesLiveChat,
   type ChatMode,
   type Citation,
   type EscalatedTicket,
   type LlmHealth,
 } from '@/lib/api'
+import {
+  buildCreateDraftFromMessages,
+  type ProposedTicketAction,
+  type TicketCommentDraft,
+  type TicketUpdateDraft,
+} from '@/components/chat/ticketActionTypes'
 
 export interface AssistantMessage {
   id: string
@@ -17,6 +24,8 @@ export interface AssistantMessage {
   citations?: Citation[]
   /** True when no KB article matched strongly — treat the answer with care. */
   retrievalWeak?: boolean
+  /** Proposed ticket create/update/comment awaiting user confirmation. */
+  action?: ProposedTicketAction
 }
 
 const HEALTH_POLL_MS = 60_000
@@ -34,6 +43,18 @@ async function fetchHealth(): Promise<LlmHealth | null> {
   } catch {
     return null
   }
+}
+
+function patchActionInMessages(
+  messages: AssistantMessage[],
+  actionId: string,
+  update: (action: ProposedTicketAction) => ProposedTicketAction,
+): AssistantMessage[] {
+  return messages.map((msg) =>
+    msg.action?.id === actionId
+      ? { ...msg, action: update(msg.action) }
+      : msg,
+  )
 }
 
 /**
@@ -81,6 +102,14 @@ export function useAssistantChat({ greeting }: Options) {
       )
     },
     [],
+  )
+
+  const hasOpenAction = messages.some(
+    (m) =>
+      m.action &&
+      (m.action.status === 'pending' ||
+        m.action.status === 'editing' ||
+        m.action.status === 'executing'),
   )
 
   const send = useCallback(
@@ -133,8 +162,6 @@ export function useAssistantChat({ greeting }: Options) {
                 ...msg,
                 body: msg.body + delta,
               })),
-            // Citations arrive with the SSE start event, so sources can
-            // render while the answer is still streaming.
             onCitations: (citations, retrievalWeak) =>
               patchMessage(botId, (msg) => ({
                 ...msg,
@@ -146,8 +173,6 @@ export function useAssistantChat({ greeting }: Options) {
           controller.signal,
         )
 
-        // The persisted message is authoritative — it carries the offline
-        // fallback text when the model never produced any tokens.
         patchMessage(botId, (msg) => ({
           ...msg,
           body: msg.body || result.botMessage?.content || '',
@@ -174,36 +199,217 @@ export function useAssistantChat({ greeting }: Options) {
     [isStreaming, mode, patchMessage],
   )
 
-  /** Turns the conversation into a support ticket. Safe to call twice. */
-  const escalate = useCallback(async (): Promise<EscalatedTicket | null> => {
-    const id = conversationId.current
-    if (!id || isEscalating) return null
+  /** Open a create-ticket proposal card (user must confirm). */
+  const proposeCreate = useCallback(() => {
+    if (ticket || hasOpenAction || isStreaming) return
+    const create = buildCreateDraftFromMessages(messages)
+    const action: ProposedTicketAction = {
+      id: `act-create-${Date.now()}`,
+      kind: 'create',
+      status: 'pending',
+      create,
+    }
+    setMessages((prev) => [
+      ...prev,
+      {
+        id: `a-action-${Date.now()}`,
+        role: 'assistant',
+        body: 'Review this ticket before it is filed. You can edit the details or cancel.',
+        action,
+      },
+    ])
+  }, [ticket, hasOpenAction, isStreaming, messages])
 
+  const proposeUpdate = useCallback(
+    (seed?: Partial<TicketUpdateDraft>) => {
+      if (hasOpenAction || isStreaming) return
+      const action: ProposedTicketAction = {
+        id: `act-update-${Date.now()}`,
+        kind: 'update',
+        status: 'editing',
+        update: {
+          ticketId: seed?.ticketId ?? ticket?.id ?? '',
+          ticketLabel: seed?.ticketLabel ?? ticket?.subject ?? 'Select a ticket',
+          status: seed?.status ?? 'in_progress',
+          priority: seed?.priority ?? 'medium',
+          category: seed?.category,
+        },
+      }
+      setMessages((prev) => [
+        ...prev,
+        {
+          id: `a-action-${Date.now()}`,
+          role: 'assistant',
+          body: 'Choose a ticket and the fields to update, then confirm.',
+          action,
+        },
+      ])
+    },
+    [hasOpenAction, isStreaming, ticket],
+  )
+
+  const proposeComment = useCallback(
+    (seed?: Partial<TicketCommentDraft>) => {
+      if (hasOpenAction || isStreaming) return
+      const action: ProposedTicketAction = {
+        id: `act-comment-${Date.now()}`,
+        kind: 'comment',
+        status: 'editing',
+        comment: {
+          ticketId: seed?.ticketId ?? ticket?.id ?? '',
+          ticketLabel: seed?.ticketLabel ?? ticket?.subject ?? 'Select a ticket',
+          body: seed?.body ?? '',
+        },
+      }
+      setMessages((prev) => [
+        ...prev,
+        {
+          id: `a-action-${Date.now()}`,
+          role: 'assistant',
+          body: 'Pick a ticket and write the comment, then confirm.',
+          action,
+        },
+      ])
+    },
+    [hasOpenAction, isStreaming, ticket],
+  )
+
+  const beginEditAction = useCallback((actionId: string) => {
+    setMessages((prev) =>
+      patchActionInMessages(prev, actionId, (action) => ({
+        ...action,
+        status: 'editing',
+        error: undefined,
+      })),
+    )
+  }, [])
+
+  const saveEditAction = useCallback((next: ProposedTicketAction) => {
+    setMessages((prev) =>
+      patchActionInMessages(prev, next.id, () => ({
+        ...next,
+        status: 'pending',
+        error: undefined,
+      })),
+    )
+  }, [])
+
+  const cancelEditAction = useCallback((actionId: string) => {
+    setMessages((prev) =>
+      patchActionInMessages(prev, actionId, (action) => ({
+        ...action,
+        status: 'pending',
+      })),
+    )
+  }, [])
+
+  const cancelAction = useCallback((actionId: string) => {
+    setMessages((prev) =>
+      patchActionInMessages(prev, actionId, (action) => ({
+        ...action,
+        status: 'cancelled',
+      })),
+    )
+  }, [])
+
+  const confirmAction = useCallback(async (actionId: string) => {
+    const current = messages.find((m) => m.action?.id === actionId)?.action
+    if (!current || current.status === 'executing') return
+
+    setMessages((prev) =>
+      patchActionInMessages(prev, actionId, (action) => ({
+        ...action,
+        status: 'executing',
+        error: undefined,
+      })),
+    )
     setIsEscalating(true)
     setError(null)
+
     try {
-      const result = await chatApi.escalate(id)
-      setTicket(result.ticket)
-      if (result.botMessage) {
-        setMessages((prev) => [
-          ...prev,
-          {
-            id: result.botMessage!.id,
-            role: 'assistant',
-            body: result.botMessage!.content,
-          },
-        ])
+      if (current.kind === 'create' && current.create) {
+        const created = await ticketsApi.create({
+          subject: current.create.subject,
+          description: current.create.description,
+          category: current.create.category,
+          priority: current.create.priority,
+        })
+
+        const escalated: EscalatedTicket = {
+          id: created.id,
+          subject: created.subject,
+          status: created.status,
+          category: created.category,
+        }
+        setTicket(escalated)
+        setMessages((prev) =>
+          patchActionInMessages(prev, actionId, (action) => ({
+            ...action,
+            status: 'completed',
+            resultTicketId: created.id,
+            resultSubject: created.subject,
+          })),
+        )
+        return
       }
-      return result.ticket
+
+      if (current.kind === 'update' && current.update?.ticketId) {
+        const updated = await ticketsApi.update(current.update.ticketId, {
+          status: current.update.status,
+          priority: current.update.priority,
+          category: current.update.category,
+        })
+        setMessages((prev) =>
+          patchActionInMessages(prev, actionId, (action) => ({
+            ...action,
+            status: 'completed',
+            resultTicketId: updated.id,
+            resultSubject: updated.subject,
+          })),
+        )
+        return
+      }
+
+      if (current.kind === 'comment' && current.comment?.ticketId) {
+        await ticketsApi.addComment(current.comment.ticketId, {
+          body: current.comment.body,
+        })
+        setMessages((prev) =>
+          patchActionInMessages(prev, actionId, (action) => ({
+            ...action,
+            status: 'completed',
+            resultTicketId: current.comment!.ticketId,
+            resultSubject: current.comment!.ticketLabel,
+          })),
+        )
+        return
+      }
+
+      throw new Error('Ticket action is incomplete — edit the details first.')
     } catch (err) {
-      setError(
-        err instanceof Error ? err.message : 'Could not create a ticket.',
+      const message =
+        err instanceof Error ? err.message : 'Could not complete ticket action.'
+      setError(message)
+      setMessages((prev) =>
+        patchActionInMessages(prev, actionId, (action) => ({
+          ...action,
+          status: 'failed',
+          error: message,
+        })),
       )
-      return null
     } finally {
       setIsEscalating(false)
     }
-  }, [isEscalating])
+  }, [messages])
+
+  /**
+   * Legacy immediate escalate — kept for callers that still need the
+   * transcript-linked backend path. Prefer proposeCreate → confirmAction.
+   */
+  const escalate = useCallback(async (): Promise<EscalatedTicket | null> => {
+    proposeCreate()
+    return null
+  }, [proposeCreate])
 
   return {
     messages,
@@ -216,8 +422,27 @@ export function useAssistantChat({ greeting }: Options) {
     /** True only when we know the provider is reachable-but-broken or down. */
     llmOffline: health !== null && health.status !== 'online',
     escalate,
+    proposeCreate,
+    proposeUpdate,
+    proposeComment,
+    beginEditAction,
+    saveEditAction,
+    cancelEditAction,
+    cancelAction,
+    confirmAction,
     isEscalating,
     ticket,
-    canEscalate: hasConversation && ticket === null && !isStreaming,
+    hasOpenAction,
+    canEscalate:
+      hasConversation &&
+      ticket === null &&
+      !isStreaming &&
+      !hasOpenAction,
+    /** Propose when there is user context and no open card / filed ticket. */
+    canProposeCreate:
+      ticket === null &&
+      !isStreaming &&
+      !hasOpenAction &&
+      messages.some((m) => m.role === 'user'),
   }
 }

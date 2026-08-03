@@ -12,6 +12,7 @@ import {
 import { useAssistantChat } from '@/hooks/useAssistantChat'
 import { useDialogFocus } from '@/hooks/useDialogFocus'
 import { CitationBlock } from '@/components/chat/CitationBlock'
+import { TicketActionCard } from '@/components/chat/TicketActionCard'
 import styles from './ChatbotFab.module.css'
 
 export function ChatbotFab() {
@@ -23,10 +24,15 @@ export function ChatbotFab() {
     isStreaming,
     health,
     llmOffline,
-    escalate,
+    proposeCreate,
+    beginEditAction,
+    saveEditAction,
+    cancelEditAction,
+    cancelAction,
+    confirmAction,
     isEscalating,
     ticket,
-    canEscalate,
+    canProposeCreate,
   } = useAssistantChat({ greeting: 'Hi — how can I help?' })
   const panelId = useId()
   const panelRef = useRef<HTMLDivElement>(null)
@@ -132,10 +138,23 @@ export function ChatbotFab() {
                       compact
                       citations={msg.citations ?? []}
                       retrievalWeak={msg.retrievalWeak}
-                      canEscalate={canEscalate}
+                      canEscalate={canProposeCreate}
                       isEscalating={isEscalating}
-                      onEscalate={() => void escalate()}
+                      onEscalate={() => proposeCreate()}
                       escalateLabel="Create ticket"
+                    />
+                  </div>
+                ) : null}
+                {msg.role === 'assistant' && msg.action ? (
+                  <div className={styles.citations}>
+                    <TicketActionCard
+                      compact
+                      action={msg.action}
+                      onConfirm={() => void confirmAction(msg.action!.id)}
+                      onCancel={() => cancelAction(msg.action!.id)}
+                      onBeginEdit={() => beginEditAction(msg.action!.id)}
+                      onSaveEdit={saveEditAction}
+                      onCancelEdit={() => cancelEditAction(msg.action!.id)}
                     />
                   </div>
                 ) : null}
@@ -193,14 +212,14 @@ export function ChatbotFab() {
               </Link>
             ) : (
               <>
-                {canEscalate ? (
+                {canProposeCreate ? (
                   <button
                     type="button"
                     className={styles.hintBtn}
                     disabled={isEscalating}
-                    onClick={() => void escalate()}
+                    onClick={() => proposeCreate()}
                   >
-                    {isEscalating ? 'Creating ticket…' : 'Create ticket'}
+                    Propose ticket
                   </button>
                 ) : (
                   'Escape closes'
