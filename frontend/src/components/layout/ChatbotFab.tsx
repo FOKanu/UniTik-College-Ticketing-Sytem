@@ -11,6 +11,7 @@ import {
 } from '@/components/ui/icons'
 import { useAssistantChat } from '@/hooks/useAssistantChat'
 import { useDialogFocus } from '@/hooks/useDialogFocus'
+import { CitationBlock } from '@/components/chat/CitationBlock'
 import styles from './ChatbotFab.module.css'
 
 export function ChatbotFab() {
@@ -124,6 +125,20 @@ export function ChatbotFab() {
                 className={msg.role === 'user' ? styles.mine : styles.theirs}
               >
                 <p>{msg.body}</p>
+                {msg.role === 'assistant' &&
+                (msg.citations?.length || msg.retrievalWeak) ? (
+                  <div className={styles.citations}>
+                    <CitationBlock
+                      compact
+                      citations={msg.citations ?? []}
+                      retrievalWeak={msg.retrievalWeak}
+                      canEscalate={canEscalate}
+                      isEscalating={isEscalating}
+                      onEscalate={() => void escalate()}
+                      escalateLabel="Create ticket"
+                    />
+                  </div>
+                ) : null}
                 <small>{msg.role === 'user' ? 'You' : 'Assistant'}</small>
               </div>
             ))}

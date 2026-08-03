@@ -35,6 +35,50 @@
   font-weight: 700;
 }
 
+.createForm {
+  display: grid;
+  gap: 0.85rem;
+  padding: 1rem;
+  background: var(--color-surface);
+  border: 1px solid var(--color-border);
+  border-radius: var(--radius-lg);
+  box-shadow: var(--shadow-card);
+}
+
+.createForm h2 {
+  margin: 0;
+  font-size: 1.05rem;
+}
+
+.formRow {
+  display: flex;
+  align-items: center;
+  gap: 0.65rem;
+}
+
+.formError {
+  margin: 0;
+  color: var(--color-error, #b3261e);
+  font-size: 0.85rem;
+}
+
+.stateBox {
+  display: grid;
+  justify-items: start;
+  gap: 0.65rem;
+  padding: 1rem;
+  border: 1px dashed var(--color-border);
+  border-radius: var(--radius-md);
+  background: var(--color-surface-muted);
+}
+
+.stateBox p {
+  margin: 0;
+  color: var(--color-text-muted);
+  font-size: 0.88rem;
+  line-height: 1.5;
+}
+
 .toolbar {
   display: grid;
   grid-template-columns: 160px 160px 1fr;

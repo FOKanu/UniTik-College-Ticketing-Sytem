@@ -26,10 +26,12 @@ export type {
   ChatConversation,
   ChatMessage,
   ChatMode,
+  Citation,
   EscalatedTicket,
   EscalateResult,
   LlmHealth,
   StreamHandlers,
+  StreamResult,
 } from './chat'
 export { chatApi } from './chat'
 export type * from './types'

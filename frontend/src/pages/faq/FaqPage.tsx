@@ -1,29 +1,73 @@
-import { useMemo, useState } from 'react'
+import { useEffect, useState } from 'react'
 import { ROUTES } from '@/app/routes'
-import { ButtonLink, SearchField } from '@/components/ui'
-import { mockArticles } from '@/mocks/data'
+import { Button, ButtonLink, SearchField } from '@/components/ui'
+import { knowledgeApi } from '@/lib/api'
+import type { KnowledgeArticle } from '@/types'
 import styles from './FaqPage.module.css'
 
 const CATEGORIES = ['All', 'IT', 'Finance', 'Academics', 'Maintenance'] as const
 
+function formatUpdated(iso: string): string {
+  return new Date(iso).toLocaleDateString(undefined, {
+    month: 'short',
+    day: 'numeric',
+  })
+}
+
 export function FaqPage() {
   const [query, setQuery] = useState('')
   const [category, setCategory] = useState<(typeof CATEGORIES)[number]>('All')
+  const [articles, setArticles] = useState<KnowledgeArticle[]>([])
+  const [loading, setLoading] = useState(true)
+  const [error, setError] = useState<string | null>(null)
+  const [reloadKey, setReloadKey] = useState(0)
 
-  const published = useMemo(
-    () => mockArticles.filter((a) => a.status === 'published'),
-    [],
-  )
+  useEffect(() => {
+    let cancelled = false
+    void (async () => {
+      try {
+        // Students only see published entries; the FAQ API serves no drafts.
+        const data = await knowledgeApi.list({ status: 'published' })
+        if (cancelled) return
+        setArticles(data)
+        setError(null)
+      } catch (err) {
+        if (cancelled) return
+        setError(
+          err instanceof Error
+            ? err.message
+            : 'Could not load articles. Check your connection and try again.',
+        )
+      } finally {
+        if (!cancelled) setLoading(false)
+      }
+    })()
+    return () => {
+      cancelled = true
+    }
+  }, [reloadKey])
 
-  const articles = published.filter((a) => {
+  function retry() {
+    setLoading(true)
+    setError(null)
+    setReloadKey((key) => key + 1)
+  }
+
+  const filtered = articles.filter((a) => {
     const matchesQuery = a.title.toLowerCase().includes(query.toLowerCase())
     const matchesCategory = category === 'All' || a.category === category
     return matchesQuery && matchesCategory
   })
 
-  const mostAsked = [...published]
-    .sort((a, b) => b.views - a.views)
+  const recentlyUpdated = [...articles]
+    .sort(
+      (a, b) =>
+        new Date(b.updatedAt).getTime() - new Date(a.updatedAt).getTime(),
+    )
     .slice(0, 3)
+
+  const hasCorpus = articles.length > 0
+  const isFiltering = query.trim() !== '' || category !== 'All'
 
   return (
     <div className={styles.page}>
@@ -59,13 +103,34 @@ export function FaqPage() {
       </div>
 
       <div className={styles.grid}>
-        <section className={styles.panel}>
+        <section className={styles.panel} aria-busy={loading}>
           <h2>Articles</h2>
-          {articles.length === 0 ? (
-            <p className={styles.empty}>No articles match your search.</p>
+          {loading ? (
+            <p className={styles.empty} aria-live="polite">
+              Loading articles…
+            </p>
+          ) : error ? (
+            <div className={styles.stateBox} role="alert">
+              <p>{error}</p>
+              <Button variant="secondary" size="sm" onClick={retry}>
+                Try again
+              </Button>
+            </div>
+          ) : !hasCorpus ? (
+            <div className={styles.stateBox}>
+              <p>
+                No articles have been published yet. Ask the AI Assistant or
+                open a ticket — staff answers often become new articles.
+              </p>
+            </div>
+          ) : filtered.length === 0 && isFiltering ? (
+            <p className={styles.empty}>
+              No articles match your search. Try different keywords or clear the
+              category filter.
+            </p>
           ) : (
             <ul>
-              {articles.map((article) => (
+              {filtered.map((article) => (
                 <li key={article.id}>
                   <button
                     type="button"
@@ -73,8 +138,8 @@ export function FaqPage() {
                   >
                     <strong>{article.title}</strong>
                     <span>
-                      {article.category} · {article.views.toLocaleString()}{' '}
-                      views
+                      {article.category} · Updated{' '}
+                      {formatUpdated(article.updatedAt)}
                     </span>
                   </button>
                 </li>
@@ -85,17 +150,23 @@ export function FaqPage() {
 
         <aside className={styles.rail}>
           <section className={styles.panel}>
-            <h2>Most asked</h2>
-            <ol className={styles.mostAsked}>
-              {mostAsked.map((article, index) => (
-                <li key={article.id}>
-                  <span className={styles.rank} aria-hidden="true">
-                    {index + 1}
-                  </span>
-                  <button type="button">{article.title}</button>
-                </li>
-              ))}
-            </ol>
+            <h2>Recently updated</h2>
+            {loading || error || recentlyUpdated.length === 0 ? (
+              <p className={styles.empty}>
+                {loading ? 'Loading…' : 'Nothing here yet.'}
+              </p>
+            ) : (
+              <ol className={styles.mostAsked}>
+                {recentlyUpdated.map((article, index) => (
+                  <li key={article.id}>
+                    <span className={styles.rank} aria-hidden="true">
+                      {index + 1}
+                    </span>
+                    <button type="button">{article.title}</button>
+                  </li>
+                ))}
+              </ol>
+            )}
           </section>
 
           <section className={styles.help}>

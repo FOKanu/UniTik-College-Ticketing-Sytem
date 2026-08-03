@@ -1,7 +1,8 @@
 import { mockArticles } from '@/mocks/data'
 import type { KnowledgeArticle } from '@/types'
 import { type Envelope, toDepartment, unwrap } from './adapters'
-import { get, mockLatency, usesMockKnowledge } from './client'
+import { get, mockLatency, post, usesMockKnowledge } from './client'
+import { ApiError } from './errors'
 
 interface BackendFaq {
   id: string
@@ -30,10 +31,18 @@ function matchesFilters(
   article: KnowledgeArticle,
   params?: { query?: string; category?: string; status?: string },
 ): boolean {
-  if (params?.category && params.category !== 'all' && article.category !== params.category) {
+  if (
+    params?.category &&
+    params.category !== 'all' &&
+    article.category !== params.category
+  ) {
     return false
   }
-  if (params?.status && params.status !== 'all' && article.status !== params.status) {
+  if (
+    params?.status &&
+    params.status !== 'all' &&
+    article.status !== params.status
+  ) {
     return false
   }
   if (
@@ -57,6 +66,31 @@ export const knowledgeApi = {
     }
 
     const raw = unwrap(await get<Envelope<BackendFaq[]>>('/kb/faq'))
-    return raw.map(toArticle).filter((article) => matchesFilters(article, params))
+    return raw
+      .map(toArticle)
+      .filter((article) => matchesFilters(article, params))
+  },
+
+  /** Staff/admin only — the backend enforces the role. */
+  async create(data: {
+    question: string
+    answer: string
+    category?: string | null
+  }): Promise<KnowledgeArticle> {
+    if (usesMockKnowledge()) {
+      // Honest failure: mock mode has no persistence, so don't pretend.
+      throw new ApiError(
+        'Connect the backend (VITE_DATA_SOURCE=hybrid) to add articles.',
+        { code: 'UNKNOWN' },
+      )
+    }
+    const raw = unwrap(
+      await post<Envelope<BackendFaq>>('/kb/faq', {
+        question: data.question,
+        answer: data.answer,
+        category: data.category ?? null,
+      }),
+    )
+    return toArticle(raw)
   },
 }

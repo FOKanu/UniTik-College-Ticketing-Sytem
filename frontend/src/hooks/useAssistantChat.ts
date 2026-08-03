@@ -3,6 +3,7 @@ import {
   chatApi,
   usesLiveChat,
   type ChatMode,
+  type Citation,
   type EscalatedTicket,
   type LlmHealth,
 } from '@/lib/api'
@@ -12,6 +13,10 @@ export interface AssistantMessage {
   role: 'user' | 'assistant'
   body: string
   streaming?: boolean
+  /** KB articles the answer was grounded in (live chat only). */
+  citations?: Citation[]
+  /** True when no KB article matched strongly — treat the answer with care. */
+  retrievalWeak?: boolean
 }
 
 const HEALTH_POLL_MS = 60_000
@@ -118,7 +123,7 @@ export function useAssistantChat({ greeting }: Options) {
           setHasConversation(true)
         }
 
-        const botMessage = await chatApi.streamMessage(
+        const result = await chatApi.streamMessage(
           conversationId.current,
           trimmed,
           mode,
@@ -127,6 +132,14 @@ export function useAssistantChat({ greeting }: Options) {
               patchMessage(botId, (msg) => ({
                 ...msg,
                 body: msg.body + delta,
+              })),
+            // Citations arrive with the SSE start event, so sources can
+            // render while the answer is still streaming.
+            onCitations: (citations, retrievalWeak) =>
+              patchMessage(botId, (msg) => ({
+                ...msg,
+                citations,
+                retrievalWeak,
               })),
             onError: (message) => setError(message),
           },
@@ -137,7 +150,9 @@ export function useAssistantChat({ greeting }: Options) {
         // fallback text when the model never produced any tokens.
         patchMessage(botId, (msg) => ({
           ...msg,
-          body: msg.body || botMessage?.content || '',
+          body: msg.body || result.botMessage?.content || '',
+          citations: result.citations.length ? result.citations : msg.citations,
+          retrievalWeak: result.retrievalWeak,
           streaming: false,
         }))
       } catch (err) {

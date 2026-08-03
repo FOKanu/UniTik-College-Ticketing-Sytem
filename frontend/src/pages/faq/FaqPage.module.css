@@ -115,6 +115,23 @@
   font-size: var(--text-caption);
 }
 
+.stateBox {
+  display: grid;
+  justify-items: start;
+  gap: var(--space-3);
+  padding: var(--space-4);
+  border: 1px dashed var(--neutral-200);
+  border-radius: var(--radius-md);
+  background: var(--neutral-50);
+}
+
+.stateBox p {
+  margin: 0;
+  color: var(--neutral-500);
+  font-size: var(--text-small);
+  line-height: 1.5;
+}
+
 .empty {
   margin: 0;
   color: var(--neutral-500);

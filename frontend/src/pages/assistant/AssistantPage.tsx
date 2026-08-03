@@ -2,6 +2,7 @@ import { useState } from 'react'
 import type { FormEvent } from 'react'
 import { ButtonLink, Button, Input } from '@/components/ui'
 import { IconAlert, IconSend } from '@/components/ui/icons'
+import { CitationBlock } from '@/components/chat/CitationBlock'
 import { ROUTES, ticketDetailPath } from '@/app/routes'
 import { useAssistantChat } from '@/hooks'
 import { usesLiveChat } from '@/lib/api'
@@ -124,6 +125,16 @@ export function AssistantPage() {
                       <span className={styles.caret}>▍</span>
                     ) : null}
                   </p>
+                  {msg.role === 'assistant' &&
+                  (msg.citations?.length || msg.retrievalWeak) ? (
+                    <CitationBlock
+                      citations={msg.citations ?? []}
+                      retrievalWeak={msg.retrievalWeak}
+                      canEscalate={canEscalate}
+                      isEscalating={isEscalating}
+                      onEscalate={() => void escalate()}
+                    />
+                  ) : null}
                 </article>
               ))}
             </div>
