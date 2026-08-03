@@ -109,3 +109,21 @@ describe('mock staff directory', () => {
     )
   })
 })
+
+describe('mock attachments API', () => {
+  it('uploads and lists attachments on a mock ticket', async () => {
+    const file = new File(['png-bytes'], 'screenshot.png', {
+      type: 'image/png',
+    })
+    const uploaded = await ticketsApi.uploadAttachment('TCK-1042', file)
+    expect(uploaded.name).toBe('screenshot.png')
+    expect(uploaded.sizeLabel).toBeTruthy()
+
+    const listed = await ticketsApi.listAttachments('TCK-1042')
+    expect(listed.some((item) => item.id === uploaded.id)).toBe(true)
+
+    await ticketsApi.deleteAttachment('TCK-1042', uploaded.id)
+    const after = await ticketsApi.listAttachments('TCK-1042')
+    expect(after.some((item) => item.id === uploaded.id)).toBe(false)
+  })
+})

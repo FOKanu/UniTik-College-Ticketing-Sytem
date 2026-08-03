@@ -12,6 +12,7 @@ import {
   Textarea,
   Toggle,
 } from '@/components/ui'
+import { TicketAttachments } from '@/components/tickets/TicketAttachments'
 import { usePageTitle } from '@/hooks/usePageTitle'
 import { usersApi, type StaffMember } from '@/lib/api'
 import { useAuthStore, useTicketStore } from '@/stores'
@@ -357,16 +358,11 @@ export function AgentTicketDetailPage() {
               <p>{ticket.description}</p>
             </div>
           ) : null}
-          {ticket.attachments?.length ? (
-            <div className={styles.attachments}>
-              <h2>Attachments</h2>
-              <ul>
-                {ticket.attachments.map((file) => (
-                  <li key={file.id}>{file.name}</li>
-                ))}
-              </ul>
-            </div>
-          ) : null}
+          <TicketAttachments
+            ticketId={ticket.id}
+            attachments={ticket.attachments}
+            dropzoneId="agent-ticket-attachment"
+          />
         </aside>
 
         <section className={styles.main} aria-label="Conversation">

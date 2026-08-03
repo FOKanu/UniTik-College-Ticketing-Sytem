@@ -9,6 +9,7 @@ export {
   mockLatency,
   patch,
   post,
+  postForm,
   put,
   usesLiveAuth,
   usesLiveChat,
@@ -19,7 +20,7 @@ export {
 } from './client'
 export { ApiError, isApiError, toApiError, type ApiErrorCode } from './errors'
 export { authApi, signOut } from './auth'
-export { ticketsApi } from './tickets'
+export { ticketsApi, formatFileSize } from './tickets'
 export { notificationsApi } from './notifications'
 export { knowledgeApi } from './knowledge'
 export { usersApi, type StaffMember } from './users'

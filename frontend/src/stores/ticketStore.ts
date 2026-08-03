@@ -7,7 +7,7 @@ import {
   type ListTicketsParams,
   type UpdateTicketPayload,
 } from '@/lib/api'
-import type { Ticket } from '@/types'
+import type { Ticket, TicketAttachment } from '@/types'
 
 export type TicketListScope = 'mine' | 'queue'
 
@@ -38,12 +38,20 @@ interface TicketState {
   setPage: (page: number) => void
   fetchList: (overrides?: Partial<ListTicketsParams>) => Promise<void>
   fetchById: (ticketId: string) => Promise<Ticket | null>
-  createTicket: (payload: CreateTicketPayload) => Promise<Ticket | null>
+  createTicket: (
+    payload: CreateTicketPayload,
+    file?: File | null,
+  ) => Promise<Ticket | null>
   updateTicket: (
     ticketId: string,
     payload: UpdateTicketPayload,
   ) => Promise<Ticket | null>
   addComment: (ticketId: string, payload: AddCommentPayload) => Promise<boolean>
+  uploadAttachment: (
+    ticketId: string,
+    file: File,
+  ) => Promise<TicketAttachment | null>
+  deleteAttachment: (ticketId: string, attachmentId: string) => Promise<boolean>
   bulkUpdate: (
     ticketIds: string[],
     payload: UpdateTicketPayload,
@@ -150,10 +158,32 @@ export const useTicketStore = create<TicketState>((set, get) => ({
     }
   },
 
-  createTicket: async (payload) => {
+  createTicket: async (payload, file = null) => {
     set({ mutating: true, error: null })
     try {
-      const ticket = await ticketsApi.create(payload)
+      let ticket = await ticketsApi.create(payload)
+      if (file) {
+        try {
+          const attachment = await ticketsApi.uploadAttachment(ticket.id, file)
+          ticket = {
+            ...ticket,
+            attachments: [...(ticket.attachments ?? []), attachment],
+          }
+        } catch (error) {
+          // Ticket already exists — keep it and surface the upload failure.
+          set({
+            items: [ticket, ...get().items],
+            total: get().total + 1,
+            selected: ticket,
+            mutating: false,
+            error: errorMessage(
+              error,
+              'Ticket created, but the attachment failed to upload.',
+            ),
+          })
+          return ticket
+        }
+      }
       set((state) => ({
         items: [ticket, ...state.items],
         total: state.total + 1,
@@ -237,6 +267,68 @@ export const useTicketStore = create<TicketState>((set, get) => ({
       set({
         mutating: false,
         error: errorMessage(error, 'Failed to post comment.'),
+      })
+      return false
+    }
+  },
+
+  uploadAttachment: async (ticketId, file) => {
+    set({ mutating: true, error: null })
+    try {
+      const attachment = await ticketsApi.uploadAttachment(ticketId, file)
+      set((state) => {
+        const patchAttachments = (ticket: Ticket): Ticket => ({
+          ...ticket,
+          attachments: [...(ticket.attachments ?? []), attachment],
+        })
+        return {
+          selected:
+            state.selected?.id === ticketId
+              ? patchAttachments(state.selected)
+              : state.selected,
+          items: state.items.map((item) =>
+            item.id === ticketId ? patchAttachments(item) : item,
+          ),
+          mutating: false,
+        }
+      })
+      return attachment
+    } catch (error) {
+      set({
+        mutating: false,
+        error: errorMessage(error, 'Failed to upload attachment.'),
+      })
+      return null
+    }
+  },
+
+  deleteAttachment: async (ticketId, attachmentId) => {
+    set({ mutating: true, error: null })
+    try {
+      await ticketsApi.deleteAttachment(ticketId, attachmentId)
+      set((state) => {
+        const removeAttachment = (ticket: Ticket): Ticket => ({
+          ...ticket,
+          attachments: (ticket.attachments ?? []).filter(
+            (item) => item.id !== attachmentId,
+          ),
+        })
+        return {
+          selected:
+            state.selected?.id === ticketId
+              ? removeAttachment(state.selected)
+              : state.selected,
+          items: state.items.map((item) =>
+            item.id === ticketId ? removeAttachment(item) : item,
+          ),
+          mutating: false,
+        }
+      })
+      return true
+    } catch (error) {
+      set({
+        mutating: false,
+        error: errorMessage(error, 'Failed to remove attachment.'),
       })
       return false
     }
