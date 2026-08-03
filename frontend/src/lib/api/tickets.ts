@@ -32,6 +32,9 @@ interface BackendTicket {
   assignedToId: string | null
   createdAt: string
   updatedAt: string
+  createdByName?: string | null
+  createdByEmail?: string | null
+  assignedToName?: string | null
 }
 
 interface BackendComment {
@@ -57,6 +60,11 @@ function toTicket(raw: BackendTicket, comments: TicketComment[] = []): Ticket {
     priority: toTicketPriority(raw.priority),
     createdBy: raw.createdById,
     assignedTo: raw.assignedToId ?? undefined,
+    // Names are resolved server-side from the user relationships. Without
+    // them every row would read "Unassigned" even when assignedToId is set.
+    assignedName: raw.assignedToName ?? undefined,
+    requesterName: raw.createdByName ?? undefined,
+    requesterEmail: raw.createdByEmail ?? undefined,
     createdAt: raw.createdAt,
     updatedAt: raw.updatedAt,
     comments,
@@ -77,11 +85,7 @@ function toComment(raw: BackendComment): TicketComment {
   }
 }
 
-function paginate<T>(
-  items: T[],
-  page = 1,
-  pageSize = 20,
-): Paginated<T> {
+function paginate<T>(items: T[], page = 1, pageSize = 20): Paginated<T> {
   const safePage = Math.max(1, page)
   const start = (safePage - 1) * pageSize
   return {
@@ -134,8 +138,7 @@ function filterTickets(
   }
 
   return list.sort(
-    (a, b) =>
-      new Date(b.updatedAt).getTime() - new Date(a.updatedAt).getTime(),
+    (a, b) => new Date(b.updatedAt).getTime() - new Date(a.updatedAt).getTime(),
   )
 }
 
@@ -144,7 +147,10 @@ export const ticketsApi = {
     if (!usesLiveTickets()) {
       await mockLatency()
       return paginate(
-        filterTickets(mockTickets, params, { self: 'user-1', agent: 'agent-1' }),
+        filterTickets(mockTickets, params, {
+          self: 'user-1',
+          agent: 'agent-1',
+        }),
         params.page ?? 1,
         params.pageSize ?? 20,
       )
@@ -209,7 +215,9 @@ export const ticketsApi = {
         subject: payload.subject,
         description: payload.description,
         category: payload.category,
-        priority: fromTicketPriority(payload.urgent ? 'urgent' : payload.priority),
+        priority: fromTicketPriority(
+          payload.urgent ? 'urgent' : payload.priority,
+        ),
       }),
     )
     return toTicket(created)

@@ -1,4 +1,4 @@
-import { useEffect, useState } from 'react'
+import { useEffect, useMemo, useRef, useState } from 'react'
 import { Link } from 'react-router-dom'
 import { ROUTES, agentTicketDetailPath } from '@/app/routes'
 import {
@@ -9,7 +9,8 @@ import {
   Select,
   StatusBadge,
 } from '@/components/ui'
-import { useTicketStore } from '@/stores'
+import { usersApi, type StaffMember } from '@/lib/api'
+import { useAuthStore, useTicketStore } from '@/stores'
 import type { Department, TicketPriority, TicketStatus } from '@/types'
 import styles from './QueuePage.module.css'
 
@@ -28,7 +29,17 @@ export function QueuePage() {
   const setFilters = useTicketStore((s) => s.setFilters)
   const setPage = useTicketStore((s) => s.setPage)
   const fetchList = useTicketStore((s) => s.fetchList)
+  const bulkUpdate = useTicketStore((s) => s.bulkUpdate)
+  const mutating = useTicketStore((s) => s.mutating)
+  const currentUserId = useAuthStore((s) => s.user?.id)
   const [selected, setSelected] = useState<string[]>([])
+
+  const [staff, setStaff] = useState<StaffMember[]>([])
+  const [staffError, setStaffError] = useState<string | null>(null)
+  const [assignOpen, setAssignOpen] = useState(false)
+  const [confirmClose, setConfirmClose] = useState(false)
+  const [bulkMessage, setBulkMessage] = useState<string | null>(null)
+  const assignRef = useRef<HTMLDivElement>(null)
 
   const assigneeTab = (filters.assignee ?? 'all') as AssigneeTab
 
@@ -40,8 +51,78 @@ export function QueuePage() {
     void fetchList()
   }, [fetchList, filters, page, pageSize, scope])
 
+  // Staff directory powers the assign picker. Staff/admin only — the route
+  // 403s for students, who never reach this page anyway.
+  useEffect(() => {
+    let cancelled = false
+    void (async () => {
+      try {
+        const members = await usersApi.listStaff()
+        if (cancelled) return
+        setStaff(members)
+        setStaffError(null)
+      } catch (err) {
+        if (cancelled) return
+        setStaff([])
+        setStaffError(
+          err instanceof Error
+            ? err.message
+            : 'Could not load the staff directory.',
+        )
+      }
+    })()
+    return () => {
+      cancelled = true
+    }
+  }, [])
+
+  useEffect(() => {
+    if (!assignOpen) return
+    function onPointerDown(event: MouseEvent) {
+      if (assignRef.current?.contains(event.target as Node)) return
+      setAssignOpen(false)
+    }
+    function onKeyDown(event: KeyboardEvent) {
+      if (event.key === 'Escape') setAssignOpen(false)
+    }
+    document.addEventListener('mousedown', onPointerDown)
+    document.addEventListener('keydown', onKeyDown)
+    return () => {
+      document.removeEventListener('mousedown', onPointerDown)
+      document.removeEventListener('keydown', onKeyDown)
+    }
+  }, [assignOpen])
+
   const from = total === 0 ? 0 : (page - 1) * pageSize + 1
   const to = Math.min(total, page * pageSize)
+
+  const selectedTickets = useMemo(
+    () => items.filter((ticket) => selected.includes(ticket.id)),
+    [items, selected],
+  )
+
+  // When every selected ticket shares a department, surface that team first.
+  const sharedDepartment = useMemo(() => {
+    const departments = new Set(selectedTickets.map((t) => t.category))
+    return departments.size === 1 ? [...departments][0] : null
+  }, [selectedTickets])
+
+  // Any already-assigned ticket in the selection makes this a reassignment.
+  const hasAssigned = useMemo(
+    () => selectedTickets.some((ticket) => !!ticket.assignedTo),
+    [selectedTickets],
+  )
+  const assignVerb = hasAssigned ? 'Reassign' : 'Assign'
+
+  const assignOptions = useMemo(() => {
+    if (!sharedDepartment) return staff
+    const matches = staff.filter((member) =>
+      (member.department ?? '')
+        .toLowerCase()
+        .includes(sharedDepartment.toLowerCase()),
+    )
+    return matches.length > 0 ? matches : staff
+  }, [staff, sharedDepartment])
 
   function toggle(id: string) {
     setSelected((prev) =>
@@ -51,6 +132,41 @@ export function QueuePage() {
 
   function setAssigneeTab(tab: AssigneeTab) {
     setFilters({ assignee: tab })
+  }
+
+  function describe(action: string, count: number, failures: number): string {
+    if (failures === 0) {
+      return `${action} ${count} ticket${count === 1 ? '' : 's'}.`
+    }
+    return `${action} ${count - failures} of ${count} tickets — ${failures} failed.`
+  }
+
+  async function assignTo(member: StaffMember | null) {
+    const ids = [...selected]
+    setAssignOpen(false)
+    setBulkMessage(null)
+    const result = await bulkUpdate(ids, { assignedTo: member?.id ?? null })
+    setBulkMessage(
+      describe(
+        member
+          ? `${hasAssigned ? 'Reassigned' : 'Assigned'} to ${member.displayName} —`
+          : 'Unassigned',
+        ids.length,
+        result.failed.length,
+      ),
+    )
+    setSelected(result.failed.map((f) => f.id))
+    await fetchList()
+  }
+
+  async function closeSelected() {
+    const ids = [...selected]
+    setConfirmClose(false)
+    setBulkMessage(null)
+    const result = await bulkUpdate(ids, { status: 'closed' })
+    setBulkMessage(describe('Closed', ids.length, result.failed.length))
+    setSelected(result.failed.map((f) => f.id))
+    await fetchList()
   }
 
   return (
@@ -64,7 +180,7 @@ export function QueuePage() {
         {(
           [
             { id: 'all', label: 'All' },
-            { id: 'me', label: 'Assigned' },
+            { id: 'me', label: 'Assigned to me' },
             { id: 'unassigned', label: 'Unassigned' },
           ] as const
         ).map((tab) => (
@@ -143,12 +259,135 @@ export function QueuePage() {
       {selected.length > 0 ? (
         <div className={styles.bulk}>
           <span>{selected.length} selected</span>
-          <Button variant="secondary" size="sm" disabled>
-            Assign
-          </Button>
-          <Button size="sm" disabled>
+
+          <div className={styles.assignWrap} ref={assignRef}>
+            <Button
+              variant="secondary"
+              size="sm"
+              aria-haspopup="menu"
+              aria-expanded={assignOpen}
+              disabled={mutating || !!staffError}
+              onClick={() => setAssignOpen((v) => !v)}
+            >
+              {mutating ? 'Working…' : assignVerb}
+            </Button>
+
+            {assignOpen ? (
+              <div className={styles.assignMenu} role="menu">
+                <p className={styles.assignHint}>
+                  {sharedDepartment
+                    ? `${sharedDepartment} team`
+                    : 'Mixed departments — showing all staff'}
+                </p>
+                {currentUserId && staff.some((m) => m.id === currentUserId) ? (
+                  <button
+                    type="button"
+                    role="menuitem"
+                    className={styles.assignItem}
+                    onClick={() =>
+                      void assignTo(
+                        staff.find((m) => m.id === currentUserId) ?? null,
+                      )
+                    }
+                  >
+                    Assign to me
+                  </button>
+                ) : null}
+                {assignOptions
+                  .filter((member) => member.id !== currentUserId)
+                  .map((member) => (
+                    <button
+                      key={member.id}
+                      type="button"
+                      role="menuitem"
+                      className={styles.assignItem}
+                      onClick={() => void assignTo(member)}
+                    >
+                      <span>{member.displayName}</span>
+                      {member.department ? (
+                        <small>{member.department}</small>
+                      ) : null}
+                    </button>
+                  ))}
+                {assignOptions.length === 0 ? (
+                  <p className={styles.assignHint}>
+                    No staff accounts available to assign.
+                  </p>
+                ) : null}
+                <button
+                  type="button"
+                  role="menuitem"
+                  className={styles.assignItem}
+                  onClick={() => void assignTo(null)}
+                >
+                  Clear assignee
+                </button>
+              </div>
+            ) : null}
+          </div>
+
+          <Button
+            size="sm"
+            disabled={mutating}
+            onClick={() => setConfirmClose(true)}
+          >
             Close selected
           </Button>
+
+          <button
+            type="button"
+            className={styles.clearSelection}
+            onClick={() => setSelected([])}
+          >
+            Clear
+          </button>
+        </div>
+      ) : null}
+
+      {staffError && selected.length > 0 ? (
+        <p className={styles.bulkNote} role="alert">
+          {staffError} Assigning is unavailable until it loads.
+        </p>
+      ) : null}
+
+      {bulkMessage ? (
+        <p className={styles.bulkNote} role="status">
+          {bulkMessage}
+        </p>
+      ) : null}
+
+      {confirmClose ? (
+        <div
+          className={styles.confirm}
+          role="alertdialog"
+          aria-modal="true"
+          aria-labelledby="confirm-close-title"
+        >
+          <div className={styles.confirmBox}>
+            <h2 id="confirm-close-title">
+              Close {selected.length} ticket{selected.length === 1 ? '' : 's'}?
+            </h2>
+            <p>
+              Requesters can still reopen a closed ticket by replying to it.
+              This cannot be undone in bulk.
+            </p>
+            <div className={styles.confirmActions}>
+              <Button
+                variant="secondary"
+                size="sm"
+                onClick={() => setConfirmClose(false)}
+              >
+                Cancel
+              </Button>
+              <Button
+                size="sm"
+                disabled={mutating}
+                onClick={() => void closeSelected()}
+              >
+                {mutating ? 'Closing…' : 'Close tickets'}
+              </Button>
+            </div>
+          </div>
         </div>
       ) : null}
 

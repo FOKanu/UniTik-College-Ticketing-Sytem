@@ -1,5 +1,6 @@
 from sqlalchemy import select
 from sqlalchemy.ext.asyncio import AsyncSession
+from sqlalchemy.orm import selectinload
 
 from app.core.exceptions import ForbiddenError, NotFoundError
 from app.db.base import Role, TicketStatus
@@ -13,17 +14,27 @@ from app.schemas.tickets import (
 )
 from app.services import users as users_service
 
+# Display names come from the requester/assignee relationships. Async SQLAlchemy
+# cannot lazy-load them during serialization, so every query that feeds
+# ticket_to_response must eager-load both.
+_WITH_PEOPLE = (
+    selectinload(Ticket.created_by),
+    selectinload(Ticket.assigned_to),
+)
+
 
 async def list_tickets(db: AsyncSession, user: User) -> list[Ticket]:
+    stmt = select(Ticket).options(*_WITH_PEOPLE)
     if user.role == Role.STUDENT:
-        result = await db.execute(select(Ticket).where(Ticket.createdById == user.id))
-    else:
-        result = await db.execute(select(Ticket))
+        stmt = stmt.where(Ticket.createdById == user.id)
+    result = await db.execute(stmt)
     return list(result.scalars().all())
 
 
 async def get_ticket(db: AsyncSession, ticket_id: str, user: User) -> Ticket:
-    result = await db.execute(select(Ticket).where(Ticket.id == ticket_id))
+    result = await db.execute(
+        select(Ticket).options(*_WITH_PEOPLE).where(Ticket.id == ticket_id)
+    )
     ticket = result.scalar_one_or_none()
     if not ticket:
         raise NotFoundError("Ticket not found")
@@ -43,7 +54,7 @@ async def create_ticket(db: AsyncSession, user: User, data: TicketCreate) -> Tic
     )
     db.add(ticket)
     await db.commit()
-    await db.refresh(ticket)
+    await db.refresh(ticket, ["created_by", "assigned_to"])
     return ticket
 
 
@@ -63,7 +74,8 @@ async def update_ticket(
     for key, value in updates.items():
         setattr(ticket, key, value)
     await db.commit()
-    await db.refresh(ticket)
+    # Reload the people relationships so a reassignment returns the new name.
+    await db.refresh(ticket, ["created_by", "assigned_to"])
     return ticket
 
 
@@ -107,7 +119,15 @@ async def add_comment(
 
 
 def ticket_to_response(ticket: Ticket) -> TicketResponse:
-    return TicketResponse.model_validate(ticket)
+    response = TicketResponse.model_validate(ticket)
+    # Relationships are eager-loaded by the queries above; fall back to None
+    # rather than triggering a lazy load if a caller passes a bare instance.
+    created_by = ticket.__dict__.get("created_by")
+    assigned_to = ticket.__dict__.get("assigned_to")
+    response.createdByName = created_by.displayName if created_by else None
+    response.createdByEmail = created_by.email if created_by else None
+    response.assignedToName = assigned_to.displayName if assigned_to else None
+    return response
 
 
 def comment_to_response(comment: TicketComment) -> CommentResponse:

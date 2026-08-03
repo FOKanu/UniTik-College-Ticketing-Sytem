@@ -36,6 +36,11 @@ class TicketResponse(BaseModel):
     problemId: str | None
     createdAt: datetime
     updatedAt: datetime
+    # Resolved from the requester/assignee relationships so clients can show
+    # people without a second round trip to the user directory.
+    createdByName: str | None = None
+    createdByEmail: str | None = None
+    assignedToName: str | None = None
 
     model_config = {"from_attributes": True}
 

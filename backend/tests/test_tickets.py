@@ -103,3 +103,58 @@ async def test_student_reply_reopens_resolved_ticket(client):
 
     reopened_res = await client.get(f"/api/v1/tickets/{ticket_id}", headers=student_headers)
     assert reopened_res.json()["data"]["status"] == "OPEN"
+
+
+@pytest.mark.asyncio
+@integration
+async def test_ticket_response_carries_people_names(client):
+    """The queue renders assignee/requester names, so /tickets must resolve them
+    from the user relationships — not just return bare ids. Regression: every
+    row read "Unassigned" because only assignedToId was serialized."""
+    student_token, student_id = await _register_and_login(client, role="STUDENT")
+    staff_token, staff_id = await _register_and_login(
+        client, role="STAFF", department="IT"
+    )
+    student_headers = {"Authorization": f"Bearer {student_token}"}
+    staff_headers = {"Authorization": f"Bearer {staff_token}"}
+
+    create_res = await client.post(
+        "/api/v1/tickets",
+        json={"subject": "Cannot access course portal", "description": "500 on login"},
+        headers=student_headers,
+    )
+    assert create_res.status_code == 201, create_res.text
+    ticket_id = create_res.json()["data"]["id"]
+
+    # Requester name is present immediately; nobody is assigned yet.
+    created = create_res.json()["data"]
+    assert created["createdById"] == student_id
+    assert created["createdByName"] == "Test Student"
+    assert created["assignedToId"] is None
+    assert created["assignedToName"] is None
+
+    # Assigning must return the new assignee's display name on the PATCH itself.
+    assign_res = await client.patch(
+        f"/api/v1/tickets/{ticket_id}",
+        json={"assignedToId": staff_id},
+        headers=staff_headers,
+    )
+    assert assign_res.status_code == 200, assign_res.text
+    assert assign_res.json()["data"]["assignedToName"] == "Test Staff"
+
+    # ...and on the list endpoint the queue actually reads from.
+    list_res = await client.get("/api/v1/tickets", headers=staff_headers)
+    assert list_res.status_code == 200
+    row = next(t for t in list_res.json()["data"] if t["id"] == ticket_id)
+    assert row["assignedToId"] == staff_id
+    assert row["assignedToName"] == "Test Staff"
+    assert row["createdByName"] == "Test Student"
+
+    # Clearing the assignee clears the name too.
+    unassign_res = await client.patch(
+        f"/api/v1/tickets/{ticket_id}",
+        json={"assignedToId": None},
+        headers=staff_headers,
+    )
+    assert unassign_res.status_code == 200
+    assert unassign_res.json()["data"]["assignedToName"] is None
