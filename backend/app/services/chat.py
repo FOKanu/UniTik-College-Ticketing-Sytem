@@ -10,7 +10,10 @@ from app.ai.triage import fallback_subject, suggest_ticket_fields
 from app.core.exceptions import BadRequestError, ForbiddenError, NotFoundError
 from app.db.base import TicketStatus
 from app.models import ChatConversation, ChatMessage, Ticket, User
-from app.schemas.chat import MessageCreate
+from app.schemas.chat import Citation, MessageCreate
+from app.schemas.kb import FaqSearchResult
+from app.services import kb as kb_service
+from app.services.kb_embedding import EmbeddingProviderError, embed_text
 
 logger = logging.getLogger(__name__)
 
@@ -20,9 +23,19 @@ HISTORY_LIMIT = 20
 # Ticket descriptions embed the transcript, so cap what one chat can write.
 TRANSCRIPT_MAX_CHARS = 20_000
 
+RAG_TOP_K = 5
+# Cosine similarity (1 - distance). Below this we treat retrieval as weak.
+RAG_MIN_SCORE = 0.55
+
 LLM_OFFLINE_REPLY = (
     "I can't reach the AI assistant right now. A support agent can help if you "
     "escalate this conversation to a ticket."
+)
+
+NO_KB_CONTEXT = (
+    "No matching knowledge-base excerpts were found for this question. "
+    "Tell the user you are unsure and offer to escalate to a support ticket. "
+    "Do not invent policy details."
 )
 
 
@@ -32,6 +45,13 @@ class EscalationResult:
     ticket: Ticket
     already_escalated: bool
     bot_message: ChatMessage | None
+
+
+@dataclass
+class RetrievalBundle:
+    citations: list[Citation]
+    kb_context: str
+    retrieval_weak: bool
 
 
 async def create_conversation(db: AsyncSession, user: User) -> ChatConversation:
@@ -85,10 +105,59 @@ async def _recent_history(db: AsyncSession, conversation_id: str) -> list[tuple[
     return [(m.sender, m.content) for m in rows]
 
 
+def _citations_from_hits(hits: list[FaqSearchResult]) -> list[Citation]:
+    return [
+        Citation(
+            id=hit.id,
+            question=hit.question,
+            category=hit.category,
+            score=float(hit.score),
+        )
+        for hit in hits
+    ]
+
+
+def _format_kb_context(hits: list[FaqSearchResult]) -> str:
+    blocks = [
+        f"[{index}] id={hit.id} category={hit.category or 'General'}\n"
+        f"Q: {hit.question}\nA: {hit.answer}"
+        for index, hit in enumerate(hits, start=1)
+    ]
+    return (
+        "Knowledge-base excerpts (use these; cite FAQ ids when you rely on them):\n\n"
+        + "\n\n".join(blocks)
+    )
+
+
+async def retrieve_for_query(db: AsyncSession, query: str) -> RetrievalBundle:
+    """Vector search with text fallback. Marks weak when top score is below threshold."""
+    hits: list[FaqSearchResult] = []
+    try:
+        vector = await embed_text(query)
+        hits = await kb_service.search_faq_vector(db, vector, limit=RAG_TOP_K)
+    except EmbeddingProviderError as exc:
+        logger.warning("Embedding retrieval failed; falling back to text search: %s", exc)
+        hits = await kb_service.search_faq(db, query, limit=RAG_TOP_K)
+
+    strong = [hit for hit in hits if hit.score >= RAG_MIN_SCORE]
+    if strong:
+        return RetrievalBundle(
+            citations=_citations_from_hits(strong),
+            kb_context=_format_kb_context(strong),
+            retrieval_weak=False,
+        )
+
+    return RetrievalBundle(
+        citations=_citations_from_hits(hits[:3]),
+        kb_context=NO_KB_CONTEXT,
+        retrieval_weak=True,
+    )
+
+
 async def start_user_turn(
     db: AsyncSession, conversation_id: str, user: User, data: MessageCreate
-) -> tuple[ChatMessage, list[dict[str, str]]]:
-    """Persist the user's message and build the prompt the model will answer."""
+) -> tuple[ChatMessage, list[dict[str, str]], RetrievalBundle]:
+    """Persist the user's message, retrieve KB context, and build the LLM prompt."""
     conversation = await get_conversation(db, conversation_id, user)
     user_message = ChatMessage(
         conversationId=conversation.id,
@@ -99,8 +168,10 @@ async def start_user_turn(
     await db.commit()
     await db.refresh(user_message)
 
+    retrieval = await retrieve_for_query(db, data.content)
     history = await _recent_history(db, conversation.id)
-    return user_message, build_messages(history, data.mode)
+    prompt = build_messages(history, data.mode, kb_context=retrieval.kb_context)
+    return user_message, prompt, retrieval
 
 
 async def finish_bot_turn(db: AsyncSession, conversation_id: str, content: str) -> ChatMessage:
@@ -117,8 +188,8 @@ async def finish_bot_turn(db: AsyncSession, conversation_id: str, content: str) 
 
 async def send_message(
     db: AsyncSession, conversation_id: str, user: User, data: MessageCreate
-) -> tuple[ChatMessage, ChatMessage]:
-    user_message, prompt = await start_user_turn(db, conversation_id, user, data)
+) -> tuple[ChatMessage, ChatMessage, RetrievalBundle]:
+    user_message, prompt, retrieval = await start_user_turn(db, conversation_id, user, data)
 
     try:
         reply = await chat_completion(prompt, data.mode)
@@ -128,7 +199,7 @@ async def send_message(
         reply = LLM_OFFLINE_REPLY
 
     bot_message = await finish_bot_turn(db, conversation_id, reply)
-    return user_message, bot_message
+    return user_message, bot_message, retrieval
 
 
 def _format_transcript(messages: list[ChatMessage], user: User) -> str:

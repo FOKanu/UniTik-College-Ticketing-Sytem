@@ -33,6 +33,13 @@ class MessageResponse(BaseModel):
     model_config = {"from_attributes": True}
 
 
+class Citation(BaseModel):
+    id: str
+    question: str
+    category: str | None = None
+    score: float
+
+
 class EscalatedTicket(BaseModel):
     id: str
     subject: str

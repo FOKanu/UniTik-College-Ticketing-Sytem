@@ -70,8 +70,8 @@ apiClient.interceptors.response.use(
 /**
  * Data-source modes:
  * - `mock`   — full fixture UI (no FastAPI). Safe default for design work.
- * - `hybrid` — live auth + chat + tickets (LLM path); mock notifications /
- *              knowledge fixtures for slices the backend does not own yet.
+ * - `hybrid` — live auth + chat + tickets + knowledge/FAQ; mock notifications
+ *              for slices the backend does not own yet.
  * - `api`    — everything talks to FastAPI; unfinished slices degrade empty.
  */
 export type DataSourceMode = 'mock' | 'hybrid' | 'api'
@@ -106,9 +106,9 @@ export function usesMockNotifications(): boolean {
   return getDataSourceMode() !== 'api'
 }
 
-/** Knowledge/FAQ keeps rich fixtures outside pure api mode. */
+/** Knowledge/FAQ is live whenever auth is live (corpus is ingested on the backend). */
 export function usesMockKnowledge(): boolean {
-  return getDataSourceMode() !== 'api'
+  return getDataSourceMode() === 'mock'
 }
 
 /** Small delay so fixture-backed calls feel async like a real API. */

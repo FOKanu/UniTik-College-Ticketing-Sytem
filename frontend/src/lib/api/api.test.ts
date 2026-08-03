@@ -64,14 +64,14 @@ describe('data source modes', () => {
     expect(usesMockKnowledge()).toBe(true)
   })
 
-  it('treats hybrid as live auth/chat with fixture notifications', () => {
+  it('treats hybrid as live auth/chat/knowledge with fixture notifications', () => {
     vi.stubEnv('VITE_DATA_SOURCE', 'hybrid')
     expect(getDataSourceMode()).toBe('hybrid')
     expect(isMockDataSource()).toBe(false)
     expect(usesLiveAuth()).toBe(true)
     expect(usesLiveChat()).toBe(true)
     expect(usesMockNotifications()).toBe(true)
-    expect(usesMockKnowledge()).toBe(true)
+    expect(usesMockKnowledge()).toBe(false)
     vi.stubEnv('VITE_DATA_SOURCE', 'mock')
   })
 })

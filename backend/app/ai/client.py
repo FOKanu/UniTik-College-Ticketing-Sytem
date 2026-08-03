@@ -104,9 +104,17 @@ def _get_client(config: ResolvedLLMConfig) -> AsyncOpenAI:
 def build_messages(
     history: Iterable[tuple[str, str]],
     mode: ChatMode = ChatMode.QUICK,
+    *,
+    kb_context: str | None = None,
 ) -> list[dict[str, str]]:
-    """Turn ``(sender, content)`` rows into OpenAI-shaped messages."""
+    """Turn ``(sender, content)`` rows into OpenAI-shaped messages.
+
+    Optional ``kb_context`` is injected as a second system message so the model
+    grounds answers in retrieved FAQ excerpts (or is told none were found).
+    """
     messages: list[dict[str, str]] = [{"role": "system", "content": system_prompt(mode)}]
+    if kb_context is not None:
+        messages.append({"role": "system", "content": kb_context})
     for sender, content in history:
         role = "assistant" if sender == "bot" else "user"
         messages.append({"role": role, "content": content})
