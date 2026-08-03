@@ -20,11 +20,11 @@ How do I update my address or phone number?
 
 ### Answer
 
-Change it in the student portal under Personal Details. Updates apply immediately across university systems.
+Registrar owns official student-record updates. Open https://portal.university.example/registrar/forms, select Student Record Correction, enter the new address or phone number, provide any requested evidence, and submit. Registrar normally updates a complete request within five business days.
 
 ### Escalation
 
-Contact Academics to change your legal name.
+Email registrar@university.example if a complete request remains pending after five business days.
 
 ### Related phrasings
 
@@ -49,11 +49,11 @@ How do I change my legal name on university records?
 
 ### Answer
 
-Submit a name change request with a legal document showing the new name. Records are updated within 5 business days of approval.
+Submit Legal Name Change at https://portal.university.example/registrar/forms. Enter the current and new legal names, upload a government-issued document showing the change, and submit. Registrar normally updates the official student record within five business days.
 
 ### Escalation
 
-Contact Academics if your documents are in another language.
+Email registrar@university.example if documentation cannot be uploaded or a complete request exceeds five business days.
 
 ### Related phrasings
 
@@ -78,11 +78,11 @@ My name is spelled wrong on my student record.
 
 ### Answer
 
-Report the error in the portal under Personal Details with the correct spelling. Corrections are made within 3 business days.
+Open https://portal.university.example/registrar/forms and select Student Record Correction. Identify the misspelled field, provide the correct spelling, upload identity evidence, and submit. Registrar normally responds within five business days.
 
 ### Escalation
 
-Contact Academics if the error also appears on issued documents.
+Email registrar@university.example if the error appears on an issued document or remains after five business days.
 
 ### Related phrasings
 
@@ -107,11 +107,11 @@ How do I register for courses?
 
 ### Answer
 
-Course registration opens in the portal under Enrolment two weeks before term. Select your courses and confirm before the registration window closes.
+Registrar owns course-registration processing. Open https://portal.university.example/registration, choose the term, search for each course and section, add selections to your plan, and select Register. Confirm that every successful selection displays Registered.
 
 ### Escalation
 
-Contact Academics if a course you need is full or unavailable.
+Email registrar@university.example if an available eligible section remains pending for one business day; ask the academic department about approval for a closed course.
 
 ### Related phrasings
 
@@ -136,11 +136,11 @@ How do I add a class after registration closes?
 
 ### Answer
 
-Late additions are allowed during the first two weeks with instructor approval. Submit the add form in the portal with the signed approval attached.
+Check the exact add deadline at https://portal.university.example/academic-calendar. After online registration closes, obtain instructor and academic-unit approval, then submit Late Add at https://portal.university.example/registrar/forms with the course, section, credits, grading basis, and approvals. Registrar normally processes a complete request within three business days.
 
 ### Escalation
 
-Contact Academics if the instructor has not responded.
+Ask the academic department about missing approval; email registrar@university.example if an approved complete request exceeds three business days.
 
 ### Related phrasings
 
@@ -165,11 +165,11 @@ How do I drop a class?
 
 ### Answer
 
-Drop it in the student portal before the end of week 2. After week 2 you must submit form W-4 with an advisor signature.
+Before the published drop deadline, open https://portal.university.example/registration, choose Current Schedule, select the course, choose Drop, review the resulting credit load, and confirm. After add/drop, use Course Withdrawal at https://portal.university.example/registrar/forms with the required advisor approval.
 
 ### Escalation
 
-Contact Academics if you are past the deadline or need an appeal.
+Email registrar@university.example if a confirmed drop is still registered or a complete withdrawal request exceeds three business days; ask Academics about a late-withdrawal petition.
 
 ### Related phrasings
 
@@ -194,11 +194,11 @@ When is the add and drop deadline?
 
 ### Answer
 
-The add-and-drop period ends at 5:00 PM on the Friday of week 2. Dates are published in the academic calendar each August.
+Open https://portal.university.example/academic-calendar, select the academic year and term, and review the official add, drop, withdrawal, and late-withdrawal deadlines. Deadlines vary by term and course format, so the calendar date controls.
 
 ### Escalation
 
-Contact Academics if you missed the deadline.
+Email registrar@university.example if a published registration deadline is missing; ask Academics about approval or appeal options after a deadline.
 
 ### Related phrasings
 
@@ -252,11 +252,11 @@ How do I switch between full-time and part-time study?
 
 ### Answer
 
-Submit a study load change request in the portal before the term starts. Changing your load can affect visa status and funding eligibility.
+Discuss the academic impact with your advisor, then use https://portal.university.example/registration to add or drop courses before the applicable deadline. Registrar determines official full-time or part-time status from registered credits under the definitions at https://portal.university.example/registrar/enrollment-verification.
 
 ### Escalation
 
-Contact Academics to check how the change affects your situation.
+Ask your advisor about academic progress; email registrar@university.example if the official enrollment status does not match the registered credits after census.
 
 ### Related phrasings
 
@@ -339,11 +339,11 @@ I need a letter for my visa application.
 
 ### Answer
 
-Request a visa support letter in the portal under Documents. Letters are issued within 5 business days and include your enrolment dates.
+Open https://portal.university.example/registrar/enrollment-verification and select a current or future-term verification. Choose the term and purpose, enter the recipient requirements, and submit. Standard current-term letters are normally immediate after census; custom letters take up to three business days.
 
 ### Escalation
 
-Contact Academics if your embassy requires a specific format.
+Email registrar@university.example before submitting if the receiving authority requires custom wording or a sealed document.
 
 ### Related phrasings
 
@@ -595,11 +595,11 @@ How do I get a certificate of enrollment?
 
 ### Answer
 
-Request the certificate under “Documents” in the portal. It will be generated automatically. Download and print it, or share the digital version as needed.
+Open https://portal.university.example/registrar/enrollment-verification. Choose the term and verification purpose, confirm the recipient, select electronic download or delivery, and submit. Current-term letters are normally available immediately after census; custom letters take up to three business days.
 
 ### Escalation
 
-Contact Academics if the certificate cannot be generated.
+Email registrar@university.example if current enrollment is incorrect or a custom letter exceeds three business days.
 
 ### Related phrasings
 
@@ -624,11 +624,11 @@ How do I request my diploma or degree certificate?
 
 ### Answer
 
-Submit a diploma request form once all graduation requirements are confirmed complete. Processing takes 4 to 6 weeks before it is ready for pickup or mailing.
+Registrar owns diploma delivery. Open https://portal.university.example/registrar/diplomas, verify the diploma name and delivery address, and choose tracked delivery or pickup. Diplomas are normally released six to eight weeks after the degree is awarded.
 
 ### Escalation
 
-Contact Academics if your diploma is delayed beyond 6 weeks.
+Email registrar@university.example if the address must change before dispatch or eight weeks have passed since the degree award.
 
 ### Related phrasings
 
@@ -652,11 +652,11 @@ How do I request an official transcript?
 
 ### Answer
 
-Request a transcript under Documents and choose digital or printed format. Official transcripts are stamped and signed before release.
+Registrar owns official transcript requests. Open https://portal.university.example/registrar/transcripts, choose electronic or printed delivery, verify your personal details, enter the recipient information, and submit. Electronic requests are normally processed within one business day; printed requests are normally prepared within three business days.
 
 ### Escalation
 
-Contact Academics if you need an expedited transcript.
+Email registrar@university.example if the request remains pending beyond the stated processing time.
 
 ### Related phrasings
 
@@ -820,11 +820,11 @@ How do I withdraw from a course before the exam?
 
 ### Answer
 
-Submit a course withdrawal form under My Courses before the withdrawal deadline. Withdrawing removes the exam requirement for that course.
+Check the withdrawal deadline at https://portal.university.example/academic-calendar, then submit Course Withdrawal at https://portal.university.example/registrar/forms with the term, course, section, reason, and advisor approval. Registrar normally records an approved withdrawal within three business days; Academics decides any late petition.
 
 ### Escalation
 
-Contact Academics if the withdrawal deadline has passed.
+Ask Academics about a late petition after the deadline; email registrar@university.example if an approved complete withdrawal remains unrecorded after three business days.
 
 ### Related phrasings
 

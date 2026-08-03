@@ -11,7 +11,7 @@ from collections.abc import AsyncIterator, Iterable
 import httpx
 from openai import APIConnectionError, APIStatusError, AsyncOpenAI, OpenAIError
 
-from app.ai.llm_config import ResolvedLLMConfig, get_llm_config
+from app.ai.llm_config import LLMProvider, ResolvedLLMConfig, get_llm_config
 from app.ai.prompts import ChatMode, mode_settings, system_prompt
 
 logger = logging.getLogger(__name__)
@@ -197,6 +197,38 @@ async def stream_chat_completion(
 
 
 _health_cache: tuple[float, dict] | None = None
+
+
+async def create_embedding(text: str) -> list[float]:
+    """Return a single embedding vector via the OpenAI-compatible ``/v1/embeddings`` API.
+
+    Uses the same provider base URL and API key as chat. The vector length must equal
+    ``config.embedding_dimensions`` (1536 for ``FaqEntry.embedding``).
+    """
+    config = get_llm_config()
+    if not config.embeddings_configured:
+        raise LLMUnavailableError(
+            "No embedding model configured. Set EMBEDDING_MODEL "
+            "(or OPENAI_EMBEDDING_MODEL / OLLAMA_EMBEDDING_MODEL)."
+        )
+
+    client = _get_client(config)
+    kwargs: dict = {"model": config.embedding_model, "input": text}
+    # text-embedding-3-* accepts an explicit size; pin it to the pgvector column width.
+    if config.provider is LLMProvider.OPENAI and config.embedding_model.startswith(
+        "text-embedding-3"
+    ):
+        kwargs["dimensions"] = config.embedding_dimensions
+
+    try:
+        response = await client.embeddings.create(**kwargs)
+    except OpenAIError as exc:
+        logger.warning("Embedding request failed: %s", exc)
+        raise _wrap_error(exc, config) from exc
+
+    if not response.data:
+        raise LLMUnavailableError("Embedding provider returned no vectors")
+    return list(response.data[0].embedding)
 
 
 async def check_llm_health(force: bool = False) -> dict:

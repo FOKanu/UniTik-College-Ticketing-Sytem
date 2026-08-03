@@ -67,12 +67,18 @@ case "$AREA" in
     ALLOWED+=('^backend/scripts/')
     ;;
   ai-rag)
+    ALLOWED+=('^backend/app/ai/')
     ALLOWED+=('^backend/app/api/v1/chat\.py$')
     ALLOWED+=('^backend/app/api/v1/kb\.py$')
     ALLOWED+=('^backend/app/services/chat\.py$')
     ALLOWED+=('^backend/app/services/kb\.py$')
+    ALLOWED+=('^backend/app/services/kb_')
     ALLOWED+=('^backend/app/schemas/chat\.py$')
     ALLOWED+=('^backend/app/schemas/kb\.py$')
+    ALLOWED+=('^backend/scripts/ingest_kb\.py$')
+    ALLOWED+=('^backend/tests/test_kb')
+    ALLOWED+=('^backend/\.env\.example$')
+    ALLOWED+=('^scripts/check-workstream-paths\.sh$')
     ALLOWED+=('^frontend/src/modules/chat/')
     ALLOWED+=('^frontend/src/modules/faq/')
     ;;
