@@ -13,6 +13,7 @@ from app.schemas.tickets import (
     TicketResponse,
     TicketUpdate,
 )
+from app.services import notifications as notification_service
 from app.services import sla as sla_service
 from app.services import users as users_service
 
@@ -118,9 +119,12 @@ async def update_ticket(
 
     previous_status = ticket.status
     previous_priority = ticket.priority
+    previous_assignee = ticket.assignedToId
 
     for key, value in updates.items():
         setattr(ticket, key, value)
+
+    pending_notes: list = []
 
     if "status" in updates and ticket.status != previous_status:
         db.add(
@@ -132,6 +136,30 @@ async def update_ticket(
                 reason="staff_update",
             )
         )
+        pending_notes.append(
+            notification_service.create_in_app(
+                user_id=ticket.createdById,
+                actor_id=user.id,
+                ticket_id=ticket.id,
+                title="Ticket update",
+                body=(
+                    f'"{ticket.subject}" moved to '
+                    f"{ticket.status.value.replace('_', ' ').title()}."
+                ),
+            )
+        )
+
+    if "assignedToId" in updates and ticket.assignedToId != previous_assignee:
+        if ticket.assignedToId:
+            pending_notes.append(
+                notification_service.create_in_app(
+                    user_id=ticket.assignedToId,
+                    actor_id=user.id,
+                    ticket_id=ticket.id,
+                    title="Ticket assigned",
+                    body=f'You were assigned "{ticket.subject}".',
+                )
+            )
 
     if "priority" in updates and ticket.priority != previous_priority:
         # Priority change restarts the first-response clock under the new policy.
@@ -140,6 +168,7 @@ async def update_ticket(
     else:
         sla_service.refresh_breach(ticket)
 
+    await notification_service.notify_many(db, pending_notes)
     await db.commit()
     # Reload the people relationships so a reassignment returns the new name.
     await db.refresh(ticket, ["created_by", "assigned_to"])
@@ -192,6 +221,33 @@ async def add_comment(
         isInternal=data.isInternal,
     )
     db.add(comment)
+
+    # Public comments notify the counterpart; internal notes stay staff-only.
+    pending_notes: list = []
+    if not data.isInternal:
+        if user.role == Role.STUDENT:
+            if ticket.assignedToId:
+                pending_notes.append(
+                    notification_service.create_in_app(
+                        user_id=ticket.assignedToId,
+                        actor_id=user.id,
+                        ticket_id=ticket.id,
+                        title="Student reply",
+                        body=f'New reply on "{ticket.subject}".',
+                    )
+                )
+        elif ticket.createdById:
+            pending_notes.append(
+                notification_service.create_in_app(
+                    user_id=ticket.createdById,
+                    actor_id=user.id,
+                    ticket_id=ticket.id,
+                    title="Agent reply",
+                    body=f'Support replied on "{ticket.subject}".',
+                )
+            )
+    await notification_service.notify_many(db, pending_notes)
+
     await db.commit()
     await db.refresh(comment)
     return comment
