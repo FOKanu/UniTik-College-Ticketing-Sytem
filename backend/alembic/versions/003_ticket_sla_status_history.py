@@ -2,65 +2,54 @@
 
 Prototype first-response SLA is stamped on Ticket.slaDueAt; status transitions
 (including create and reopen) are appended to TicketStatusHistory.
+
+Uses raw SQL (same style as 001_baseline) so we reference the existing
+Postgres "TicketStatus" enum without SQLAlchemy attempting CREATE TYPE again.
 """
 
-import sqlalchemy as sa
 from alembic import op
-from sqlalchemy.dialects import postgresql
 
 revision = "003_ticket_sla_status_history"
 down_revision = "002_faq_embedding_768"
 branch_labels = None
 depends_on = None
 
-# Reuse the existing Postgres enum — do not CREATE TYPE again.
-ticket_status = postgresql.ENUM(
-    "OPEN",
-    "IN_PROGRESS",
-    "RESOLVED",
-    "CLOSED",
-    name="TicketStatus",
-    create_type=False,
-)
-
 
 def upgrade() -> None:
-    op.add_column(
-        "Ticket",
-        sa.Column("slaDueAt", sa.DateTime(timezone=False), nullable=True),
+    op.execute('ALTER TABLE "Ticket" ADD COLUMN IF NOT EXISTS "slaDueAt" TIMESTAMP')
+    op.execute(
+        'ALTER TABLE "Ticket" ADD COLUMN IF NOT EXISTS "slaBreachedAt" TIMESTAMP'
     )
-    op.add_column(
-        "Ticket",
-        sa.Column("slaBreachedAt", sa.DateTime(timezone=False), nullable=True),
+    op.execute(
+        """
+        CREATE TABLE IF NOT EXISTS "TicketStatusHistory" (
+            "id" TEXT NOT NULL,
+            "ticketId" TEXT NOT NULL,
+            "fromStatus" "TicketStatus",
+            "toStatus" "TicketStatus" NOT NULL,
+            "changedById" TEXT,
+            "reason" TEXT,
+            "createdAt" TIMESTAMP NOT NULL DEFAULT CURRENT_TIMESTAMP,
+            CONSTRAINT "TicketStatusHistory_pkey" PRIMARY KEY ("id"),
+            CONSTRAINT "TicketStatusHistory_ticketId_fkey"
+                FOREIGN KEY ("ticketId") REFERENCES "Ticket"("id"),
+            CONSTRAINT "TicketStatusHistory_changedById_fkey"
+                FOREIGN KEY ("changedById") REFERENCES "User"("id")
+        )
+        """
     )
-
-    op.create_table(
-        "TicketStatusHistory",
-        sa.Column("id", sa.String(), primary_key=True, nullable=False),
-        sa.Column("ticketId", sa.String(), sa.ForeignKey("Ticket.id"), nullable=False),
-        sa.Column("fromStatus", ticket_status, nullable=True),
-        sa.Column("toStatus", ticket_status, nullable=False),
-        sa.Column("changedById", sa.String(), sa.ForeignKey("User.id"), nullable=True),
-        sa.Column("reason", sa.String(), nullable=True),
-        sa.Column(
-            "createdAt",
-            sa.DateTime(timezone=False),
-            server_default=sa.text("CURRENT_TIMESTAMP"),
-            nullable=False,
-        ),
-    )
-    op.create_index(
-        "ix_TicketStatusHistory_ticketId_createdAt",
-        "TicketStatusHistory",
-        ["ticketId", "createdAt"],
+    op.execute(
+        """
+        CREATE INDEX IF NOT EXISTS "ix_TicketStatusHistory_ticketId_createdAt"
+        ON "TicketStatusHistory" ("ticketId", "createdAt")
+        """
     )
 
 
 def downgrade() -> None:
-    op.drop_index(
-        "ix_TicketStatusHistory_ticketId_createdAt",
-        table_name="TicketStatusHistory",
+    op.execute(
+        'DROP INDEX IF EXISTS "ix_TicketStatusHistory_ticketId_createdAt"'
     )
-    op.drop_table("TicketStatusHistory")
-    op.drop_column("Ticket", "slaBreachedAt")
-    op.drop_column("Ticket", "slaDueAt")
+    op.execute('DROP TABLE IF EXISTS "TicketStatusHistory"')
+    op.execute('ALTER TABLE "Ticket" DROP COLUMN IF EXISTS "slaBreachedAt"')
+    op.execute('ALTER TABLE "Ticket" DROP COLUMN IF EXISTS "slaDueAt"')
