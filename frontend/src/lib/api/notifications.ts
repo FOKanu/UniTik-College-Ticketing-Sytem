@@ -1,19 +1,46 @@
 import { mockNotifications } from '@/mocks/data'
 import type { NotificationItem } from '@/types'
-import { mockLatency, usesMockNotifications } from './client'
+import { type Envelope, unwrap } from './adapters'
+import {
+  get,
+  mockLatency,
+  patch,
+  post,
+  usesMockNotifications,
+} from './client'
 import { ApiError } from './errors'
 
-/**
- * Notifications are not a backend slice yet. Hybrid/mock keep the fixture
- * inbox so the shell looks complete; pure api mode reports empty.
- */
+interface BackendNotification {
+  id: string
+  title: string
+  body: string
+  read: boolean
+  createdAt: string
+  ticketId?: string | null
+}
+
+function toItem(raw: BackendNotification): NotificationItem {
+  return {
+    id: raw.id,
+    title: raw.title,
+    body: raw.body,
+    read: raw.read,
+    createdAt: raw.createdAt,
+    ticketId: raw.ticketId ?? undefined,
+  }
+}
+
 export const notificationsApi = {
   async list(): Promise<NotificationItem[]> {
     if (usesMockNotifications()) {
       await mockLatency(180)
       return structuredClone(mockNotifications)
     }
-    return []
+
+    const raw = unwrap(
+      await get<Envelope<BackendNotification[]>>('/notifications'),
+    )
+    return raw.map(toItem)
   },
 
   async markRead(id: string): Promise<NotificationItem> {
@@ -29,10 +56,13 @@ export const notificationsApi = {
       item.read = true
       return structuredClone(item)
     }
-    throw new ApiError('Notification not found.', {
-      code: 'NOT_FOUND',
-      status: 404,
-    })
+
+    const updated = unwrap(
+      await patch<Envelope<BackendNotification>>(
+        `/notifications/${id}/read`,
+      ),
+    )
+    return toItem(updated)
   },
 
   async markAllRead(): Promise<void> {
@@ -43,6 +73,11 @@ export const notificationsApi = {
       })
       return
     }
-    // Nothing to mark while the inbox is always empty.
+
+    unwrap(
+      await post<Envelope<{ updated: number }>>(
+        '/notifications/mark-all-read',
+      ),
+    )
   },
 }

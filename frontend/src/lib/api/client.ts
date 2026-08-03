@@ -70,8 +70,7 @@ apiClient.interceptors.response.use(
 /**
  * Data-source modes:
  * - `mock`   — full fixture UI (no FastAPI). Safe default for design work.
- * - `hybrid` — live auth + chat + tickets + knowledge/FAQ; mock notifications
- *              for slices the backend does not own yet.
+ * - `hybrid` — live auth + chat + tickets + knowledge/FAQ + notifications.
  * - `api`    — everything talks to FastAPI; unfinished slices degrade empty.
  */
 export type DataSourceMode = 'mock' | 'hybrid' | 'api'
@@ -101,9 +100,9 @@ export function usesLiveTickets(): boolean {
   return getDataSourceMode() !== 'mock'
 }
 
-/** Notifications have no backend slice — prefer fixtures outside pure api. */
+/** Notifications are live whenever auth is live (inbox API exists). */
 export function usesMockNotifications(): boolean {
-  return getDataSourceMode() !== 'api'
+  return getDataSourceMode() === 'mock'
 }
 
 /** Knowledge/FAQ is live whenever auth is live (corpus is ingested on the backend). */
