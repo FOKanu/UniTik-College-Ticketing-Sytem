@@ -161,7 +161,8 @@ class Notification(Base):
     id: Mapped[str] = mapped_column(String, primary_key=True, default=lambda: str(uuid.uuid4()))
     userId: Mapped[str] = mapped_column(String, ForeignKey("User.id"), nullable=False)
     ticketId: Mapped[str | None] = mapped_column(String, nullable=True)
-    channel: Mapped[str] = mapped_column(String, default="EMAIL", nullable=False)
+    channel: Mapped[str] = mapped_column(String, default="IN_APP", nullable=False)
+    title: Mapped[str] = mapped_column(String, nullable=False)
     message: Mapped[str] = mapped_column(Text, nullable=False)
     readAt: Mapped[datetime | None] = mapped_column(DateTime(timezone=False), nullable=True)
     createdAt: Mapped[datetime] = mapped_column(
