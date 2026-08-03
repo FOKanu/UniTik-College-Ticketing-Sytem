@@ -6,11 +6,22 @@ Prototype first-response SLA is stamped on Ticket.slaDueAt; status transitions
 
 import sqlalchemy as sa
 from alembic import op
+from sqlalchemy.dialects import postgresql
 
 revision = "003_ticket_sla_status_history"
 down_revision = "002_faq_embedding_768"
 branch_labels = None
 depends_on = None
+
+# Reuse the existing Postgres enum — do not CREATE TYPE again.
+ticket_status = postgresql.ENUM(
+    "OPEN",
+    "IN_PROGRESS",
+    "RESOLVED",
+    "CLOSED",
+    name="TicketStatus",
+    create_type=False,
+)
 
 
 def upgrade() -> None:
@@ -27,30 +38,8 @@ def upgrade() -> None:
         "TicketStatusHistory",
         sa.Column("id", sa.String(), primary_key=True, nullable=False),
         sa.Column("ticketId", sa.String(), sa.ForeignKey("Ticket.id"), nullable=False),
-        sa.Column(
-            "fromStatus",
-            sa.Enum(
-                "OPEN",
-                "IN_PROGRESS",
-                "RESOLVED",
-                "CLOSED",
-                name="TicketStatus",
-                create_type=False,
-            ),
-            nullable=True,
-        ),
-        sa.Column(
-            "toStatus",
-            sa.Enum(
-                "OPEN",
-                "IN_PROGRESS",
-                "RESOLVED",
-                "CLOSED",
-                name="TicketStatus",
-                create_type=False,
-            ),
-            nullable=False,
-        ),
+        sa.Column("fromStatus", ticket_status, nullable=True),
+        sa.Column("toStatus", ticket_status, nullable=False),
         sa.Column("changedById", sa.String(), sa.ForeignKey("User.id"), nullable=True),
         sa.Column("reason", sa.String(), nullable=True),
         sa.Column(
