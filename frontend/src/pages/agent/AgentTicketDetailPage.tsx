@@ -8,6 +8,7 @@ import {
   DepartmentBadge,
   PriorityBadge,
   Select,
+  SlaBadge,
   StatusBadge,
   Textarea,
   Toggle,
@@ -333,9 +334,10 @@ export function AgentTicketDetailPage() {
             <div>
               <dt>SLA</dt>
               <dd>
-                {ticket.slaHoursRemaining != null
-                  ? `${ticket.slaHoursRemaining}h remaining`
-                  : '—'}
+                <SlaBadge
+                  hoursRemaining={ticket.slaHoursRemaining}
+                  breached={ticket.slaBreached}
+                />
               </dd>
             </div>
           </dl>

@@ -44,6 +44,10 @@ interface BackendTicket {
   createdByName?: string | null
   createdByEmail?: string | null
   assignedToName?: string | null
+  slaDueAt?: string | null
+  slaBreachedAt?: string | null
+  slaHoursRemaining?: number | null
+  slaBreached?: boolean
 }
 
 interface BackendComment {
@@ -103,6 +107,10 @@ function toTicket(
     requesterEmail: raw.createdByEmail ?? undefined,
     createdAt: raw.createdAt,
     updatedAt: raw.updatedAt,
+    slaDueAt: raw.slaDueAt ?? null,
+    slaBreachedAt: raw.slaBreachedAt ?? null,
+    slaHoursRemaining: raw.slaHoursRemaining ?? undefined,
+    slaBreached: raw.slaBreached ?? false,
     comments,
     attachments: attachments.length > 0 ? attachments : undefined,
   }

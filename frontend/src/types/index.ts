@@ -51,7 +51,12 @@ export interface Ticket {
   assignedName?: string
   createdAt: string
   updatedAt: string
+  /** First-response due timestamp from the API (ISO). */
+  slaDueAt?: string | null
+  /** Set once when the open ticket passed slaDueAt. */
+  slaBreachedAt?: string | null
   slaHoursRemaining?: number
+  slaBreached?: boolean
   comments: TicketComment[]
   attachments?: TicketAttachment[]
 }

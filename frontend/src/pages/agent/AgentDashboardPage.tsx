@@ -1,7 +1,7 @@
 import { useEffect } from 'react'
 import { Link } from 'react-router-dom'
 import { ROUTES, agentTicketDetailPath } from '@/app/routes'
-import { PriorityBadge, StatusBadge } from '@/components/ui'
+import { PriorityBadge, SlaBadge, StatusBadge } from '@/components/ui'
 import { useAuthStore, useTicketStore } from '@/stores'
 import styles from './AgentDashboardPage.module.css'
 
@@ -33,12 +33,16 @@ export function AgentDashboardPage() {
   }, [setScope, setFilters, fetchList])
 
   const firstName = user?.displayName?.split(' ')[0] ?? 'Agent'
-  const assigned = items.filter((t) => t.assignedTo === 'agent-1').length
+  const assigned = items.filter((t) => t.assignedTo === user?.id).length
   const unassigned = items.filter((t) => !t.assignedTo).length
   const resolvedToday = items.filter((t) => t.status === 'resolved').length
   const queue = items.slice(0, 6)
+  const slaBreached = items.filter((t) => t.slaBreached).length
   const slaAtRisk = items.filter(
-    (t) => t.slaHoursRemaining != null && t.slaHoursRemaining <= 8,
+    (t) =>
+      !t.slaBreached &&
+      t.slaHoursRemaining != null &&
+      t.slaHoursRemaining <= 8,
   ).length
 
   const byDept = ['Academics', 'IT', 'Finance', 'Maintenance'].map((dept) => ({
@@ -105,9 +109,10 @@ export function AgentDashboardPage() {
                     <PriorityBadge priority={ticket.priority} />
                   </td>
                   <td>
-                    {ticket.slaHoursRemaining != null
-                      ? `${ticket.slaHoursRemaining}h`
-                      : '—'}
+                    <SlaBadge
+                      hoursRemaining={ticket.slaHoursRemaining}
+                      breached={ticket.slaBreached}
+                    />
                   </td>
                   <td>
                     <StatusBadge status={ticket.status} />
@@ -149,9 +154,11 @@ export function AgentDashboardPage() {
           <section className={styles.slaBox} role="status">
             <h2>SLA warning</h2>
             <p>
-              {slaAtRisk > 0
-                ? `${slaAtRisk} ticket${slaAtRisk === 1 ? '' : 's'} within 8 hours of SLA.`
-                : 'No tickets currently at SLA risk.'}
+              {slaBreached > 0
+                ? `${slaBreached} breached · ${slaAtRisk} within 8 hours.`
+                : slaAtRisk > 0
+                  ? `${slaAtRisk} ticket${slaAtRisk === 1 ? '' : 's'} within 8 hours of SLA.`
+                  : 'No tickets currently at SLA risk.'}
             </p>
             <Link to={ROUTES.queue}>Review at-risk tickets</Link>
           </section>

@@ -222,8 +222,11 @@ export const useTicketStore = create<TicketState>((set, get) => ({
                   ? previous.assignedName
                   : ticket.assignedName),
               attachments: ticket.attachments ?? previous.attachments,
+              slaDueAt: ticket.slaDueAt ?? previous.slaDueAt,
+              slaBreachedAt: ticket.slaBreachedAt ?? previous.slaBreachedAt,
               slaHoursRemaining:
                 ticket.slaHoursRemaining ?? previous.slaHoursRemaining,
+              slaBreached: ticket.slaBreached ?? previous.slaBreached,
             }
           : ticket
         return {

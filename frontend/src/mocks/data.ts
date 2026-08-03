@@ -58,6 +58,7 @@ export const mockTickets: Ticket[] = [
     createdAt: '2026-07-20T09:12:00.000Z',
     updatedAt: '2026-07-21T11:05:00.000Z',
     slaHoursRemaining: 6,
+    slaBreached: false,
     attachments: [{ id: 'a1', name: 'exam_error_screenshot.png' }],
     comments: [
       {
@@ -142,7 +143,8 @@ export const mockTickets: Ticket[] = [
     assignedName: 'J. Novak',
     createdAt: '2026-07-20T07:00:00.000Z',
     updatedAt: '2026-07-20T07:00:00.000Z',
-    slaHoursRemaining: 10,
+    slaHoursRemaining: -3,
+    slaBreached: true,
     attachments: [{ id: 'a2', name: 'vpn_error_screenshot.png' }],
     comments: [
       {

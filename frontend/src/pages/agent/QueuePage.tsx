@@ -7,7 +7,9 @@ import {
   PriorityBadge,
   SearchField,
   Select,
+  SlaBadge,
   StatusBadge,
+  Badge,
 } from '@/components/ui'
 import { usersApi, type StaffMember } from '@/lib/api'
 import { useAuthStore, useTicketStore } from '@/stores'
@@ -441,11 +443,18 @@ export function QueuePage() {
                   <td>
                     <StatusBadge status={ticket.status} />
                   </td>
-                  <td>{ticket.assignedName ?? 'Unassigned'}</td>
                   <td>
-                    {ticket.slaHoursRemaining != null
-                      ? `${ticket.slaHoursRemaining}h`
-                      : '—'}
+                    {ticket.assignedTo ? (
+                      (ticket.assignedName ?? 'Assigned')
+                    ) : (
+                      <Badge tone="warn">Unassigned</Badge>
+                    )}
+                  </td>
+                  <td>
+                    <SlaBadge
+                      hoursRemaining={ticket.slaHoursRemaining}
+                      breached={ticket.slaBreached}
+                    />
                   </td>
                 </tr>
               ))}
