@@ -5,15 +5,20 @@ Demo password for all seeded users: demo1234
 
 import asyncio
 import uuid
+from datetime import datetime, timedelta
 
 from sqlalchemy import select
 
 from app.core.security import hash_password
-from app.db.base import Role, TicketStatus
+from app.db.base import Role, TicketPriority, TicketStatus
 from app.db.session import async_session_factory
-from app.models import Attachment, Problem, Ticket, User
+from app.models import Attachment, Problem, Ticket, TicketStatusHistory, User
 
 DEMO_PASSWORD = "demo1234"
+
+
+def _due(hours: int) -> datetime:
+    return datetime.now() + timedelta(hours=hours)
 
 
 async def seed() -> None:
@@ -86,10 +91,12 @@ async def seed() -> None:
             subject="Cannot access course portal",
             description="Login page redirects back to itself after entering valid credentials.",
             status=TicketStatus.OPEN,
+            priority=TicketPriority.HIGH,
             department="Computer Science",
             category="Access",
             createdById=student_jordan.id,
             assignedToId=staff_tier1.id,
+            slaDueAt=_due(24),
         )
         wifi_ticket = Ticket(
             id=str(uuid.uuid4()),
@@ -98,40 +105,74 @@ async def seed() -> None:
                 "WiFi has been dropping every few minutes in the second-floor labs since Monday."
             ),
             status=TicketStatus.IN_PROGRESS,
+            priority=TicketPriority.HIGH,
             department="Biology",
             category="Network",
             createdById=student_sophie.id,
             assignedToId=staff_tier2.id,
+            slaDueAt=_due(24),
         )
         grade_ticket = Ticket(
             id=str(uuid.uuid4()),
             subject="Grade appeal not reflected in transcript",
             description="Approved grade change from last semester still shows the old grade.",
             status=TicketStatus.RESOLVED,
+            priority=TicketPriority.MEDIUM,
             department="Mechanical Engineering",
             category="Academic Records",
             createdById=student_liam.id,
             assignedToId=staff_tier1.id,
+            slaDueAt=_due(72),
         )
         vpn_ticket = Ticket(
             id=str(uuid.uuid4()),
             subject="Intermittent VPN disconnects",
             description="VPN connection drops every 10-15 minutes when working from off campus.",
             status=TicketStatus.IN_PROGRESS,
+            priority=TicketPriority.MEDIUM,
             department="Computer Science",
             category="Network",
             createdById=student_jordan.id,
             assignedToId=staff_tier2.id,
+            slaDueAt=_due(72),
         )
         unclassified_ticket = Ticket(
             id=str(uuid.uuid4()),
             subject="App keeps crashing, not sure who to contact",
             description="The mobile app crashes on launch.",
             status=TicketStatus.OPEN,
+            priority=TicketPriority.LOW,
             createdById=student_sophie.id,
+            slaDueAt=_due(120),
         )
         db.add_all([portal_ticket, wifi_ticket, grade_ticket, vpn_ticket, unclassified_ticket])
         await db.flush()
+
+        db.add_all(
+            [
+                TicketStatusHistory(
+                    ticketId=portal_ticket.id,
+                    fromStatus=None,
+                    toStatus=TicketStatus.OPEN,
+                    changedById=student_jordan.id,
+                    reason="created",
+                ),
+                TicketStatusHistory(
+                    ticketId=wifi_ticket.id,
+                    fromStatus=None,
+                    toStatus=TicketStatus.OPEN,
+                    changedById=student_sophie.id,
+                    reason="created",
+                ),
+                TicketStatusHistory(
+                    ticketId=wifi_ticket.id,
+                    fromStatus=TicketStatus.OPEN,
+                    toStatus=TicketStatus.IN_PROGRESS,
+                    changedById=staff_tier2.id,
+                    reason="staff_update",
+                ),
+            ]
+        )
 
         network_problem = Problem(
             id=str(uuid.uuid4()),
