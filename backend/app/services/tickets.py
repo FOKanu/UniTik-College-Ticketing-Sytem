@@ -11,6 +11,7 @@ from app.schemas.tickets import (
     TicketResponse,
     TicketUpdate,
 )
+from app.services import users as users_service
 
 
 async def list_tickets(db: AsyncSession, user: User) -> list[Ticket]:
@@ -53,6 +54,12 @@ async def update_ticket(
     if user.role == Role.STUDENT:
         raise ForbiddenError("Students cannot update tickets")
     updates = data.model_dump(exclude_unset=True)
+
+    # Validate assignee before applying — null clears assignment; any id must
+    # resolve to a STAFF/ADMIN account so students cannot be assigned tickets.
+    if "assignedToId" in updates and updates["assignedToId"] is not None:
+        await users_service.get_assignable_user(db, updates["assignedToId"])
+
     for key, value in updates.items():
         setattr(ticket, key, value)
     await db.commit()
