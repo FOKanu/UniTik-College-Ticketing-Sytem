@@ -203,7 +203,7 @@ async def create_embedding(text: str) -> list[float]:
     """Return a single embedding vector via the OpenAI-compatible ``/v1/embeddings`` API.
 
     Uses the same provider base URL and API key as chat. The vector length must equal
-    ``config.embedding_dimensions`` (1536 for ``FaqEntry.embedding``).
+    ``config.embedding_dimensions`` (768 for ``FaqEntry.embedding`` / nomic-embed-text).
     """
     config = get_llm_config()
     if not config.embeddings_configured:

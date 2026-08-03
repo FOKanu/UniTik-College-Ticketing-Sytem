@@ -136,7 +136,7 @@ class FaqEntry(Base):
     language: Mapped[str] = mapped_column(String, default="en", nullable=False)
     category: Mapped[str | None] = mapped_column(String, nullable=True)
     contextBlob: Mapped[str | None] = mapped_column(Text, nullable=True)
-    embedding = mapped_column(Vector(1536), nullable=True)
+    embedding = mapped_column(Vector(768), nullable=True)
     createdAt: Mapped[datetime] = mapped_column(
         DateTime(timezone=False), server_default=func.now(), nullable=False
     )

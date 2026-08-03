@@ -50,7 +50,7 @@ def configure(monkeypatch, events, entries, *, embedding_error=None, commit_erro
         events.append("embed")
         if embedding_error:
             raise embedding_error
-        return [0.0] * 1536
+        return [0.0] * 768
 
     def session_factory():
         return FakeSession(events, commit_error)
@@ -164,7 +164,7 @@ async def test_upsert_inserts_then_updates_by_id_without_committing_or_deleting(
         language="en",
         category="Academics",
         context_blob="{}",
-        embedding=[0.0] * 1536,
+        embedding=[0.0] * 768,
     )
     assert create_session.added == [created]
 
@@ -177,7 +177,7 @@ async def test_upsert_inserts_then_updates_by_id_without_committing_or_deleting(
         language="en",
         category="Academics",
         context_blob="{}",
-        embedding=[1.0] * 1536,
+        embedding=[1.0] * 768,
     )
     assert updated is created
     assert updated.question == "Updated"

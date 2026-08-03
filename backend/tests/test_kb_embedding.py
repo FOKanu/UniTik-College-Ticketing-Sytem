@@ -83,7 +83,7 @@ async def test_embed_text_dimension_mismatch_is_rejected(monkeypatch):
         "create_embedding",
         AsyncMock(return_value=[0.1] * 8),
     )
-    with pytest.raises(InvalidEmbeddingResponseError, match="1536"):
+    with pytest.raises(InvalidEmbeddingResponseError, match="768"):
         await embed_text("context")
 
 
@@ -111,4 +111,4 @@ async def test_cancellation_propagates(monkeypatch):
 
 def test_validate_embedding_vector_rejects_wrong_width():
     with pytest.raises(InvalidEmbeddingResponseError):
-        validate_embedding_vector([1.0, 2.0], expected_dimensions=1536)
+        validate_embedding_vector([1.0, 2.0], expected_dimensions=768)

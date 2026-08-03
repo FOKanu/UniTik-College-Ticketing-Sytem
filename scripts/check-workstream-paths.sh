@@ -75,6 +75,8 @@ case "$AREA" in
     ALLOWED+=('^backend/app/services/kb_')
     ALLOWED+=('^backend/app/schemas/chat\.py$')
     ALLOWED+=('^backend/app/schemas/kb\.py$')
+    ALLOWED+=('^backend/app/models/')
+    ALLOWED+=('^backend/alembic/')
     ALLOWED+=('^backend/scripts/ingest_kb\.py$')
     ALLOWED+=('^backend/tests/test_kb')
     ALLOWED+=('^backend/\.env\.example$')

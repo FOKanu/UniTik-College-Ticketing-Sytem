@@ -79,7 +79,8 @@ globally unique. Existing IDs in established documents must not be renumbered.
 The active application uses FastAPI with SQLAlchemy. The administrative ingester parses the canonical
 Markdown, builds embeddings through the shared OpenAI-compatible LLM client in ``app.ai`` (same Funnel /
 OpenAI / Gemini credentials as chat), and stores FAQ rows in PostgreSQL with pgvector. Vectors must be
-exactly 1,536 finite floats to match ``FaqEntry.embedding``. Configure ``EMBEDDING_MODEL`` /
+exactly **768** finite floats to match ``FaqEntry.embedding`` (Ollama ``nomic-embed-text``; OpenAI
+``text-embedding-3-*`` can request ``dimensions=768``). Configure ``EMBEDDING_MODEL`` /
 ``OPENAI_EMBEDDING_MODEL`` / ``OLLAMA_EMBEDDING_MODEL``; provider errors exposed by the command are
 sanitized.
 
@@ -100,6 +101,7 @@ ID uniqueness, and global normalized-question uniqueness. Source order is preser
 9. escalation guidance
 
 Arrays retain Markdown order. The serialized `contextBlob` is distinct from the numeric pgvector embedding.
+The pgvector column width is **768** (aligned with Ollama `nomic-embed-text`).
 
 ### Current implementation status
 
@@ -107,7 +109,7 @@ Arrays retain Markdown order. The serialized `contextBlob` is distinct from the 
 | --- | --- |
 | Canonical Markdown corpus | Implemented and strictly validated: 6 files / 183 entries |
 | Synthetic-content safeguards | Implemented in tests for de-identification, domains, IDs, counts, links, and duplicate questions |
-| Embedding adapter | Implemented via ``app.ai.create_embedding`` (OpenAI-compatible ``/v1/embeddings``); enforces 1,536 dims |
+| Embedding adapter | Implemented via ``app.ai.create_embedding`` (OpenAI-compatible ``/v1/embeddings``); enforces **768** dims |
 | Database ingestion | Implemented as explicit, atomic insert-or-update ingestion into PostgreSQL/pgvector |
 | Vector similarity query | Implemented in the service layer using cosine distance (`<=>`) |
 | Public `POST /api/v1/kb/search` | **Text search only**; it currently searches question/answer text with `ILIKE` |
@@ -129,10 +131,10 @@ python -m scripts.ingest_kb
 ```
 
 Prerequisites are a migrated PostgreSQL database with the pgvector extension, a reachable LLM provider that
-exposes OpenAI-compatible embeddings, and an embedding model that returns **exactly 1536** dimensions
-(see `backend/.env.example`: `OPENAI_EMBEDDING_MODEL=text-embedding-3-small`, or set
-`OLLAMA_EMBEDDING_MODEL` / `EMBEDDING_MODEL`). Chat can stay on Ollama while embeddings use OpenAI if you
-set `LLM_PROVIDER=openai` only for the ingest run (or point Ollama at a 1536-dim embed model).
+exposes OpenAI-compatible embeddings, and an embedding model that returns **exactly 768** dimensions
+(see `backend/.env.example`: `OLLAMA_EMBEDDING_MODEL=nomic-embed-text:latest`, or
+`OPENAI_EMBEDDING_MODEL=text-embedding-3-small` with `dimensions=768`). Chat can stay on Ollama while
+embeddings use the same Funnel endpoint.
 
 Ingestion does not run at FastAPI startup. It reads and validates the complete corpus before database work,
 obtains embeddings before opening the database session, then performs insert-or-update operations in one

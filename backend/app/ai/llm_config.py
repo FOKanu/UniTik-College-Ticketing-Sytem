@@ -39,7 +39,7 @@ class ResolvedLLMConfig:
     temperature: float
     max_tokens: int
     embedding_model: str = ""
-    embedding_dimensions: int = 1536
+    embedding_dimensions: int = 768
     extra_body: dict = field(default_factory=dict)
 
     @property
@@ -75,11 +75,12 @@ class LLMSettings(BaseSettings):
     llm_max_tokens: int = 800
 
     # Embeddings share the resolved chat provider base URL / API key unless overridden.
-    # FaqEntry.embedding is fixed at 1536 dims — the model must match (or support dimensions=).
+    # FaqEntry.embedding is Vector(768) — matches Ollama nomic-embed-text; OpenAI
+    # text-embedding-3-* can pin dimensions=768 via the embeddings API.
     embedding_model: str = ""
-    embedding_dimensions: int = 1536
+    embedding_dimensions: int = 768
     openai_embedding_model: str = "text-embedding-3-small"
-    ollama_embedding_model: str = ""
+    ollama_embedding_model: str = "nomic-embed-text:latest"
 
     # Ollama (default provider — remote GPU box reached over an SSH tunnel).
     ollama_host: str = OLLAMA_BASE_URL

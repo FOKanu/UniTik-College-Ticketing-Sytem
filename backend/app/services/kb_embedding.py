@@ -14,7 +14,7 @@ from numbers import Real
 from app.ai.client import LLMUnavailableError, create_embedding
 from app.ai.llm_config import get_llm_config
 
-EMBEDDING_DIMENSIONS = 1536
+EMBEDDING_DIMENSIONS = 768
 
 
 class EmbeddingProviderError(Exception):
