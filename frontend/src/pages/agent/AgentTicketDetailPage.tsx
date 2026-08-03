@@ -13,12 +13,146 @@ import {
   Toggle,
 } from '@/components/ui'
 import { usePageTitle } from '@/hooks/usePageTitle'
-import { useTicketStore } from '@/stores'
-import type { TicketPriority, TicketStatus } from '@/types'
+import { usersApi, type StaffMember } from '@/lib/api'
+import { useAuthStore, useTicketStore } from '@/stores'
+import type { Department, TicketPriority, TicketStatus } from '@/types'
 import styles from './AgentTicketDetailPage.module.css'
+
+const DEPARTMENTS: Department[] = ['Academics', 'IT', 'Finance', 'Maintenance']
+
+function RoutingPanel({
+  ticketId,
+  category,
+  assignedTo,
+  assignedName,
+  staff,
+  staffError,
+  currentUserId,
+  mutating,
+}: {
+  ticketId: string
+  category: Department
+  assignedTo?: string
+  assignedName?: string
+  staff: StaffMember[]
+  staffError: string | null
+  currentUserId?: string
+  mutating: boolean
+}) {
+  const updateTicket = useTicketStore((s) => s.updateTicket)
+  const [routeDepartment, setRouteDepartment] = useState<Department>(category)
+  const [routeAssignee, setRouteAssignee] = useState(assignedTo ?? '')
+  const [routingMessage, setRoutingMessage] = useState<string | null>(null)
+
+  const assigneeOptions = [
+    { value: '', label: 'Unassigned' },
+    ...staff.map((member) => ({
+      value: member.id,
+      label:
+        member.id === currentUserId
+          ? `${member.displayName} (me)`
+          : member.department
+            ? `${member.displayName} · ${member.department}`
+            : member.displayName,
+    })),
+  ]
+
+  async function reassignTicket(event: FormEvent) {
+    event.preventDefault()
+    setRoutingMessage(null)
+    const assigneeName =
+      routeAssignee === ''
+        ? null
+        : (staff.find((m) => m.id === routeAssignee)?.displayName ?? null)
+    const updated = await updateTicket(ticketId, {
+      category: routeDepartment,
+      assignedTo: routeAssignee || null,
+    })
+    if (!updated) {
+      setRoutingMessage(
+        useTicketStore.getState().error ?? 'Failed to reassign ticket.',
+      )
+      return
+    }
+    useTicketStore.setState((state) => {
+      if (state.selected?.id !== ticketId) return state
+      return {
+        selected: {
+          ...state.selected,
+          assignedName: assigneeName ?? undefined,
+        },
+      }
+    })
+    setRoutingMessage(
+      routeAssignee
+        ? `Routed to ${assigneeName ?? 'selected staff'}.`
+        : 'Ticket left unassigned.',
+    )
+  }
+
+  return (
+    <form
+      className={styles.routing}
+      onSubmit={(e) => void reassignTicket(e)}
+      aria-label="Reassign ticket"
+    >
+      <h2>Route / reassign</h2>
+      <Select
+        id="route-department"
+        label="Department"
+        value={routeDepartment}
+        onChange={(e) => {
+          setRouteDepartment(e.target.value as Department)
+          setRoutingMessage(null)
+        }}
+        options={DEPARTMENTS.map((dept) => ({
+          value: dept,
+          label: dept,
+        }))}
+      />
+      <Select
+        id="route-assignee"
+        label="Assignee"
+        value={routeAssignee}
+        onChange={(e) => {
+          setRouteAssignee(e.target.value)
+          setRoutingMessage(null)
+        }}
+        options={
+          routeAssignee &&
+          !assigneeOptions.some((option) => option.value === routeAssignee)
+            ? [
+                ...assigneeOptions,
+                {
+                  value: routeAssignee,
+                  label: assignedName
+                    ? `${assignedName} (current)`
+                    : 'Current assignee',
+                },
+              ]
+            : assigneeOptions
+        }
+      />
+      {staffError ? (
+        <p className={styles.routingError} role="alert">
+          {staffError}
+        </p>
+      ) : null}
+      {routingMessage ? (
+        <p className={styles.routingStatus} role="status">
+          {routingMessage}
+        </p>
+      ) : null}
+      <Button type="submit" size="sm" disabled={mutating || !!staffError}>
+        Reassign
+      </Button>
+    </form>
+  )
+}
 
 export function AgentTicketDetailPage() {
   const { ticketId } = useParams()
+  const currentUser = useAuthStore((s) => s.user)
   const ticket = useTicketStore((s) => s.selected)
   const loading = useTicketStore((s) => s.detailLoading)
   const mutating = useTicketStore((s) => s.mutating)
@@ -32,11 +166,39 @@ export function AgentTicketDetailPage() {
   const [internalNote, setInternalNote] = useState(false)
   const [showAi, setShowAi] = useState(true)
 
+  const [staff, setStaff] = useState<StaffMember[]>([])
+  const [staffError, setStaffError] = useState<string | null>(null)
+
   usePageTitle(ticket ? `${ticket.id}: ${ticket.subject}` : 'Ticket Detail')
 
   useEffect(() => {
     if (ticketId) void fetchById(ticketId)
   }, [ticketId, fetchById])
+
+  useEffect(() => {
+    let cancelled = false
+    void (async () => {
+      try {
+        const members = await usersApi.listStaff()
+        if (!cancelled) {
+          setStaff(members)
+          setStaffError(null)
+        }
+      } catch (err) {
+        if (!cancelled) {
+          setStaff([])
+          setStaffError(
+            err instanceof Error
+              ? err.message
+              : 'Could not load staff directory.',
+          )
+        }
+      }
+    })()
+    return () => {
+      cancelled = true
+    }
+  }, [])
 
   if (loading && !ticket) {
     return (
@@ -58,6 +220,10 @@ export function AgentTicketDetailPage() {
 
   const status = ticket.status
   const priority = ticket.priority
+  const assigneeLabel =
+    staff.find((m) => m.id === ticket.assignedTo)?.displayName ??
+    ticket.assignedName ??
+    (ticket.assignedTo ? 'Assigned' : 'Unassigned')
 
   async function sendReply(event: FormEvent) {
     event.preventDefault()
@@ -161,7 +327,7 @@ export function AgentTicketDetailPage() {
             </div>
             <div>
               <dt>Assignee</dt>
-              <dd>{ticket.assignedName ?? 'Unassigned'}</dd>
+              <dd>{assigneeLabel}</dd>
             </div>
             <div>
               <dt>SLA</dt>
@@ -172,6 +338,19 @@ export function AgentTicketDetailPage() {
               </dd>
             </div>
           </dl>
+
+          <RoutingPanel
+            key={ticket.id}
+            ticketId={ticket.id}
+            category={ticket.category}
+            assignedTo={ticket.assignedTo}
+            assignedName={ticket.assignedName}
+            staff={staff}
+            staffError={staffError}
+            currentUserId={currentUser?.id}
+            mutating={mutating}
+          />
+
           {ticket.description ? (
             <div className={styles.description}>
               <h2>Details</h2>
