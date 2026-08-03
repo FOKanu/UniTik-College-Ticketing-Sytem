@@ -158,3 +158,75 @@ async def test_ticket_response_carries_people_names(client):
     )
     assert unassign_res.status_code == 200
     assert unassign_res.json()["data"]["assignedToName"] is None
+
+
+@pytest.mark.asyncio
+@integration
+async def test_sla_and_status_history_on_create_update_reopen(client):
+    student_token, _ = await _register_and_login(client, role="STUDENT")
+    staff_token, _ = await _register_and_login(client, role="STAFF", department="IT")
+    student_headers = {"Authorization": f"Bearer {student_token}"}
+    staff_headers = {"Authorization": f"Bearer {staff_token}"}
+
+    create_res = await client.post(
+        "/api/v1/tickets",
+        json={
+            "subject": "SLA clock",
+            "description": "needs response",
+            "priority": "HIGH",
+        },
+        headers=student_headers,
+    )
+    assert create_res.status_code == 201, create_res.text
+    created = create_res.json()["data"]
+    ticket_id = created["id"]
+    assert created["slaDueAt"] is not None
+    assert created["slaHoursRemaining"] is not None
+    assert created["slaBreached"] is False
+    assert 23 <= created["slaHoursRemaining"] <= 24
+
+    history_res = await client.get(
+        f"/api/v1/tickets/{ticket_id}/status-history",
+        headers=student_headers,
+    )
+    assert history_res.status_code == 200
+    history = history_res.json()["data"]
+    assert len(history) == 1
+    assert history[0]["fromStatus"] is None
+    assert history[0]["toStatus"] == "OPEN"
+    assert history[0]["reason"] == "created"
+
+    progress_res = await client.patch(
+        f"/api/v1/tickets/{ticket_id}",
+        json={"status": "IN_PROGRESS"},
+        headers=staff_headers,
+    )
+    assert progress_res.status_code == 200
+
+    resolve_res = await client.patch(
+        f"/api/v1/tickets/{ticket_id}",
+        json={"status": "RESOLVED"},
+        headers=staff_headers,
+    )
+    assert resolve_res.status_code == 200
+    assert resolve_res.json()["data"]["slaHoursRemaining"] is None
+
+    reopen_res = await client.post(
+        f"/api/v1/tickets/{ticket_id}/comments",
+        json={"body": "Still broken"},
+        headers=student_headers,
+    )
+    assert reopen_res.status_code == 201
+
+    detail = await client.get(f"/api/v1/tickets/{ticket_id}", headers=student_headers)
+    assert detail.json()["data"]["status"] == "OPEN"
+    assert detail.json()["data"]["slaDueAt"] is not None
+
+    history_after = await client.get(
+        f"/api/v1/tickets/{ticket_id}/status-history",
+        headers=staff_headers,
+    )
+    reasons = [row["reason"] for row in history_after.json()["data"]]
+    assert "created" in reasons
+    assert "staff_update" in reasons
+    assert "reopen_on_reply" in reasons

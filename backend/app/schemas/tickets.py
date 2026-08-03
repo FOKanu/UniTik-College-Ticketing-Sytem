@@ -41,6 +41,24 @@ class TicketResponse(BaseModel):
     createdByName: str | None = None
     createdByEmail: str | None = None
     assignedToName: str | None = None
+    # First-response SLA (computed remaining hours; due/breach from DB).
+    slaDueAt: datetime | None = None
+    slaBreachedAt: datetime | None = None
+    slaHoursRemaining: int | None = None
+    slaBreached: bool = False
+
+    model_config = {"from_attributes": True}
+
+
+class StatusHistoryResponse(BaseModel):
+    id: str
+    ticketId: str
+    fromStatus: TicketStatus | None
+    toStatus: TicketStatus
+    changedById: str | None
+    changedByName: str | None = None
+    reason: str | None
+    createdAt: datetime
 
     model_config = {"from_attributes": True}
 

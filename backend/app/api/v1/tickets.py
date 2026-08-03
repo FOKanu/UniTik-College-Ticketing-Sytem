@@ -58,6 +58,14 @@ async def add_comment(
     )
 
 
+@router.get("/{ticket_id}/status-history")
+async def list_status_history(db: DbSession, user: CurrentUser, ticket_id: str):
+    rows = await ticket_service.list_status_history(db, ticket_id, user)
+    return success_response(
+        [ticket_service.status_history_to_response(r).model_dump() for r in rows]
+    )
+
+
 @router.get("/{ticket_id}/attachments")
 async def list_attachments(db: DbSession, user: CurrentUser, ticket_id: str):
     items = await attachment_service.list_attachments(db, ticket_id, user)
