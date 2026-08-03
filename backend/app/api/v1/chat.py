@@ -97,18 +97,26 @@ async def stream_message(
         yield _sse("citations", retrieval_payload)
 
         parts: list[str] = []
+        offline = False
         try:
             async for delta in stream_chat_completion(prompt, body.mode):
                 parts.append(delta)
                 yield _sse("token", {"delta": delta})
         except LLMUnavailableError as exc:
+            offline = True
             yield _sse("error", {"message": str(exc)})
+
+        reply = (
+            chat_service.LLM_OFFLINE_REPLY
+            if offline
+            else "".join(parts).strip()
+        )
 
         # The request-scoped session is already closed by the time the body
         # streams, so the reply is persisted on a session this generator owns.
         async with async_session_factory() as session:
             bot_msg = await chat_service.finish_bot_turn(
-                session, conversation_id, "".join(parts).strip()
+                session, conversation_id, reply
             )
             bot_payload = MessageResponse.model_validate(bot_msg).model_dump()
 

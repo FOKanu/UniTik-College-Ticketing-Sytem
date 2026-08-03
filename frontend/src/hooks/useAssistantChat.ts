@@ -9,7 +9,8 @@ import {
   type LlmHealth,
 } from '@/lib/api'
 import {
-  buildCreateDraftFromMessages,
+  isTicketCreateIntent,
+  withCreateProposalMessage,
   type ProposedTicketAction,
   type TicketCommentDraft,
   type TicketUpdateDraft,
@@ -117,6 +118,9 @@ export function useAssistantChat({ greeting }: Options) {
       const trimmed = text.trim()
       if (!trimmed || isStreaming) return
 
+      const wantsTicket = isTicketCreateIntent(trimmed)
+      const alreadyHasTicket = ticket !== null
+
       setError(null)
       const stamp = Date.now()
       const botId = `a-${stamp}`
@@ -125,13 +129,25 @@ export function useAssistantChat({ greeting }: Options) {
         { id: `u-${stamp}`, role: 'user', body: trimmed },
       ])
 
+      const openProposal = () => {
+        if (!wantsTicket || alreadyHasTicket) return
+        setMessages((prev) => withCreateProposalMessage(prev))
+      }
+
       if (!usesLiveChat()) {
         setIsStreaming(true)
         window.setTimeout(() => {
           setMessages((prev) => [
             ...prev,
-            { id: botId, role: 'assistant', body: MOCK_REPLY },
+            {
+              id: botId,
+              role: 'assistant',
+              body: wantsTicket
+                ? 'I opened a ticket proposal from this chat. Review and confirm it below — nothing is filed until you confirm.'
+                : MOCK_REPLY,
+            },
           ])
+          openProposal()
           setIsStreaming(false)
         }, 500)
         return
@@ -194,31 +210,23 @@ export function useAssistantChat({ greeting }: Options) {
       } finally {
         abortRef.current = null
         setIsStreaming(false)
+        // Open after the reply so the draft includes this turn + prior context.
+        openProposal()
       }
     },
-    [isStreaming, mode, patchMessage],
+    [isStreaming, mode, patchMessage, ticket],
   )
 
   /** Open a create-ticket proposal card (user must confirm). */
   const proposeCreate = useCallback(() => {
     if (ticket || hasOpenAction || isStreaming) return
-    const create = buildCreateDraftFromMessages(messages)
-    const action: ProposedTicketAction = {
-      id: `act-create-${Date.now()}`,
-      kind: 'create',
-      status: 'pending',
-      create,
-    }
-    setMessages((prev) => [
-      ...prev,
-      {
-        id: `a-action-${Date.now()}`,
-        role: 'assistant',
-        body: 'Review this ticket before it is filed. You can edit the details or cancel.',
-        action,
-      },
-    ])
-  }, [ticket, hasOpenAction, isStreaming, messages])
+    setMessages((prev) =>
+      withCreateProposalMessage(prev, {
+        intro:
+          'Review this ticket before it is filed. You can edit the details or cancel.',
+      }),
+    )
+  }, [ticket, hasOpenAction, isStreaming])
 
   const proposeUpdate = useCallback(
     (seed?: Partial<TicketUpdateDraft>) => {

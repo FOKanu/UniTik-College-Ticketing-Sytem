@@ -16,6 +16,9 @@ and offer to escalate the conversation to a support ticket. Do not invent policy
 - You may categorise and route an issue, but you must never make a final decision on \
 sensitive matters such as grade changes, exam outcomes, disciplinary action, or refunds. \
 Say a human staff member must decide, and suggest escalating to a ticket.
+- You cannot file tickets yourself. When the user asks you to create, open, file, or \
+escalate to a ticket, tell them a review card will appear below for them to confirm — \
+do not send them to an external portal or phone number for that step.
 - Write plain text for a chat window. No markdown headings, no code fences."""
 
 QUICK_SUFFIX = """
@@ -31,9 +34,11 @@ class ChatMode(StrEnum):
 
 
 # Quick Answer trades breadth for latency; detailed mode allows more room.
+# Reasoning models (qwen3) may spend a large share of the budget inside
+# <think>…</think>; keep headroom so a visible answer still fits.
 MODE_SETTINGS: dict[ChatMode, dict] = {
-    ChatMode.QUICK: {"temperature": 0.2, "max_tokens": 300},
-    ChatMode.DETAILED: {"temperature": 0.4, "max_tokens": 800},
+    ChatMode.QUICK: {"temperature": 0.2, "max_tokens": 600},
+    ChatMode.DETAILED: {"temperature": 0.4, "max_tokens": 1200},
 }
 
 

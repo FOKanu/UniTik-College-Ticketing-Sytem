@@ -32,6 +32,11 @@ LLM_OFFLINE_REPLY = (
     "escalate this conversation to a ticket."
 )
 
+LLM_EMPTY_REPLY = (
+    "I could not produce an answer for that turn. Please try again, or propose "
+    "a support ticket from this conversation."
+)
+
 NO_KB_CONTEXT = (
     "No matching knowledge-base excerpts were found for this question. "
     "Tell the user you are unsure and offer to escalate to a support ticket. "
@@ -178,7 +183,7 @@ async def finish_bot_turn(db: AsyncSession, conversation_id: str, content: str) 
     bot_message = ChatMessage(
         conversationId=conversation_id,
         sender="bot",
-        content=content or LLM_OFFLINE_REPLY,
+        content=content or LLM_EMPTY_REPLY,
     )
     db.add(bot_message)
     await db.commit()

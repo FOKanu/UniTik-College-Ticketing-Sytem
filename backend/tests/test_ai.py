@@ -65,8 +65,13 @@ def test_explicit_openai_base_url_wins_over_host():
 
 def test_ollama_sends_keep_alive_hint():
     config = LLMSettings(ollama_keep_alive="10m").resolve()
-    assert config.extra_body == {"keep_alive": "10m"}
+    assert config.extra_body == {"keep_alive": "10m", "think": False}
     assert config.is_configured
+
+
+def test_ollama_disables_think_without_keep_alive():
+    config = LLMSettings(ollama_keep_alive="").resolve()
+    assert config.extra_body == {"think": False}
 
 
 def test_switching_provider_swaps_endpoint_and_model():
@@ -219,6 +224,7 @@ async def test_stream_sends_model_and_keep_alive(fake_provider):
     assert sent["model"] == "qwen3:8b"
     assert sent["stream"] is True
     assert sent["keep_alive"] == "10m"
+    assert sent["think"] is False
 
 
 @pytest.mark.asyncio
@@ -230,4 +236,5 @@ async def test_quick_mode_caps_response_length(fake_provider):
     ):
         pass
 
-    assert sent["max_tokens"] == 300
+    assert sent["max_tokens"] == 600
+    assert sent.get("think") is False

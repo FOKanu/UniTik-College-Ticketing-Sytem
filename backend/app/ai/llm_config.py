@@ -148,8 +148,13 @@ class LLMSettings(BaseSettings):
             base_url=self._ollama_openai_url(),
             api_key=self.ollama_api_key or "ollama",
             model=self.ollama_model,
-            # Ollama-only hint that keeps the model resident between requests.
-            extra_body={"keep_alive": self.ollama_keep_alive} if self.ollama_keep_alive else {},
+            # keep_alive: keep the model resident between turns.
+            # think=false: qwen3-style models otherwise burn the token budget
+            # inside <think> and the UI sees an empty / "offline" reply.
+            extra_body={
+                **({"keep_alive": self.ollama_keep_alive} if self.ollama_keep_alive else {}),
+                "think": False,
+            },
             **common,
         )
 
