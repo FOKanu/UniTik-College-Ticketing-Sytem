@@ -54,3 +54,12 @@ class CommentResponse(BaseModel):
     createdAt: datetime
 
     model_config = {"from_attributes": True}
+
+
+class AttachmentResponse(BaseModel):
+    id: str
+    ticketId: str
+    name: str
+    fileType: str
+    fileSizeBytes: int
+    uploadedAt: datetime
