@@ -1,7 +1,14 @@
-import { describe, expect, it } from 'vitest'
+import { describe, expect, it, vi } from 'vitest'
 import axios from 'axios'
 import { ApiError, isApiError, toApiError } from './errors'
-import { isMockDataSource } from './client'
+import {
+  getDataSourceMode,
+  isMockDataSource,
+  usesLiveAuth,
+  usesLiveChat,
+  usesMockKnowledge,
+  usesMockNotifications,
+} from './client'
 import { ticketsApi } from './tickets'
 
 describe('toApiError', () => {
@@ -44,6 +51,28 @@ describe('toApiError', () => {
     }
     const mapped = toApiError(error)
     expect(mapped.code).toBe('VALIDATION')
+  })
+})
+
+describe('data source modes', () => {
+  it('defaults to mock under the test stub', () => {
+    expect(getDataSourceMode()).toBe('mock')
+    expect(isMockDataSource()).toBe(true)
+    expect(usesLiveAuth()).toBe(false)
+    expect(usesLiveChat()).toBe(false)
+    expect(usesMockNotifications()).toBe(true)
+    expect(usesMockKnowledge()).toBe(true)
+  })
+
+  it('treats hybrid as live auth/chat with fixture notifications', () => {
+    vi.stubEnv('VITE_DATA_SOURCE', 'hybrid')
+    expect(getDataSourceMode()).toBe('hybrid')
+    expect(isMockDataSource()).toBe(false)
+    expect(usesLiveAuth()).toBe(true)
+    expect(usesLiveChat()).toBe(true)
+    expect(usesMockNotifications()).toBe(true)
+    expect(usesMockKnowledge()).toBe(true)
+    vi.stubEnv('VITE_DATA_SOURCE', 'mock')
   })
 })
 

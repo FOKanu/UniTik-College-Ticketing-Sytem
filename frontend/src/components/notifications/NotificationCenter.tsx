@@ -1,4 +1,4 @@
-import { useEffect, useId, useRef, useState } from 'react'
+import { useCallback, useEffect, useId, useRef, useState } from 'react'
 import { Link, useNavigate } from 'react-router-dom'
 import { ROUTES } from '@/app/routes'
 import { Button } from '@/components/ui'
@@ -47,6 +47,7 @@ export function NotificationCenter() {
   const navigate = useNavigate()
   const { role } = usePermissions()
   const [open, setOpen] = useState(false)
+  const closePanel = useCallback(() => setOpen(false), [])
 
   const items = useNotificationStore((s) => s.items)
   const loading = useNotificationStore((s) => s.loading)
@@ -63,7 +64,7 @@ export function NotificationCenter() {
     open,
     containerRef: panelRef,
     triggerRef,
-    onClose: () => setOpen(false),
+    onClose: closePanel,
   })
 
   useEffect(() => {

@@ -2,6 +2,8 @@ from datetime import datetime
 
 from pydantic import BaseModel, Field
 
+from app.ai.prompts import ChatMode
+
 
 class ConversationCreate(BaseModel):
     pass
@@ -9,6 +11,7 @@ class ConversationCreate(BaseModel):
 
 class MessageCreate(BaseModel):
     content: str = Field(min_length=1)
+    mode: ChatMode = ChatMode.QUICK
 
 
 class ConversationResponse(BaseModel):
@@ -30,6 +33,19 @@ class MessageResponse(BaseModel):
     model_config = {"from_attributes": True}
 
 
+class EscalatedTicket(BaseModel):
+    id: str
+    subject: str
+    status: str
+    category: str | None
+
+    model_config = {"from_attributes": True}
+
+
 class EscalateResponse(BaseModel):
     conversation: ConversationResponse
     ticketId: str
+    ticket: EscalatedTicket
+    # True when the conversation had already been escalated — no new ticket.
+    alreadyEscalated: bool
+    botMessage: MessageResponse | None = None

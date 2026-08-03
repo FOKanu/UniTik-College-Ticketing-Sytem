@@ -4,14 +4,43 @@ import { useForm } from 'react-hook-form'
 import { Link, useLocation, useNavigate } from 'react-router-dom'
 import { ROUTES } from '@/app/routes'
 import { Button, Input } from '@/components/ui'
-import { authApi, isApiError } from '@/lib/api'
+import { authApi, isApiError, usesLiveAuth } from '@/lib/api'
 import { homePathForRole } from '@/lib/auth'
 import { loginSchema, type LoginFormValues } from '@/lib/validation'
 import { mockAccounts } from '@/mocks/data'
 import { useAuthStore } from '@/stores/authStore'
+import type { User } from '@/types'
 import styles from './AuthPages.module.css'
 
+/** Mirrors the accounts created by `backend/scripts/seed.py`. */
+const SEEDED_ACCOUNTS: User[] = [
+  {
+    id: 'seed-student',
+    email: 'jordan.alvarez@student.university.edu',
+    displayName: 'Jordan Alvarez',
+    role: 'student',
+  },
+  {
+    id: 'seed-staff',
+    email: 'marcus.whitfield@university.edu',
+    displayName: 'Marcus Whitfield',
+    role: 'agent',
+  },
+  {
+    id: 'seed-admin',
+    email: 'elena.voss@university.edu',
+    displayName: 'Elena Voss',
+    role: 'admin',
+  },
+]
+
+const SEED_PASSWORD = 'demo1234'
+const MOCK_PASSWORD = 'password'
+
 export function LoginPage() {
+  const usingMocks = !usesLiveAuth()
+  const demoAccounts = usingMocks ? mockAccounts : SEEDED_ACCOUNTS
+  const demoPassword = usingMocks ? MOCK_PASSWORD : SEED_PASSWORD
   const navigate = useNavigate()
   const location = useLocation()
   const setSession = useAuthStore((s) => s.setSession)
@@ -25,8 +54,8 @@ export function LoginPage() {
   } = useForm<LoginFormValues>({
     resolver: zodResolver(loginSchema),
     defaultValues: {
-      email: 'amara.k@stud.university.edu',
-      password: 'password',
+      email: demoAccounts[0].email,
+      password: demoPassword,
     },
   })
 
@@ -46,9 +75,7 @@ export function LoginPage() {
       )
     } catch (err) {
       setApiError(
-        isApiError(err)
-          ? err.message
-          : 'Unable to sign in. Please try again.',
+        isApiError(err) ? err.message : 'Unable to sign in. Please try again.',
       )
     }
   }
@@ -85,7 +112,11 @@ export function LoginPage() {
             Forgot password?
           </button>
         </div>
-        {apiError ? <p className={styles.error} role="alert">{apiError}</p> : null}
+        {apiError ? (
+          <p className={styles.error} role="alert">
+            {apiError}
+          </p>
+        ) : null}
         <Button type="submit" fullWidth size="lg" disabled={isSubmitting}>
           {isSubmitting ? 'Signing in…' : 'Sign In'}
         </Button>
@@ -102,14 +133,14 @@ export function LoginPage() {
       <div className={styles.demos}>
         <p>Demo accounts</p>
         <ul>
-          {mockAccounts.map((account) => (
+          {demoAccounts.map((account) => (
             <li key={account.id}>
               <button
                 type="button"
                 aria-label={`Fill demo credentials for ${account.role}`}
                 onClick={() => {
                   setValue('email', account.email)
-                  setValue('password', 'password')
+                  setValue('password', demoPassword)
                   setApiError(null)
                 }}
               >

@@ -59,9 +59,25 @@ export function AppRouter() {
               element={<NotificationsPage />}
             />
             <Route path={ROUTES.profile} element={<ProfilePage />} />
+          </Route>
+        </Route>
+
+        <Route element={<ProtectedRoute />}>
+          <Route element={<AppLayout />}>
             <Route path={ROUTES.forbidden} element={<ForbiddenPage />} />
           </Route>
         </Route>
+
+        {/* Keep links from the pre-v2 shell from falling through to the bare
+            404 page while users update bookmarks and open browser tabs. */}
+        <Route
+          path="/staff/*"
+          element={<Navigate to={ROUTES.agent} replace />}
+        />
+        <Route
+          path="/app/*"
+          element={<Navigate to={ROUTES.dashboard} replace />}
+        />
 
         <Route element={<ProtectedRoute allowedRoles={AGENT_ROLES} />}>
           <Route element={<AppLayout />}>
