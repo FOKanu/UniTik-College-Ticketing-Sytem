@@ -235,6 +235,12 @@ export const ticketsApi = {
     const body: Record<string, unknown> = {}
     if (payload.status) body.status = fromTicketStatus(payload.status)
     if (payload.priority) body.priority = fromTicketPriority(payload.priority)
+    if (payload.category !== undefined) {
+      // Keep category + department aligned so queue filters and staff routing
+      // see the same bucket the UI picker chose.
+      body.category = payload.category
+      body.department = payload.category
+    }
     if (payload.assignedTo !== undefined) body.assignedToId = payload.assignedTo
 
     const updated = unwrap(

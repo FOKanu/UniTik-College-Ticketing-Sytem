@@ -22,6 +22,7 @@ export { authApi, signOut } from './auth'
 export { ticketsApi } from './tickets'
 export { notificationsApi } from './notifications'
 export { knowledgeApi } from './knowledge'
+export { usersApi, type StaffMember } from './users'
 export type {
   ChatConversation,
   ChatMessage,

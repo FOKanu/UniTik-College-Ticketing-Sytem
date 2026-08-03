@@ -10,6 +10,7 @@ import {
   usesMockNotifications,
 } from './client'
 import { ticketsApi } from './tickets'
+import { usersApi } from './users'
 
 describe('toApiError', () => {
   it('passes through existing ApiError instances', () => {
@@ -89,5 +90,22 @@ describe('mock tickets API', () => {
       code: 'NOT_FOUND',
       status: 404,
     })
+  })
+})
+
+describe('mock staff directory', () => {
+  it('returns agent/admin accounts for assignee dropdowns', async () => {
+    const staff = await usersApi.listStaff()
+    expect(staff.length).toBeGreaterThan(0)
+    expect(
+      staff.every((m) => m.role === 'agent' || m.role === 'admin'),
+    ).toBe(true)
+  })
+
+  it('filters mock staff by department substring', async () => {
+    const itStaff = await usersApi.listStaff('IT')
+    expect(itStaff.every((m) => (m.department ?? '').includes('IT'))).toBe(
+      true,
+    )
   })
 })

@@ -163,12 +163,34 @@ export const useTicketStore = create<TicketState>((set, get) => ({
     set({ mutating: true, error: null })
     try {
       const ticket = await ticketsApi.update(ticketId, payload)
-      set((state) => ({
-        items: upsertTicket(state.items, ticket),
-        selected:
-          state.selected?.id === ticket.id ? ticket : state.selected,
-        mutating: false,
-      }))
+      set((state) => {
+        const previous =
+          state.selected?.id === ticket.id ? state.selected : null
+        const merged = previous
+          ? {
+              ...ticket,
+              // PATCH responses omit comments / display names — keep local ones.
+              comments: ticket.comments.length
+                ? ticket.comments
+                : previous.comments,
+              requesterName: ticket.requesterName ?? previous.requesterName,
+              requesterEmail: ticket.requesterEmail ?? previous.requesterEmail,
+              assignedName:
+                ticket.assignedName ??
+                (ticket.assignedTo === previous.assignedTo
+                  ? previous.assignedName
+                  : ticket.assignedName),
+              attachments: ticket.attachments ?? previous.attachments,
+              slaHoursRemaining:
+                ticket.slaHoursRemaining ?? previous.slaHoursRemaining,
+            }
+          : ticket
+        return {
+          items: upsertTicket(state.items, merged),
+          selected: previous ? merged : state.selected,
+          mutating: false,
+        }
+      })
       return ticket
     } catch (error) {
       set({
