@@ -128,7 +128,7 @@ export function withCreateProposalMessage<
 >(
   messages: T[],
   options: { alreadyHasTicket?: boolean; intro?: string } = {},
-): T[] {
+): Array<T & { action?: ProposedTicketAction }> {
   if (options.alreadyHasTicket) return messages
   const hasOpen = messages.some(
     (m) =>
@@ -157,6 +157,6 @@ export function withCreateProposalMessage<
       role: 'assistant',
       body: intro,
       action,
-    } as T,
+    } as T & { action?: ProposedTicketAction },
   ]
 }
