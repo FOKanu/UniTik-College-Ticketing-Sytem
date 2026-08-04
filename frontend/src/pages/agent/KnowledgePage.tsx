@@ -1,5 +1,6 @@
-import { useMemo, useState } from 'react'
+import { Fragment, useMemo, useState } from 'react'
 import { Badge, Button, SearchField, Select } from '@/components/ui'
+import { renderKnowledgeBody } from '@/lib/knowledge/renderBody'
 import { mockArticles } from '@/mocks/data'
 import type { Department } from '@/types'
 import styles from './KnowledgePage.module.css'
@@ -10,6 +11,7 @@ export function KnowledgePage() {
   const [visibility, setVisibility] = useState<'all' | 'published' | 'draft'>(
     'all',
   )
+  const [openId, setOpenId] = useState<string | null>(null)
 
   const articles = useMemo(() => {
     return mockArticles.filter((article) => {
@@ -27,19 +29,25 @@ export function KnowledgePage() {
     })
   }, [query, category, visibility])
 
+  function toggle(id: string) {
+    setOpenId((current) => (current === id ? null : id))
+  }
+
   return (
     <div className={styles.page}>
       <header className={styles.header}>
         <div>
           <h1>Knowledge Base</h1>
-          <p>Articles students and staff can use for self-service help.</p>
+          <p>
+            Canonical FAQ answers for student self-service and staff replies.
+          </p>
         </div>
         <Button size="sm">+ New article</Button>
       </header>
 
       <div className={styles.banner} role="note">
-        <strong>Publishing tip:</strong> Draft articles stay internal until you
-        publish them. Published articles appear in the student FAQ and AI
+        <strong>Publishing tip:</strong> Use the exact FAQ wording below when
+        helping students. Published articles appear in the student FAQ and AI
         assistant suggestions.
       </div>
 
@@ -72,7 +80,7 @@ export function KnowledgePage() {
         />
         <SearchField
           id="kb-search"
-          placeholder="Search articles by title or keyword..."
+          placeholder="Search by title, FAQ ID, or answer text..."
           value={query}
           onChange={(e) => setQuery(e.target.value)}
           className={styles.search}
@@ -85,6 +93,7 @@ export function KnowledgePage() {
           <thead>
             <tr>
               <th scope="col">Title</th>
+              <th scope="col">FAQ ID</th>
               <th scope="col">Category</th>
               <th scope="col">Status</th>
               <th scope="col">Views</th>
@@ -92,29 +101,67 @@ export function KnowledgePage() {
             </tr>
           </thead>
           <tbody>
-            {articles.map((article) => (
-              <tr key={article.id}>
-                <td>{article.title}</td>
-                <td>{article.category}</td>
-                <td>
-                  <Badge
-                    tone={article.status === 'published' ? 'success' : 'neutral'}
-                  >
-                    {article.status === 'published' ? 'Published' : 'Draft'}
-                  </Badge>
-                </td>
-                <td>{article.views.toLocaleString()}</td>
-                <td>
-                  {new Date(article.updatedAt).toLocaleDateString(undefined, {
-                    month: 'short',
-                    day: 'numeric',
-                  })}
-                </td>
-              </tr>
-            ))}
+            {articles.map((article) => {
+              const open = openId === article.id
+              return (
+                <Fragment key={article.id}>
+                  <tr className={open ? styles.rowOpen : styles.row}>
+                    <td>
+                      <button
+                        type="button"
+                        className={styles.titleBtn}
+                        aria-expanded={open}
+                        aria-controls={`kb-answer-${article.id}`}
+                        onClick={() => toggle(article.id)}
+                      >
+                        {article.title}
+                      </button>
+                    </td>
+                    <td>
+                      <code className={styles.faqId}>{article.id}</code>
+                    </td>
+                    <td>{article.category}</td>
+                    <td>
+                      <Badge
+                        tone={
+                          article.status === 'published' ? 'success' : 'neutral'
+                        }
+                      >
+                        {article.status === 'published'
+                          ? 'Published'
+                          : 'Draft'}
+                      </Badge>
+                    </td>
+                    <td>{article.views.toLocaleString()}</td>
+                    <td>
+                      {new Date(article.updatedAt).toLocaleDateString(
+                        undefined,
+                        {
+                          month: 'short',
+                          day: 'numeric',
+                        },
+                      )}
+                    </td>
+                  </tr>
+                  {open ? (
+                    <tr className={styles.answerRow}>
+                      <td colSpan={6}>
+                        <div
+                          id={`kb-answer-${article.id}`}
+                          className={styles.answer}
+                        >
+                          <h3>Canonical answer</h3>
+                          <p>{renderKnowledgeBody(article.body)}</p>
+                        </div>
+                      </td>
+                    </tr>
+                  ) : null}
+                </Fragment>
+              )
+            })}
             {articles.length === 0 ? (
               <tr>
-                <td colSpan={5} className={styles.empty}>
+                <td colSpan={6} className={styles.empty}>
                   No articles match these filters.
                 </td>
               </tr>

@@ -82,6 +82,76 @@
   font-weight: 500;
 }
 
+.row:hover,
+.rowOpen {
+  background: var(--brand-50);
+}
+
+.titleBtn {
+  border: none;
+  background: none;
+  padding: 0;
+  margin: 0;
+  font: inherit;
+  font-weight: 650;
+  color: var(--neutral-900);
+  text-align: left;
+  cursor: pointer;
+}
+
+.titleBtn:hover {
+  color: var(--brand-700);
+  text-decoration: underline;
+  text-underline-offset: 2px;
+}
+
+.faqId {
+  font-size: 0.75rem;
+  color: var(--neutral-500);
+  background: var(--neutral-50);
+  border: 1px solid var(--neutral-200);
+  border-radius: 6px;
+  padding: 0.15rem 0.4rem;
+}
+
+.answerRow td {
+  background: var(--neutral-50);
+  padding: 0;
+  border-bottom: 1px solid var(--color-border);
+}
+
+.answer {
+  margin: 0;
+  max-width: none;
+  padding: 0.9rem 0.9rem 1rem;
+  border: none;
+  border-radius: 0;
+  background: var(--neutral-50);
+  text-align: left;
+}
+
+.answer h3 {
+  margin: 0 0 0.45rem;
+  font-size: 0.75rem;
+  text-transform: uppercase;
+  letter-spacing: 0.04em;
+  color: var(--neutral-500);
+  text-align: left;
+}
+
+.answer p {
+  margin: 0;
+  color: var(--neutral-800);
+  line-height: 1.55;
+  font-size: 0.9rem;
+}
+
+.answer a {
+  color: var(--brand-700);
+  font-weight: 600;
+  word-break: break-word;
+}
+
 @media (max-width: 900px) {
   .toolbar {
     grid-template-columns: 1fr;

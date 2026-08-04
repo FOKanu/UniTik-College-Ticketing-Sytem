@@ -1,17 +1,22 @@
 import { ROUTES } from '@/app/routes'
 import { ButtonLink } from '@/components/ui'
-import { useAuthStore } from '@/stores/authStore'
+import { findInstitution } from '@/lib/institutions'
+import { useAuthStore, useInstitutionStore } from '@/stores'
 import styles from './AdminDashboardPage.module.css'
 
 export function AdminDashboardPage() {
   const user = useAuthStore((s) => s.user)
+  const institutionId = useInstitutionStore((s) => s.institutionId)
+  const institution = findInstitution(institutionId)
   const firstName = user?.displayName?.split(' ')[0] ?? 'Admin'
 
   return (
     <div className={styles.page}>
       <header className={styles.header}>
         <h1>Admin Dashboard</h1>
-        <p>Welcome back, {firstName}. Manage TicketHub for MediaDesign Hochschule.</p>
+        <p>
+          Welcome back, {firstName}. Manage TicketHub for {institution.name}.
+        </p>
       </header>
 
       <section className={styles.stats} aria-label="Overview">

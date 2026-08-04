@@ -10,7 +10,8 @@ import {
   Toggle,
 } from '@/components/ui'
 import { mockArticles, mockStaffMembers } from '@/mocks/data'
-import { useUiStore } from '@/stores'
+import { findInstitution } from '@/lib/institutions'
+import { useInstitutionStore, useUiStore } from '@/stores'
 import type { Department } from '@/types'
 import styles from './SettingsPage.module.css'
 
@@ -80,11 +81,13 @@ export function SettingsPage() {
   const location = useLocation()
   const tab = tabFromPath(location.pathname)
   const pushToast = useUiStore((s) => s.pushToast)
+  const institutionId = useInstitutionStore((s) => s.institutionId)
+  const institution = findInstitution(institutionId)
 
-  const [displayName, setDisplayName] = useState('MediaDesign Hochschule')
-  const [shortCode, setShortCode] = useState('MDH')
+  const [displayName, setDisplayName] = useState(institution.name)
+  const [shortCode, setShortCode] = useState(institution.short)
   const [emailDomains, setEmailDomains] = useState(
-    'stud.mdh-berlin.de, mdh-berlin.de',
+    institution.emailDomains.join(', '),
   )
   const [logoName, setLogoName] = useState<string | null>(null)
   const [langDe, setLangDe] = useState(true)
