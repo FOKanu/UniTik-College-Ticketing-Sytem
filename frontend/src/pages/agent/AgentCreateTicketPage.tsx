@@ -1,3 +1,4 @@
+import { useEffect, useState } from 'react'
 import { zodResolver } from '@hookform/resolvers/zod'
 import { Controller, useForm } from 'react-hook-form'
 import { useNavigate } from 'react-router-dom'
@@ -9,10 +10,12 @@ import {
   Select,
   Textarea,
 } from '@/components/ui'
+import { usersApi, type StaffMember } from '@/lib/api'
 import {
   agentTicketCreateSchema,
   type AgentTicketCreateFormValues,
 } from '@/lib/validation'
+import { useAuthStore } from '@/stores'
 import type { Department, TicketPriority } from '@/types'
 import styles from './AgentCreateTicketPage.module.css'
 
@@ -21,6 +24,8 @@ const PRIORITIES: TicketPriority[] = ['low', 'medium', 'high', 'urgent']
 
 export function AgentCreateTicketPage() {
   const navigate = useNavigate()
+  const currentUser = useAuthStore((s) => s.user)
+  const [staff, setStaff] = useState<StaffMember[]>([])
 
   const {
     register,
@@ -36,13 +41,41 @@ export function AgentCreateTicketPage() {
       subject: '',
       description: '',
       priority: 'high',
-      assignTo: 'me',
+      assignTo: currentUser?.id ?? 'unassigned',
     },
   })
+
+  useEffect(() => {
+    let cancelled = false
+    void (async () => {
+      try {
+        const members = await usersApi.listStaff()
+        if (!cancelled) setStaff(members)
+      } catch {
+        if (!cancelled) setStaff([])
+      }
+    })()
+    return () => {
+      cancelled = true
+    }
+  }, [])
 
   function onSubmit(_values: AgentTicketCreateFormValues) {
     void navigate(ROUTES.queue)
   }
+
+  const assignOptions = [
+    { value: 'unassigned', label: 'Unassigned' },
+    ...staff.map((member) => ({
+      value: member.id,
+      label:
+        member.id === currentUser?.id
+          ? `${member.displayName} (me)`
+          : member.department
+            ? `${member.displayName} · ${member.department}`
+            : member.displayName,
+    })),
+  ]
 
   return (
     <div className={styles.page}>
@@ -139,11 +172,7 @@ export function AgentCreateTicketPage() {
             <Select
               id="assign-to"
               label="Assign To"
-              options={[
-                { value: 'me', label: 'Me (Agent Novak)' },
-                { value: 'unassigned', label: 'Unassigned' },
-                { value: 'diallo', label: 'R. Diallo' },
-              ]}
+              options={assignOptions}
               error={errors.assignTo?.message}
               {...register('assignTo')}
             />

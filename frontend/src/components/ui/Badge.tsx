@@ -58,6 +58,28 @@ export function PriorityBadge({ priority }: { priority: TicketPriority }) {
   return <Badge tone={priorityTone[priority]}>{label}</Badge>
 }
 
+/** First-response SLA cue for queue / dashboard cells. */
+export function SlaBadge({
+  hoursRemaining,
+  breached,
+  atRiskHours = 8,
+}: {
+  hoursRemaining?: number | null
+  breached?: boolean
+  atRiskHours?: number
+}) {
+  if (breached) {
+    return <Badge tone="danger">Breached</Badge>
+  }
+  if (hoursRemaining == null) {
+    return <Badge tone="neutral">—</Badge>
+  }
+  if (hoursRemaining <= atRiskHours) {
+    return <Badge tone="warn">{`${hoursRemaining}h`}</Badge>
+  }
+  return <Badge tone="info">{`${hoursRemaining}h`}</Badge>
+}
+
 export function DepartmentBadge({ department }: { department: string }) {
   return <Badge tone="department">{department}</Badge>
 }

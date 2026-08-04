@@ -6,6 +6,9 @@ import { ApiError, toApiError } from './errors'
 
 const baseURL = import.meta.env.VITE_API_BASE_URL || '/api'
 
+/** Exposed for callers that bypass axios, e.g. SSE streaming over fetch. */
+export const apiBaseUrl = baseURL
+
 export const apiClient = axios.create({
   baseURL,
   headers: {
@@ -64,13 +67,52 @@ apiClient.interceptors.response.use(
   },
 )
 
-export function isMockDataSource(): boolean {
-  return import.meta.env.VITE_DATA_SOURCE !== 'api'
+/**
+ * Data-source modes:
+ * - `mock`   — full fixture UI (no FastAPI). Safe default for design work.
+ * - `hybrid` — live auth + chat + tickets + knowledge/FAQ + notifications.
+ * - `api`    — everything talks to FastAPI; unfinished slices degrade empty.
+ */
+export type DataSourceMode = 'mock' | 'hybrid' | 'api'
+
+export function getDataSourceMode(): DataSourceMode {
+  const raw = String(import.meta.env.VITE_DATA_SOURCE ?? 'mock').toLowerCase()
+  if (raw === 'api' || raw === 'hybrid') return raw
+  return 'mock'
 }
 
-/** Small delay so mock mode feels async like a real API */
+/** True only in pure fixture mode — every module uses local mocks. */
+export function isMockDataSource(): boolean {
+  return getDataSourceMode() === 'mock'
+}
+
+export function usesLiveAuth(): boolean {
+  return getDataSourceMode() !== 'mock'
+}
+
+export function usesLiveChat(): boolean {
+  return getDataSourceMode() !== 'mock'
+}
+
+export function usesLiveTickets(): boolean {
+  // Tickets have a backend slice; keep them live whenever auth is live so
+  // chat→ticket escalation shows up under My Tickets.
+  return getDataSourceMode() !== 'mock'
+}
+
+/** Notifications are live whenever auth is live (inbox API exists). */
+export function usesMockNotifications(): boolean {
+  return getDataSourceMode() === 'mock'
+}
+
+/** Knowledge/FAQ is live whenever auth is live (corpus is ingested on the backend). */
+export function usesMockKnowledge(): boolean {
+  return getDataSourceMode() === 'mock'
+}
+
+/** Small delay so fixture-backed calls feel async like a real API. */
 export async function mockLatency(ms = 280): Promise<void> {
-  if (!isMockDataSource()) return
+  if (getDataSourceMode() === 'api') return
   await new Promise((resolve) => setTimeout(resolve, ms))
 }
 
@@ -91,6 +133,20 @@ export function get<T>(url: string, config?: AxiosRequestConfig) {
 
 export function post<T>(url: string, data?: unknown, config?: AxiosRequestConfig) {
   return apiRequest<T>({ ...config, method: 'POST', url, data })
+}
+
+/** Multipart POST — lets the browser/axios set the boundary (do not force JSON). */
+export function postForm<T>(url: string, form: FormData, config?: AxiosRequestConfig) {
+  return apiRequest<T>({
+    ...config,
+    method: 'POST',
+    url,
+    data: form,
+    headers: {
+      ...config?.headers,
+      'Content-Type': 'multipart/form-data',
+    },
+  })
 }
 
 export function patch<T>(url: string, data?: unknown, config?: AxiosRequestConfig) {

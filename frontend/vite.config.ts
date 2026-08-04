@@ -12,13 +12,12 @@ export default defineConfig({
   server: {
     port: 5173,
     proxy: {
-      // Ready for backend team — point to their API when available
       '/api': {
-        target: 'http://localhost:3000',
+        target: process.env.VITE_PROXY_TARGET || 'http://localhost:4000',
         changeOrigin: true,
       },
       '/ws': {
-        target: 'ws://localhost:3000',
+        target: process.env.VITE_WS_PROXY_TARGET || 'ws://localhost:4000',
         ws: true,
       },
     },

@@ -10,7 +10,8 @@ import {
   StatusBadge,
   Textarea,
 } from '@/components/ui'
-import { IconChevronLeft, IconPaperclip, IconSend } from '@/components/ui/icons'
+import { TicketAttachments } from '@/components/tickets/TicketAttachments'
+import { IconChevronLeft, IconSend } from '@/components/ui/icons'
 import { usePageTitle } from '@/hooks/usePageTitle'
 import { useTicketStore } from '@/stores'
 import styles from './TicketDetailPage.module.css'
@@ -116,19 +117,11 @@ export function TicketDetailPage() {
             </div>
           </dl>
 
-          {ticket.attachments?.length ? (
-            <div className={styles.attachments}>
-              <h2>Attachments</h2>
-              <ul>
-                {ticket.attachments.map((file) => (
-                  <li key={file.id}>
-                    <IconPaperclip width={14} height={14} />
-                    {file.name}
-                  </li>
-                ))}
-              </ul>
-            </div>
-          ) : null}
+          <TicketAttachments
+            ticketId={ticket.id}
+            attachments={ticket.attachments}
+            dropzoneId="student-ticket-attachment"
+          />
         </section>
 
         <section className={styles.chat} aria-label="Conversation">

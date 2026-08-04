@@ -42,6 +42,7 @@ export interface AddCommentPayload {
 export interface UpdateTicketPayload {
   status?: TicketStatus
   priority?: TicketPriority
+  /** UI department bucket; sent as both category + department for routing. */
   category?: Department
   assignedTo?: string | null
   assignedName?: string | null

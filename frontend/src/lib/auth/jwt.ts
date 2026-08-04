@@ -3,9 +3,11 @@ import type { User, UserRole } from '@/types'
 /** Claims we expect from backend JWT (mirrored in mock tokens). */
 export interface JwtPayload {
   sub: string
-  email: string
-  displayName: string
-  role: UserRole
+  // The production backend currently includes only `sub`, `role`, and `exp`.
+  // Mock tokens contain the profile fields too.
+  email?: string
+  displayName?: string
+  role: string
   /** Unix expiry seconds */
   exp: number
   iat: number
@@ -91,10 +93,20 @@ export function isJwtExpired(
 }
 
 export function userFromJwt(payload: JwtPayload): User {
+  const roleByClaim: Record<string, UserRole> = {
+    STUDENT: 'student',
+    student: 'student',
+    STAFF: 'agent',
+    AGENT: 'agent',
+    agent: 'agent',
+    ADMIN: 'admin',
+    admin: 'admin',
+  }
+
   return {
     id: payload.sub,
-    email: payload.email,
-    displayName: payload.displayName,
-    role: payload.role,
+    email: payload.email ?? '',
+    displayName: payload.displayName ?? '',
+    role: roleByClaim[payload.role] ?? 'student',
   }
 }

@@ -103,3 +103,130 @@ async def test_student_reply_reopens_resolved_ticket(client):
 
     reopened_res = await client.get(f"/api/v1/tickets/{ticket_id}", headers=student_headers)
     assert reopened_res.json()["data"]["status"] == "OPEN"
+
+
+@pytest.mark.asyncio
+@integration
+async def test_ticket_response_carries_people_names(client):
+    """The queue renders assignee/requester names, so /tickets must resolve them
+    from the user relationships — not just return bare ids. Regression: every
+    row read "Unassigned" because only assignedToId was serialized."""
+    student_token, student_id = await _register_and_login(client, role="STUDENT")
+    staff_token, staff_id = await _register_and_login(
+        client, role="STAFF", department="IT"
+    )
+    student_headers = {"Authorization": f"Bearer {student_token}"}
+    staff_headers = {"Authorization": f"Bearer {staff_token}"}
+
+    create_res = await client.post(
+        "/api/v1/tickets",
+        json={"subject": "Cannot access course portal", "description": "500 on login"},
+        headers=student_headers,
+    )
+    assert create_res.status_code == 201, create_res.text
+    ticket_id = create_res.json()["data"]["id"]
+
+    # Requester name is present immediately; nobody is assigned yet.
+    created = create_res.json()["data"]
+    assert created["createdById"] == student_id
+    assert created["createdByName"] == "Test Student"
+    assert created["assignedToId"] is None
+    assert created["assignedToName"] is None
+
+    # Assigning must return the new assignee's display name on the PATCH itself.
+    assign_res = await client.patch(
+        f"/api/v1/tickets/{ticket_id}",
+        json={"assignedToId": staff_id},
+        headers=staff_headers,
+    )
+    assert assign_res.status_code == 200, assign_res.text
+    assert assign_res.json()["data"]["assignedToName"] == "Test Staff"
+
+    # ...and on the list endpoint the queue actually reads from.
+    list_res = await client.get("/api/v1/tickets", headers=staff_headers)
+    assert list_res.status_code == 200
+    row = next(t for t in list_res.json()["data"] if t["id"] == ticket_id)
+    assert row["assignedToId"] == staff_id
+    assert row["assignedToName"] == "Test Staff"
+    assert row["createdByName"] == "Test Student"
+
+    # Clearing the assignee clears the name too.
+    unassign_res = await client.patch(
+        f"/api/v1/tickets/{ticket_id}",
+        json={"assignedToId": None},
+        headers=staff_headers,
+    )
+    assert unassign_res.status_code == 200
+    assert unassign_res.json()["data"]["assignedToName"] is None
+
+
+@pytest.mark.asyncio
+@integration
+async def test_sla_and_status_history_on_create_update_reopen(client):
+    student_token, _ = await _register_and_login(client, role="STUDENT")
+    staff_token, _ = await _register_and_login(client, role="STAFF", department="IT")
+    student_headers = {"Authorization": f"Bearer {student_token}"}
+    staff_headers = {"Authorization": f"Bearer {staff_token}"}
+
+    create_res = await client.post(
+        "/api/v1/tickets",
+        json={
+            "subject": "SLA clock",
+            "description": "needs response",
+            "priority": "HIGH",
+        },
+        headers=student_headers,
+    )
+    assert create_res.status_code == 201, create_res.text
+    created = create_res.json()["data"]
+    ticket_id = created["id"]
+    assert created["slaDueAt"] is not None
+    assert created["slaHoursRemaining"] is not None
+    assert created["slaBreached"] is False
+    assert 23 <= created["slaHoursRemaining"] <= 24
+
+    history_res = await client.get(
+        f"/api/v1/tickets/{ticket_id}/status-history",
+        headers=student_headers,
+    )
+    assert history_res.status_code == 200
+    history = history_res.json()["data"]
+    assert len(history) == 1
+    assert history[0]["fromStatus"] is None
+    assert history[0]["toStatus"] == "OPEN"
+    assert history[0]["reason"] == "created"
+
+    progress_res = await client.patch(
+        f"/api/v1/tickets/{ticket_id}",
+        json={"status": "IN_PROGRESS"},
+        headers=staff_headers,
+    )
+    assert progress_res.status_code == 200
+
+    resolve_res = await client.patch(
+        f"/api/v1/tickets/{ticket_id}",
+        json={"status": "RESOLVED"},
+        headers=staff_headers,
+    )
+    assert resolve_res.status_code == 200
+    assert resolve_res.json()["data"]["slaHoursRemaining"] is None
+
+    reopen_res = await client.post(
+        f"/api/v1/tickets/{ticket_id}/comments",
+        json={"body": "Still broken"},
+        headers=student_headers,
+    )
+    assert reopen_res.status_code == 201
+
+    detail = await client.get(f"/api/v1/tickets/{ticket_id}", headers=student_headers)
+    assert detail.json()["data"]["status"] == "OPEN"
+    assert detail.json()["data"]["slaDueAt"] is not None
+
+    history_after = await client.get(
+        f"/api/v1/tickets/{ticket_id}/status-history",
+        headers=staff_headers,
+    )
+    reasons = [row["reason"] for row in history_after.json()["data"]]
+    assert "created" in reasons
+    assert "staff_update" in reasons
+    assert "reopen_on_reply" in reasons

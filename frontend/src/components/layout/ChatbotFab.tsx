@@ -1,6 +1,6 @@
-import { useEffect, useId, useRef, useState } from 'react'
+import { useCallback, useEffect, useId, useRef, useState } from 'react'
 import { Link, useNavigate } from 'react-router-dom'
-import { ROUTES } from '@/app/routes'
+import { ROUTES, ticketDetailPath } from '@/app/routes'
 import { Button } from '@/components/ui'
 import {
   IconChat,
@@ -9,37 +9,43 @@ import {
   IconPaperclip,
   IconSend,
 } from '@/components/ui/icons'
+import { useAssistantChat } from '@/hooks/useAssistantChat'
 import { useDialogFocus } from '@/hooks/useDialogFocus'
+import { CitationBlock } from '@/components/chat/CitationBlock'
+import { TicketActionCard } from '@/components/chat/TicketActionCard'
 import styles from './ChatbotFab.module.css'
-
-interface ChatMsg {
-  id: string
-  role: 'user' | 'assistant'
-  body: string
-}
-
-const welcome: ChatMsg = {
-  id: 'welcome',
-  role: 'assistant',
-  body: 'Hi — how can I help?',
-}
 
 export function ChatbotFab() {
   const [open, setOpen] = useState(false)
   const [draft, setDraft] = useState('')
-  const [messages, setMessages] = useState<ChatMsg[]>([welcome])
-  const [typing, setTyping] = useState(false)
+  const {
+    messages,
+    send,
+    isStreaming,
+    health,
+    llmOffline,
+    proposeCreate,
+    beginEditAction,
+    saveEditAction,
+    cancelEditAction,
+    cancelAction,
+    confirmAction,
+    isEscalating,
+    ticket,
+    canProposeCreate,
+  } = useAssistantChat({ greeting: 'Hi — how can I help?' })
   const panelId = useId()
   const panelRef = useRef<HTMLDivElement>(null)
   const buttonRef = useRef<HTMLButtonElement>(null)
   const listRef = useRef<HTMLDivElement>(null)
   const navigate = useNavigate()
+  const closePanel = useCallback(() => setOpen(false), [])
 
   useDialogFocus({
     open,
     containerRef: panelRef,
     triggerRef: buttonRef,
-    onClose: () => setOpen(false),
+    onClose: closePanel,
   })
 
   useEffect(() => {
@@ -60,30 +66,11 @@ export function ChatbotFab() {
 
   useEffect(() => {
     listRef.current?.scrollTo({ top: listRef.current.scrollHeight })
-  }, [messages, typing, open])
+  }, [messages, isStreaming, open])
 
-  function send() {
-    const text = draft.trim()
-    if (!text) return
-    const userMsg: ChatMsg = {
-      id: `u-${Date.now()}`,
-      role: 'user',
-      body: text,
-    }
-    setMessages((prev) => [...prev, userMsg])
+  function submit() {
+    void send(draft)
     setDraft('')
-    setTyping(true)
-    window.setTimeout(() => {
-      setTyping(false)
-      setMessages((prev) => [
-        ...prev,
-        {
-          id: `a-${Date.now()}`,
-          role: 'assistant',
-          body: 'Placeholder response — open the full assistant for more help, or create a ticket.',
-        },
-      ])
-    }, 700)
   }
 
   return (
@@ -102,7 +89,11 @@ export function ChatbotFab() {
               <IconChat width={18} height={18} />
               <div>
                 <strong>AI Assistant</strong>
-                <span>Placeholder responses</span>
+                <span>
+                  {llmOffline
+                    ? 'LLM server offline'
+                    : (health?.model ?? 'Ready')}
+                </span>
               </div>
             </div>
             <div className={styles.headerActions}>
@@ -111,7 +102,7 @@ export function ChatbotFab() {
                 className={styles.iconBtn}
                 aria-label="Open full assistant"
                 onClick={() => {
-                  setOpen(false)
+                  closePanel()
                   void navigate(ROUTES.assistant)
                 }}
               >
@@ -121,7 +112,7 @@ export function ChatbotFab() {
                 type="button"
                 className={styles.iconBtn}
                 aria-label="Close AI assistant"
-                onClick={() => setOpen(false)}
+                onClick={closePanel}
               >
                 <IconClose width={16} height={16} />
               </button>
@@ -140,10 +131,37 @@ export function ChatbotFab() {
                 className={msg.role === 'user' ? styles.mine : styles.theirs}
               >
                 <p>{msg.body}</p>
+                {msg.role === 'assistant' &&
+                (msg.citations?.length || msg.retrievalWeak) ? (
+                  <div className={styles.citations}>
+                    <CitationBlock
+                      compact
+                      citations={msg.citations ?? []}
+                      retrievalWeak={msg.retrievalWeak}
+                      canEscalate={canProposeCreate}
+                      isEscalating={isEscalating}
+                      onEscalate={() => proposeCreate()}
+                      escalateLabel="Create ticket"
+                    />
+                  </div>
+                ) : null}
+                {msg.role === 'assistant' && msg.action ? (
+                  <div className={styles.citations}>
+                    <TicketActionCard
+                      compact
+                      action={msg.action}
+                      onConfirm={() => void confirmAction(msg.action!.id)}
+                      onCancel={() => cancelAction(msg.action!.id)}
+                      onBeginEdit={() => beginEditAction(msg.action!.id)}
+                      onSaveEdit={saveEditAction}
+                      onCancelEdit={() => cancelEditAction(msg.action!.id)}
+                    />
+                  </div>
+                ) : null}
                 <small>{msg.role === 'user' ? 'You' : 'Assistant'}</small>
               </div>
             ))}
-            {typing ? (
+            {isStreaming ? (
               <div className={styles.typing} aria-label="Assistant is typing">
                 <span />
                 <span />
@@ -156,7 +174,7 @@ export function ChatbotFab() {
             className={styles.composer}
             onSubmit={(e) => {
               e.preventDefault()
-              send()
+              submit()
             }}
           >
             <label className={styles.inputWrap}>
@@ -166,19 +184,52 @@ export function ChatbotFab() {
                 onChange={(e) => setDraft(e.target.value)}
                 placeholder="Ask a question..."
               />
-              <button type="button" className={styles.attach} aria-label="Attach file" disabled>
+              <button
+                type="button"
+                className={styles.attach}
+                aria-label="Attach file"
+                disabled
+              >
                 <IconPaperclip width={16} height={16} />
               </button>
             </label>
-            <Button type="submit" size="sm" aria-label="Send">
+            <Button
+              type="submit"
+              size="sm"
+              aria-label="Send"
+              disabled={isStreaming}
+            >
               <IconSend width={16} height={16} />
             </Button>
           </form>
           <p className={styles.hint}>
-            Escape closes ·{' '}
-            <Link to={ROUTES.assistant} onClick={() => setOpen(false)}>
-              Open full chat
-            </Link>
+            {ticket ? (
+              <Link
+                to={ticketDetailPath(ticket.id)}
+                onClick={() => setOpen(false)}
+              >
+                View ticket: {ticket.subject}
+              </Link>
+            ) : (
+              <>
+                {canProposeCreate ? (
+                  <button
+                    type="button"
+                    className={styles.hintBtn}
+                    disabled={isEscalating}
+                    onClick={() => proposeCreate()}
+                  >
+                    Propose ticket
+                  </button>
+                ) : (
+                  'Escape closes'
+                )}
+                {' · '}
+                <Link to={ROUTES.assistant} onClick={() => setOpen(false)}>
+                  Open full chat
+                </Link>
+              </>
+            )}
           </p>
         </div>
       ) : null}
@@ -193,7 +244,11 @@ export function ChatbotFab() {
         aria-controls={open ? panelId : undefined}
         onClick={() => setOpen((v) => !v)}
       >
-        {open ? <IconClose width={22} height={22} /> : <IconChat width={22} height={22} />}
+        {open ? (
+          <IconClose width={22} height={22} />
+        ) : (
+          <IconChat width={22} height={22} />
+        )}
       </button>
     </div>
   )

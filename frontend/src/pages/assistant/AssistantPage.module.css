@@ -31,6 +31,53 @@
   line-height: 1.45;
 }
 
+.bannerError {
+  background: var(--color-error-bg, #fdecec);
+  color: var(--color-error, #b3261e);
+  border-color: #f2c2be;
+}
+
+.bannerError code {
+  font-size: var(--text-caption);
+  opacity: 0.85;
+}
+
+.modes {
+  display: flex;
+  gap: var(--space-2);
+  margin-bottom: var(--space-3);
+}
+
+.modeBtn {
+  border: 1px solid var(--neutral-200);
+  background: var(--neutral-50);
+  border-radius: var(--radius-md);
+  padding: 0.35rem 0.75rem;
+  cursor: pointer;
+  font: inherit;
+  font-size: var(--text-small);
+  font-weight: 600;
+  color: var(--neutral-700);
+}
+
+.modeBtn[aria-pressed='true'] {
+  border-color: var(--brand-300);
+  background: var(--brand-50);
+  color: var(--brand-700);
+}
+
+.caret {
+  display: inline-block;
+  width: 0.5ch;
+  animation: blink 1s step-end infinite;
+}
+
+@keyframes blink {
+  50% {
+    opacity: 0;
+  }
+}
+
 .layout {
   display: grid;
   grid-template-columns: minmax(0, 1.5fr) minmax(240px, 0.75fr);
@@ -183,9 +230,27 @@
   line-height: 1.45;
 }
 
-.escalate :global(a) {
+.escalateActions {
+  display: flex;
+  flex-wrap: wrap;
+  gap: var(--space-2);
+}
+
+.escalate :global(a),
+.escalate :global(button) {
   background: #fff;
   color: #0f3145;
+}
+
+.escalate :global(button):disabled {
+  opacity: 0.65;
+  cursor: not-allowed;
+}
+
+.ticketSubject {
+  font-weight: 600;
+  opacity: 1;
+  margin-bottom: var(--space-2);
 }
 
 @media (max-width: 900px) {

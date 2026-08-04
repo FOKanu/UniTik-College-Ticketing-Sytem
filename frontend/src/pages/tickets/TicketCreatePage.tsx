@@ -29,7 +29,7 @@ export function TicketCreatePage() {
   const mutating = useTicketStore((s) => s.mutating)
   const apiError = useTicketStore((s) => s.error)
   const pushToast = useUiStore((s) => s.pushToast)
-  const [fileName, setFileName] = useState<string | null>(null)
+  const [pendingFile, setPendingFile] = useState<File | null>(null)
 
   const {
     register,
@@ -47,17 +47,23 @@ export function TicketCreatePage() {
   })
 
   async function onSubmit(values: TicketCreateFormValues) {
-    const ticket = await createTicket({
-      subject: values.subject,
-      description: values.description,
-      category: values.category,
-      priority: values.priority,
-    })
+    const ticket = await createTicket(
+      {
+        subject: values.subject,
+        description: values.description,
+        category: values.category,
+        priority: values.priority,
+      },
+      pendingFile,
+    )
     if (ticket) {
+      const uploadFailed = Boolean(pendingFile && useTicketStore.getState().error)
       pushToast({
-        title: 'Ticket created',
-        body: `${ticket.id} was submitted.`,
-        tone: 'success',
+        title: uploadFailed ? 'Ticket created with upload warning' : 'Ticket created',
+        body: uploadFailed
+          ? `${ticket.id} was submitted, but the attachment failed to upload.`
+          : `${ticket.id} was submitted.`,
+        tone: uploadFailed ? 'error' : 'success',
       })
       void navigate(ROUTES.tickets)
     }
@@ -131,8 +137,9 @@ export function TicketCreatePage() {
             />
 
             <FileDropzone
-              fileName={fileName}
-              onChange={(file) => setFileName(file?.name ?? null)}
+              fileName={pendingFile?.name ?? null}
+              disabled={mutating}
+              onChange={(file) => setPendingFile(file)}
             />
 
             {apiError ? (

@@ -40,8 +40,22 @@ Docker: `docker compose up --build` — Postgres (pgvector), backend, frontend.
 | Chat | `app/api/v1/chat.py` | `src/modules/chat/` |
 | KB/FAQ | `app/api/v1/kb.py` | `src/modules/faq/` |
 
+`app/ai/` is the only place that talks to a model provider (Ollama / OpenAI / Gemini, all
+via the OpenAI protocol). Switch with `LLM_PROVIDER`; see `docs/LLM_INTEGRATION.md`.
+Team default for Ollama is the public Tailscale Funnel URL in `backend/.env.example`
+(`https://muc-a-3099.tail129a23.ts.net/v1`) plus a Bearer `OLLAMA_API_KEY`.
+Chat replies stream over SSE from `POST /api/v1/chat/conversations/{id}/messages/stream`.
+
 API envelope (unchanged from v1): `{ success, data }` / `{ success: false, error: { message } }`.
-Frontend `src/lib/api-client.ts` expects this shape.
+Frontend `src/lib/api/adapters.ts` unwraps this envelope and reconciles the backend's vocabulary
+with the mock-first UI types (`OPEN` → `open`, `createdById` → `createdBy`, free-text categories →
+the four `Department` buckets). Per-module API files map their own payloads on top of it.
+
+`VITE_DATA_SOURCE` modes: `mock` (fixtures only), `hybrid` (live auth/chat/tickets + mock
+notifications/knowledge), `api` (all live; unfinished slices empty). Prefer `hybrid` for LLM work.
+
+Notifications have no backend slice yet, so in `api` mode `notificationsApi` reports an empty
+inbox instead of calling a route that does not exist.
 
 Access-control (NEG-4): students see only their tickets; `isInternal` comments hidden from students.
 

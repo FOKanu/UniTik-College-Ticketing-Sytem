@@ -94,48 +94,33 @@
 }
 
 .description,
-.attachments {
+.attachments,
+.routing {
   margin-top: 1.15rem;
   padding-top: 1rem;
   border-top: 1px solid var(--color-border);
 }
 
-.assignPanel {
-  margin-top: 1.15rem;
-  padding-top: 1rem;
-  border-top: 1px solid var(--color-border);
-  display: grid;
-  gap: 0.75rem;
-}
-
-.assignPanel h2 {
-  margin: 0;
-}
-
-.assignHint {
-  margin: 0;
-  color: var(--color-text-muted);
-  font-size: 0.82rem;
-  line-height: 1.4;
-}
-
-.assignActions {
-  display: flex;
-  flex-wrap: wrap;
-  gap: 0.45rem;
-}
-
-.escalateBlock {
+.routing {
   display: grid;
   gap: 0.65rem;
-  padding-top: 0.35rem;
-  border-top: 1px dashed var(--color-border);
 }
 
-.escalateBlock h3 {
+.routing h2 {
   margin: 0;
+  font-size: 0.9rem;
+}
+
+.routingError {
+  margin: 0;
+  color: var(--color-danger, #b42318);
   font-size: 0.85rem;
-  font-weight: 700;
+}
+
+.routingStatus {
+  margin: 0;
+  color: var(--color-text-muted);
+  font-size: 0.85rem;
 }
 
 .description h2,

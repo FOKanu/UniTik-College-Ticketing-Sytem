@@ -78,6 +78,11 @@ class Ticket(Base):
     updatedAt: Mapped[datetime] = mapped_column(
         DateTime(timezone=False), default=_now, onupdate=_now, nullable=False
     )
+    # First-response SLA clock (set on create / priority change / reopen).
+    slaDueAt: Mapped[datetime | None] = mapped_column(DateTime(timezone=False), nullable=True)
+    slaBreachedAt: Mapped[datetime | None] = mapped_column(
+        DateTime(timezone=False), nullable=True
+    )
 
     created_by: Mapped["User"] = relationship(
         "User", foreign_keys=[createdById], back_populates="tickets_created"
@@ -91,6 +96,11 @@ class Ticket(Base):
         "ChatConversation", back_populates="escalated_ticket"
     )
     comments: Mapped[list["TicketComment"]] = relationship("TicketComment", back_populates="ticket")
+    status_history: Mapped[list["TicketStatusHistory"]] = relationship(
+        "TicketStatusHistory",
+        back_populates="ticket",
+        order_by="TicketStatusHistory.createdAt",
+    )
 
 
 class Attachment(Base):
@@ -136,7 +146,7 @@ class FaqEntry(Base):
     language: Mapped[str] = mapped_column(String, default="en", nullable=False)
     category: Mapped[str | None] = mapped_column(String, nullable=True)
     contextBlob: Mapped[str | None] = mapped_column(Text, nullable=True)
-    embedding = mapped_column(Vector(1536), nullable=True)
+    embedding = mapped_column(Vector(768), nullable=True)
     createdAt: Mapped[datetime] = mapped_column(
         DateTime(timezone=False), server_default=func.now(), nullable=False
     )
@@ -151,7 +161,8 @@ class Notification(Base):
     id: Mapped[str] = mapped_column(String, primary_key=True, default=lambda: str(uuid.uuid4()))
     userId: Mapped[str] = mapped_column(String, ForeignKey("User.id"), nullable=False)
     ticketId: Mapped[str | None] = mapped_column(String, nullable=True)
-    channel: Mapped[str] = mapped_column(String, default="EMAIL", nullable=False)
+    channel: Mapped[str] = mapped_column(String, default="IN_APP", nullable=False)
+    title: Mapped[str] = mapped_column(String, nullable=False)
     message: Mapped[str] = mapped_column(Text, nullable=False)
     readAt: Mapped[datetime | None] = mapped_column(DateTime(timezone=False), nullable=True)
     createdAt: Mapped[datetime] = mapped_column(
@@ -230,3 +241,26 @@ class TicketComment(Base):
 
     ticket: Mapped["Ticket"] = relationship("Ticket", back_populates="comments")
     author: Mapped["User"] = relationship("User", back_populates="ticket_comments")
+
+
+class TicketStatusHistory(Base):
+    """Append-only log of ticket status transitions (including create / reopen)."""
+
+    __tablename__ = "TicketStatusHistory"
+
+    id: Mapped[str] = mapped_column(String, primary_key=True, default=lambda: str(uuid.uuid4()))
+    ticketId: Mapped[str] = mapped_column(String, ForeignKey("Ticket.id"), nullable=False)
+    fromStatus: Mapped[TicketStatus | None] = mapped_column(
+        Enum(TicketStatus, name="TicketStatus", create_constraint=False), nullable=True
+    )
+    toStatus: Mapped[TicketStatus] = mapped_column(
+        Enum(TicketStatus, name="TicketStatus", create_constraint=False), nullable=False
+    )
+    changedById: Mapped[str | None] = mapped_column(String, ForeignKey("User.id"), nullable=True)
+    reason: Mapped[str | None] = mapped_column(String, nullable=True)
+    createdAt: Mapped[datetime] = mapped_column(
+        DateTime(timezone=False), server_default=func.now(), nullable=False
+    )
+
+    ticket: Mapped["Ticket"] = relationship("Ticket", back_populates="status_history")
+    changed_by: Mapped[Optional["User"]] = relationship("User")

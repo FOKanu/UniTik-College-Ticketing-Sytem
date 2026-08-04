@@ -35,6 +35,20 @@ describe('jwt helpers', () => {
     const token = createMockJwt(student, 3600)
     expect(isJwtExpired(token)).toBe(false)
   })
+
+  it('normalises the production backend role claims', () => {
+    const productionPayload = {
+      sub: 'u1',
+      role: 'STUDENT',
+      exp: Math.floor(Date.now() / 1000) + 3600,
+      iat: Math.floor(Date.now() / 1000),
+    }
+
+    expect(userFromJwt(productionPayload).role).toBe('student')
+    expect(userFromJwt({ ...productionPayload, role: 'STAFF' }).role).toBe(
+      'agent',
+    )
+  })
 })
 
 describe('rbac helpers', () => {

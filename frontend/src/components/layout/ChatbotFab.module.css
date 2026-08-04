@@ -142,6 +142,14 @@
   text-align: right;
 }
 
+.citations {
+  background: var(--neutral-100);
+  border: 1px solid var(--neutral-200);
+  border-radius: 12px;
+  border-top-left-radius: 4px;
+  padding: 0.5rem 0.8rem;
+}
+
 .typing {
   align-self: flex-start;
   display: flex;
@@ -238,6 +246,21 @@
   color: #0f3145;
   font-weight: 600;
   text-decoration: none;
+}
+
+.hintBtn {
+  border: 0;
+  background: none;
+  padding: 0;
+  font: inherit;
+  font-weight: 600;
+  color: #0f3145;
+  cursor: pointer;
+}
+
+.hintBtn:disabled {
+  color: var(--neutral-400);
+  cursor: not-allowed;
 }
 
 @media (max-width: 767px) {
