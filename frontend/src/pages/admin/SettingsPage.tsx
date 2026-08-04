@@ -9,7 +9,9 @@ import {
   Input,
   Toggle,
 } from '@/components/ui'
-import { mockArticles } from '@/mocks/data'
+import { mockArticles, mockStaffMembers } from '@/mocks/data'
+import { useUiStore } from '@/stores'
+import type { Department } from '@/types'
 import styles from './SettingsPage.module.css'
 
 type SettingsTab = 'institution' | 'departments' | 'people' | 'knowledge'
@@ -60,39 +62,11 @@ const DEPARTMENTS = [
   },
 ]
 
-const STAFF = [
-  {
-    id: '1',
-    name: 'J. Novak',
-    email: 'agent@campus.edu',
-    role: 'Agent',
-    department: 'IT',
-    status: 'Active' as const,
-  },
-  {
-    id: '2',
-    name: 'R. Diallo',
-    email: 'r.diallo@campus.edu',
-    role: 'Agent',
-    department: 'Academics',
-    status: 'Active' as const,
-  },
-  {
-    id: '3',
-    name: 'Sam Admin',
-    email: 'admin@campus.edu',
-    role: 'Admin',
-    department: 'IT',
-    status: 'Active' as const,
-  },
-  {
-    id: '4',
-    name: 'M. Keller',
-    email: 'm.keller@campus.edu',
-    role: 'Agent',
-    department: 'Finance',
-    status: 'Invited' as const,
-  },
+const DEPARTMENT_OPTIONS: Department[] = [
+  'Academics',
+  'IT',
+  'Finance',
+  'Maintenance',
 ]
 
 function tabFromPath(pathname: string): SettingsTab {
@@ -105,6 +79,7 @@ function tabFromPath(pathname: string): SettingsTab {
 export function SettingsPage() {
   const location = useLocation()
   const tab = tabFromPath(location.pathname)
+  const pushToast = useUiStore((s) => s.pushToast)
 
   const [displayName, setDisplayName] = useState('MediaDesign Hochschule')
   const [shortCode, setShortCode] = useState('MDH')
@@ -114,8 +89,34 @@ export function SettingsPage() {
   const [logoName, setLogoName] = useState<string | null>(null)
   const [langDe, setLangDe] = useState(true)
   const [langEn, setLangEn] = useState(true)
+  const [staff, setStaff] = useState(() =>
+    mockStaffMembers.map((member) => ({ ...member })),
+  )
 
   const articles = useMemo(() => mockArticles, [])
+
+  function updateStaffMember(
+    id: string,
+    patch: Partial<(typeof staff)[number]>,
+  ) {
+    setStaff((prev) =>
+      prev.map((member) =>
+        member.id === id ? { ...member, ...patch } : member,
+      ),
+    )
+    const target = mockStaffMembers.find((member) => member.id === id)
+    if (target) Object.assign(target, patch)
+  }
+
+  function saveStaffMember(id: string) {
+    const member = staff.find((item) => item.id === id)
+    if (!member) return
+    pushToast({
+      title: 'Staff updated',
+      body: `${member.name} → ${member.role}, ${member.department}.`,
+      tone: 'success',
+    })
+  }
 
   return (
     <div className={styles.page}>
@@ -142,12 +143,7 @@ export function SettingsPage() {
       {tab === 'institution' ? (
         <section className={styles.panel} aria-labelledby="institution-heading">
           <h2 id="institution-heading">Institution</h2>
-          <form
-            className={styles.form}
-            onSubmit={(e) => {
-              e.preventDefault()
-            }}
-          >
+          <div className={styles.form}>
             <Input
               id="inst-name"
               label="Display name"
@@ -162,41 +158,46 @@ export function SettingsPage() {
             />
             <Input
               id="inst-domains"
-              label="Email domains"
-              hint="Comma-separated domains allowed for student self-registration."
+              label="Allowed email domains"
               value={emailDomains}
               onChange={(e) => setEmailDomains(e.target.value)}
+              hint="Comma-separated domains for student self-registration."
             />
             <div className={styles.logoField}>
               <span className={styles.label}>Institution logo</span>
               <FileDropzone
-                id="inst-logo"
                 fileName={logoName}
                 onChange={(file) => setLogoName(file?.name ?? null)}
               />
             </div>
-            <fieldset className={styles.languages}>
-              <legend>Languages</legend>
+            <div className={styles.toggles}>
               <Toggle
                 id="lang-de"
-                label="Deutsch"
+                label="German (DE)"
                 checked={langDe}
                 onChange={setLangDe}
               />
               <Toggle
                 id="lang-en"
-                label="English"
+                label="English (EN)"
                 checked={langEn}
                 onChange={setLangEn}
               />
-            </fieldset>
-            <div className={styles.formActions}>
-              <Button type="button" variant="secondary">
-                Cancel
-              </Button>
-              <Button type="submit">Save changes</Button>
             </div>
-          </form>
+            <div className={styles.formActions}>
+              <Button
+                onClick={() =>
+                  pushToast({
+                    title: 'Institution saved',
+                    body: 'Settings were updated for this demo session.',
+                    tone: 'success',
+                  })
+                }
+              >
+                Save changes
+              </Button>
+            </div>
+          </div>
         </section>
       ) : null}
 
@@ -243,8 +244,8 @@ export function SettingsPage() {
             <Button size="sm">+ Invite staff</Button>
           </div>
           <div className={styles.banner} role="note">
-            Students self-register with an allowed institution email domain.
-            Invite staff here to grant agent or admin access.
+            Change an employee&apos;s department or role here. Updates apply to
+            ticket assignment lists in this demo session.
           </div>
           <div className={styles.tableWrap}>
             <table className={styles.table}>
@@ -256,21 +257,62 @@ export function SettingsPage() {
                   <th scope="col">Role</th>
                   <th scope="col">Department</th>
                   <th scope="col">Status</th>
+                  <th scope="col">Actions</th>
                 </tr>
               </thead>
               <tbody>
-                {STAFF.map((person) => (
+                {staff.map((person) => (
                   <tr key={person.id}>
                     <td>{person.name}</td>
                     <td>{person.email}</td>
-                    <td>{person.role}</td>
-                    <td>{person.department}</td>
+                    <td>
+                      <select
+                        className={styles.inlineSelect}
+                        aria-label={`Role for ${person.name}`}
+                        value={person.role}
+                        onChange={(e) =>
+                          updateStaffMember(person.id, {
+                            role: e.target.value as 'Agent' | 'Admin',
+                          })
+                        }
+                      >
+                        <option value="Agent">Agent</option>
+                        <option value="Admin">Admin</option>
+                      </select>
+                    </td>
+                    <td>
+                      <select
+                        className={styles.inlineSelect}
+                        aria-label={`Department for ${person.name}`}
+                        value={person.department}
+                        onChange={(e) =>
+                          updateStaffMember(person.id, {
+                            department: e.target.value as Department,
+                          })
+                        }
+                      >
+                        {DEPARTMENT_OPTIONS.map((dept) => (
+                          <option key={dept} value={dept}>
+                            {dept}
+                          </option>
+                        ))}
+                      </select>
+                    </td>
                     <td>
                       <Badge
                         tone={person.status === 'Active' ? 'success' : 'warn'}
                       >
                         {person.status}
                       </Badge>
+                    </td>
+                    <td>
+                      <Button
+                        size="sm"
+                        variant="secondary"
+                        onClick={() => saveStaffMember(person.id)}
+                      >
+                        Save
+                      </Button>
                     </td>
                   </tr>
                 ))}

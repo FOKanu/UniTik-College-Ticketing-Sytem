@@ -68,6 +68,8 @@ export interface NotificationItem {
 export interface KnowledgeArticle {
   id: string
   title: string
+  /** Canonical FAQ / knowledge-base answer body (exact wording). */
+  body: string
   category: Department
   status: 'published' | 'draft'
   views: number

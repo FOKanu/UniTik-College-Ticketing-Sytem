@@ -2,6 +2,7 @@ import type {
   KnowledgeArticle,
   NotificationItem,
   Ticket,
+  Department,
   User,
 } from '@/types'
 
@@ -33,6 +34,66 @@ export const mockAccounts: User[] = [
 export function findMockAccount(email: string): User | undefined {
   return mockAccounts.find(
     (account) => account.email.toLowerCase() === email.trim().toLowerCase(),
+  )
+}
+
+export type StaffMemberStatus = 'Active' | 'Invited'
+
+export interface StaffMember {
+  id: string
+  name: string
+  email: string
+  role: 'Agent' | 'Admin'
+  department: Department
+  status: StaffMemberStatus
+}
+
+/** Mutable staff roster used by admin People settings and ticket assignment. */
+export const mockStaffMembers: StaffMember[] = [
+  {
+    id: 'agent-1',
+    name: 'J. Novak',
+    email: 'agent@campus.edu',
+    role: 'Agent',
+    department: 'IT',
+    status: 'Active',
+  },
+  {
+    id: 'agent-2',
+    name: 'R. Diallo',
+    email: 'r.diallo@campus.edu',
+    role: 'Agent',
+    department: 'Academics',
+    status: 'Active',
+  },
+  {
+    id: 'admin-1',
+    name: 'Sam Admin',
+    email: 'admin@campus.edu',
+    role: 'Admin',
+    department: 'IT',
+    status: 'Active',
+  },
+  {
+    id: 'agent-3',
+    name: 'M. Keller',
+    email: 'm.keller@campus.edu',
+    role: 'Agent',
+    department: 'Finance',
+    status: 'Invited',
+  },
+]
+
+export function findStaffMember(id: string): StaffMember | undefined {
+  return mockStaffMembers.find((member) => member.id === id)
+}
+
+export function listAssignableStaff(department?: Department): StaffMember[] {
+  return mockStaffMembers.filter(
+    (member) =>
+      member.status === 'Active' &&
+      (member.role === 'Agent' || member.role === 'Admin') &&
+      (!department || member.department === department),
   )
 }
 
@@ -204,36 +265,112 @@ export const mockTickets: Ticket[] = [
 
 export const mockArticles: KnowledgeArticle[] = [
   {
-    id: 'art-1',
-    title: 'How to reset your student portal password',
+    id: 'faq-it-support-001',
+    title: 'I forgot my university password.',
+    body: 'Open [https://portal.university.example/support/it](https://portal.university.example/support/it), select Password Reset, enter your university email, complete identity verification, and follow the reset instructions. Then sign in to the Student Portal at [https://portal.university.example](https://portal.university.example) with the new password.',
     category: 'IT',
     status: 'published',
-    views: 1204,
-    updatedAt: '2026-07-10T00:00:00.000Z',
+    views: 1840,
+    updatedAt: '2026-08-01T00:00:00.000Z',
   },
   {
-    id: 'art-2',
-    title: 'Fix Wi-Fi authentication on dorm network',
+    id: 'faq-it-support-002',
+    title: 'How do I connect to the campus Wi-Fi?',
+    body: 'Open [https://portal.university.example/support/it](https://portal.university.example/support/it) and select Campus Wi-Fi. Choose your device type, connect to the university wireless network named in the guide, authenticate with your Student Portal account, and accept the university network certificate when its details match the guide.',
     category: 'IT',
     status: 'published',
-    views: 840,
-    updatedAt: '2026-07-08T00:00:00.000Z',
+    views: 1520,
+    updatedAt: '2026-08-01T00:00:00.000Z',
   },
   {
-    id: 'art-3',
-    title: 'Tuition refund timeline explained',
+    id: 'faq-registrar-004',
+    title: 'How do I register for courses in the Student Portal?',
+    body: 'Open [https://portal.university.example/registration](https://portal.university.example/registration), sign in, choose the term, search by subject or course number, add sections to your plan, and select Register. Review prerequisites, time conflicts, credits, and grading basis before confirming. A successful submission displays Registered and sends a portal confirmation.',
+    category: 'Academics',
+    status: 'published',
+    views: 1310,
+    updatedAt: '2026-08-01T00:00:00.000Z',
+  },
+  {
+    id: 'faq-academics-007',
+    title: 'When is the add and drop deadline?',
+    body: 'Open [https://portal.university.example/academic-calendar](https://portal.university.example/academic-calendar), select the academic year and term, and review the official add, drop, withdrawal, and late-withdrawal deadlines. Deadlines vary by term and course format, so the calendar date controls.',
+    category: 'Academics',
+    status: 'published',
+    views: 980,
+    updatedAt: '2026-08-01T00:00:00.000Z',
+  },
+  {
+    id: 'faq-finance-001',
+    title: 'When is the tuition fee payment deadline?',
+    body: 'Open [https://portal.university.example/finance](https://portal.university.example/finance), select Account and Deadlines, and choose the term. Review the invoice due date and pay through the listed synthetic payment methods before that date to avoid the published late-payment process.',
     category: 'Finance',
     status: 'published',
-    views: 512,
-    updatedAt: '2026-07-05T00:00:00.000Z',
+    views: 1120,
+    updatedAt: '2026-08-01T00:00:00.000Z',
   },
   {
-    id: 'art-4',
-    title: 'Lab equipment reservation (draft)',
+    id: 'faq-registrar-020',
+    title: 'How do I order an official transcript?',
+    body: 'Open [https://portal.university.example/registrar/transcripts](https://portal.university.example/registrar/transcripts). Choose electronic or printed delivery, verify your identity and record details, enter the recipient, review any disclosed fee, and submit. Electronic requests are normally processed within one business day; printed requests are normally prepared within three business days before delivery.',
+    category: 'Academics',
+    status: 'published',
+    views: 870,
+    updatedAt: '2026-08-01T00:00:00.000Z',
+  },
+  {
+    id: 'faq-registrar-028',
+    title: 'How do I obtain official enrollment verification?',
+    body: 'Open [https://portal.university.example/registrar/enrollment-verification](https://portal.university.example/registrar/enrollment-verification). Choose the term and verification purpose, confirm the recipient, select electronic download or delivery, and submit. Current-term letters are normally available immediately after the enrollment census; custom letters take up to three business days.',
+    category: 'Academics',
+    status: 'published',
+    views: 640,
+    updatedAt: '2026-08-01T00:00:00.000Z',
+  },
+  {
+    id: 'faq-housing-003',
+    title: 'How do I apply for university housing?',
+    body: 'Open [https://portal.university.example/housing/apply](https://portal.university.example/housing/apply), sign in, choose the academic term, complete personal and roommate-profile details, rank room preferences, review the contract, and submit. A confirmation appears immediately. Housing communicates deposit and selection steps through the Student Portal.',
     category: 'Maintenance',
-    status: 'draft',
-    views: 12,
-    updatedAt: '2026-07-12T00:00:00.000Z',
+    status: 'published',
+    views: 720,
+    updatedAt: '2026-08-01T00:00:00.000Z',
+  },
+  {
+    id: 'faq-housing-020',
+    title: 'How do I request a room change?',
+    body: 'Open [https://portal.university.example/housing/room-change](https://portal.university.example/housing/room-change), select Request Room Change, describe the reason, indicate acceptable room types, and note any safety or accessibility concern. Meet with residential staff when requested. Routine requests are reviewed within ten business days and depend on available space; do not move until written approval.',
+    category: 'Maintenance',
+    status: 'published',
+    views: 410,
+    updatedAt: '2026-08-01T00:00:00.000Z',
+  },
+  {
+    id: 'faq-housing-046',
+    title: 'How do I report a repair in university housing?',
+    body: 'Open [https://portal.university.example/maintenance/housing](https://portal.university.example/maintenance/housing), select Routine Repair, provide the residence community and room, issue category, description, permission to enter, availability, and photos when useful, then submit. Maintenance owns repair execution and normally acknowledges routine requests within one business day.',
+    category: 'Maintenance',
+    status: 'published',
+    views: 550,
+    updatedAt: '2026-08-01T00:00:00.000Z',
+  },
+  {
+    id: 'faq-maintenance-006',
+    title: 'How do I replace a lost student ID card?',
+    body: 'Sign in at [https://portal.university.example](https://portal.university.example), select Profile, then Access Card, and choose Report Lost to deactivate the card immediately. Select Request Replacement and follow the identity-verification steps. For temporary access or technical problems, open [https://portal.university.example/support/it](https://portal.university.example/support/it).',
+    category: 'IT',
+    status: 'published',
+    views: 990,
+    updatedAt: '2026-08-01T00:00:00.000Z',
+  },
+  {
+    id: 'faq-registrar-001',
+    title: 'Where can I find the academic calendar?',
+    body: "Open the Academic Calendar at [https://portal.university.example/academic-calendar](https://portal.university.example/academic-calendar). Select the academic year and term to view class dates, add/drop and withdrawal deadlines, holidays, examinations, and grade deadlines. Dates shown there are the university's official deadlines.",
+    category: 'Academics',
+    status: 'published',
+    views: 1450,
+    updatedAt: '2026-08-01T00:00:00.000Z',
   },
 ]
 
@@ -265,7 +402,7 @@ export const mockNotifications: NotificationItem[] = [
 ]
 
 export const suggestedTopics = [
-  'Reset student portal password',
-  'Check tuition refund status',
-  'Report a maintenance issue',
+  'I forgot my university password.',
+  'How do I connect to the campus Wi-Fi?',
+  'When is the tuition fee payment deadline?',
 ]

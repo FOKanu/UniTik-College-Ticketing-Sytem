@@ -40,13 +40,18 @@ export function AdminDashboardPage() {
           <ButtonLink to={ROUTES.analytics}>Open analytics</ButtonLink>
         </article>
         <article className={styles.card}>
+          <h2>People</h2>
+          <p>Change staff roles and move employees between departments.</p>
+          <ButtonLink to={ROUTES.settingsPeople}>Manage people</ButtonLink>
+        </article>
+        <article className={styles.card}>
           <h2>Settings</h2>
           <p>Institution profile, departments, people, and knowledge base.</p>
           <ButtonLink to={ROUTES.settings}>Open settings</ButtonLink>
         </article>
         <article className={styles.card}>
           <h2>Staff queue</h2>
-          <p>Jump into the live ticket queue for oversight.</p>
+          <p>Assign, reassign, or escalate tickets from the live queue.</p>
           <ButtonLink to={ROUTES.queue} variant="secondary">
             Open queue
           </ButtonLink>

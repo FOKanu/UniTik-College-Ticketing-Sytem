@@ -82,6 +82,7 @@ function pageTitle(pathname: string): string {
   if (pathname.startsWith('/agent/tickets/') && pathname !== ROUTES.agentTicketNew) {
     return 'Ticket Resolution'
   }
+  if (pathname.startsWith('/admin/settings/people')) return 'People'
   if (pathname.startsWith('/admin/settings')) return 'Settings'
   const map: Record<string, string> = {
     [ROUTES.dashboard]: 'Dashboard',
@@ -99,6 +100,9 @@ function pageTitle(pathname: string): string {
     [ROUTES.admin]: 'Dashboard',
     [ROUTES.departments]: 'Departments',
     [ROUTES.settings]: 'Settings',
+    [ROUTES.settingsPeople]: 'People',
+    [ROUTES.settingsDepartments]: 'Settings',
+    [ROUTES.settingsKnowledge]: 'Settings',
   }
   return map[pathname] ?? 'TicketHub'
 }

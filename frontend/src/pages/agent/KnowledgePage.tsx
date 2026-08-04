@@ -17,7 +17,9 @@ export function KnowledgePage() {
       if (visibility !== 'all' && article.status !== visibility) return false
       if (
         query.trim() &&
-        !article.title.toLowerCase().includes(query.toLowerCase())
+        !article.title.toLowerCase().includes(query.toLowerCase()) &&
+        !article.body.toLowerCase().includes(query.toLowerCase()) &&
+        !article.id.toLowerCase().includes(query.toLowerCase())
       ) {
         return false
       }

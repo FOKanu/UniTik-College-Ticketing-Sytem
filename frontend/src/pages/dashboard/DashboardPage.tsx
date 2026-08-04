@@ -105,19 +105,19 @@ export function DashboardPage() {
             <ul className={styles.articles}>
               <li>
                 <Link to={ROUTES.faq}>
-                  How to reset your student portal password
+                  I forgot my university password.
                   <span aria-hidden="true">›</span>
                 </Link>
               </li>
               <li>
                 <Link to={ROUTES.faq}>
-                  Fix Wi-Fi authentication on dorm network
+                  How do I connect to the campus Wi-Fi?
                   <span aria-hidden="true">›</span>
                 </Link>
               </li>
               <li>
                 <Link to={ROUTES.faq}>
-                  Tuition refund timeline explained
+                  When is the tuition fee payment deadline?
                   <span aria-hidden="true">›</span>
                 </Link>
               </li>

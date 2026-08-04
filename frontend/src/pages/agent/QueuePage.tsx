@@ -9,13 +9,14 @@ import {
   Select,
   StatusBadge,
 } from '@/components/ui'
-import { useTicketStore } from '@/stores'
+import { useAuthStore, useTicketStore, useUiStore } from '@/stores'
 import type { Department, TicketPriority, TicketStatus } from '@/types'
 import styles from './QueuePage.module.css'
 
 type AssigneeTab = 'all' | 'me' | 'unassigned'
 
 export function QueuePage() {
+  const user = useAuthStore((s) => s.user)
   const items = useTicketStore((s) => s.items)
   const total = useTicketStore((s) => s.total)
   const page = useTicketStore((s) => s.page)
@@ -23,12 +24,16 @@ export function QueuePage() {
   const scope = useTicketStore((s) => s.scope)
   const filters = useTicketStore((s) => s.filters)
   const loading = useTicketStore((s) => s.loading)
+  const mutating = useTicketStore((s) => s.mutating)
   const error = useTicketStore((s) => s.error)
   const setScope = useTicketStore((s) => s.setScope)
   const setFilters = useTicketStore((s) => s.setFilters)
   const setPage = useTicketStore((s) => s.setPage)
   const fetchList = useTicketStore((s) => s.fetchList)
+  const updateTicket = useTicketStore((s) => s.updateTicket)
+  const pushToast = useUiStore((s) => s.pushToast)
   const [selected, setSelected] = useState<string[]>([])
+  const [claimingId, setClaimingId] = useState<string | null>(null)
 
   const assigneeTab = (filters.assignee ?? 'all') as AssigneeTab
 
@@ -51,6 +56,25 @@ export function QueuePage() {
 
   function setAssigneeTab(tab: AssigneeTab) {
     setFilters({ assignee: tab })
+  }
+
+  async function claimTicket(ticketId: string) {
+    if (!user) return
+    setClaimingId(ticketId)
+    const updated = await updateTicket(ticketId, {
+      assignedTo: user.id,
+      assignedName: user.displayName,
+      status: 'in_progress',
+    })
+    setClaimingId(null)
+    if (updated) {
+      pushToast({
+        title: 'Ticket assigned',
+        body: `${ticketId} is now assigned to you.`,
+        tone: 'success',
+      })
+      void fetchList()
+    }
   }
 
   return (
@@ -171,6 +195,7 @@ export function QueuePage() {
               <th scope="col">Status</th>
               <th scope="col">Assignee</th>
               <th scope="col">SLA</th>
+              <th scope="col">Actions</th>
             </tr>
           </thead>
           <tbody>
@@ -207,6 +232,25 @@ export function QueuePage() {
                     {ticket.slaHoursRemaining != null
                       ? `${ticket.slaHoursRemaining}h`
                       : '—'}
+                  </td>
+                  <td>
+                    {!ticket.assignedTo ? (
+                      <Button
+                        size="sm"
+                        variant="secondary"
+                        disabled={mutating || claimingId === ticket.id}
+                        onClick={() => void claimTicket(ticket.id)}
+                      >
+                        {claimingId === ticket.id ? 'Assigning…' : 'Assign to me'}
+                      </Button>
+                    ) : (
+                      <Link
+                        className={styles.reassignLink}
+                        to={agentTicketDetailPath(ticket.id)}
+                      >
+                        Reassign
+                      </Link>
+                    )}
                   </td>
                 </tr>
               ))}

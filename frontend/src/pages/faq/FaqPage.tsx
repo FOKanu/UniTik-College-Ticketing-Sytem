@@ -1,6 +1,7 @@
 import { useMemo, useState } from 'react'
 import { ROUTES } from '@/app/routes'
 import { ButtonLink, SearchField } from '@/components/ui'
+import { renderKnowledgeBody } from '@/lib/knowledge/renderBody'
 import { mockArticles } from '@/mocks/data'
 import styles from './FaqPage.module.css'
 
@@ -9,6 +10,7 @@ const CATEGORIES = ['All', 'IT', 'Finance', 'Academics', 'Maintenance'] as const
 export function FaqPage() {
   const [query, setQuery] = useState('')
   const [category, setCategory] = useState<(typeof CATEGORIES)[number]>('All')
+  const [openId, setOpenId] = useState<string | null>(null)
 
   const published = useMemo(
     () => mockArticles.filter((a) => a.status === 'published'),
@@ -16,7 +18,12 @@ export function FaqPage() {
   )
 
   const articles = published.filter((a) => {
-    const matchesQuery = a.title.toLowerCase().includes(query.toLowerCase())
+    const q = query.toLowerCase()
+    const matchesQuery =
+      !q ||
+      a.title.toLowerCase().includes(q) ||
+      a.body.toLowerCase().includes(q) ||
+      a.id.toLowerCase().includes(q)
     const matchesCategory = category === 'All' || a.category === category
     return matchesQuery && matchesCategory
   })
@@ -24,6 +31,10 @@ export function FaqPage() {
   const mostAsked = [...published]
     .sort((a, b) => b.views - a.views)
     .slice(0, 3)
+
+  function toggleArticle(id: string) {
+    setOpenId((current) => (current === id ? null : id))
+  }
 
   return (
     <div className={styles.page}>
@@ -65,20 +76,33 @@ export function FaqPage() {
             <p className={styles.empty}>No articles match your search.</p>
           ) : (
             <ul>
-              {articles.map((article) => (
-                <li key={article.id}>
-                  <button
-                    type="button"
-                    aria-label={`Read article: ${article.title}`}
-                  >
-                    <strong>{article.title}</strong>
-                    <span>
-                      {article.category} · {article.views.toLocaleString()}{' '}
-                      views
-                    </span>
-                  </button>
-                </li>
-              ))}
+              {articles.map((article) => {
+                const open = openId === article.id
+                return (
+                  <li key={article.id}>
+                    <button
+                      type="button"
+                      className={open ? styles.articleOpen : undefined}
+                      aria-expanded={open}
+                      aria-controls={`faq-answer-${article.id}`}
+                      onClick={() => toggleArticle(article.id)}
+                    >
+                      <strong>{article.title}</strong>
+                      <span>
+                        {article.category} · {article.id}
+                      </span>
+                    </button>
+                    {open ? (
+                      <div
+                        id={`faq-answer-${article.id}`}
+                        className={styles.answer}
+                      >
+                        <p>{renderKnowledgeBody(article.body)}</p>
+                      </div>
+                    ) : null}
+                  </li>
+                )
+              })}
             </ul>
           )}
         </section>
@@ -92,7 +116,9 @@ export function FaqPage() {
                   <span className={styles.rank} aria-hidden="true">
                     {index + 1}
                   </span>
-                  <button type="button">{article.title}</button>
+                  <button type="button" onClick={() => toggleArticle(article.id)}>
+                    {article.title}
+                  </button>
                 </li>
               ))}
             </ol>

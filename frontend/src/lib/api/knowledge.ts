@@ -27,7 +27,9 @@ export const knowledgeApi = {
         }
         if (
           params?.query?.trim() &&
-          !article.title.toLowerCase().includes(params.query.toLowerCase())
+          !article.title.toLowerCase().includes(params.query.toLowerCase()) &&
+          !article.body.toLowerCase().includes(params.query.toLowerCase()) &&
+          !article.id.toLowerCase().includes(params.query.toLowerCase())
         ) {
           return false
         }

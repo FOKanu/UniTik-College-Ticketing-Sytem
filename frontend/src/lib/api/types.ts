@@ -42,7 +42,9 @@ export interface AddCommentPayload {
 export interface UpdateTicketPayload {
   status?: TicketStatus
   priority?: TicketPriority
+  category?: Department
   assignedTo?: string | null
+  assignedName?: string | null
   resolutionSummary?: string
 }
 

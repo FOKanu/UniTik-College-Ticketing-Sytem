@@ -1,4 +1,4 @@
-import { mockTickets } from '@/mocks/data'
+import { findStaffMember, mockTickets } from '@/mocks/data'
 import type { Ticket, TicketComment } from '@/types'
 import { get, isMockDataSource, mockLatency, patch, post } from './client'
 import { ApiError } from './errors'
@@ -133,7 +133,28 @@ export const ticketsApi = {
           status: 404,
         })
       }
-      Object.assign(ticket, payload, { updatedAt: new Date().toISOString() })
+
+      const next: UpdateTicketPayload = { ...payload }
+
+      if ('assignedTo' in payload) {
+        if (payload.assignedTo == null || payload.assignedTo === '') {
+          next.assignedTo = null
+          next.assignedName = null
+        } else {
+          const staff = findStaffMember(payload.assignedTo)
+          next.assignedTo = payload.assignedTo
+          next.assignedName =
+            payload.assignedName ?? staff?.name ?? payload.assignedTo
+        }
+      }
+
+      Object.assign(ticket, next, { updatedAt: new Date().toISOString() })
+
+      if (next.assignedTo === null) {
+        delete ticket.assignedTo
+        delete ticket.assignedName
+      }
+
       return structuredClone(ticket)
     }
 

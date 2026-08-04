@@ -104,6 +104,32 @@
   border-color: var(--brand-200);
 }
 
+.articleOpen {
+  background: var(--brand-50) !important;
+  border-color: var(--brand-200) !important;
+}
+
+.answer {
+  margin: 0.15rem 0 0.35rem;
+  padding: 0.85rem 1rem;
+  border-radius: var(--radius-md);
+  border: 1px solid var(--neutral-200);
+  background: #fff;
+}
+
+.answer p {
+  margin: 0;
+  color: var(--neutral-700);
+  font-size: var(--text-small);
+  line-height: 1.55;
+}
+
+.answer a {
+  color: var(--brand-700);
+  font-weight: 600;
+  word-break: break-word;
+}
+
 .panel strong {
   display: block;
   font-size: var(--text-body);

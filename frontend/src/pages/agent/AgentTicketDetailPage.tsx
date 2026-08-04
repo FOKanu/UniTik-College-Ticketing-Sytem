@@ -13,12 +13,21 @@ import {
   Toggle,
 } from '@/components/ui'
 import { usePageTitle } from '@/hooks/usePageTitle'
-import { useTicketStore } from '@/stores'
-import type { TicketPriority, TicketStatus } from '@/types'
+import { listAssignableStaff } from '@/mocks/data'
+import { useAuthStore, useTicketStore, useUiStore } from '@/stores'
+import type { Department, TicketPriority, TicketStatus } from '@/types'
 import styles from './AgentTicketDetailPage.module.css'
+
+const DEPARTMENTS: Department[] = [
+  'Academics',
+  'IT',
+  'Finance',
+  'Maintenance',
+]
 
 export function AgentTicketDetailPage() {
   const { ticketId } = useParams()
+  const user = useAuthStore((s) => s.user)
   const ticket = useTicketStore((s) => s.selected)
   const loading = useTicketStore((s) => s.detailLoading)
   const mutating = useTicketStore((s) => s.mutating)
@@ -26,17 +35,32 @@ export function AgentTicketDetailPage() {
   const fetchById = useTicketStore((s) => s.fetchById)
   const updateTicket = useTicketStore((s) => s.updateTicket)
   const addComment = useTicketStore((s) => s.addComment)
+  const pushToast = useUiStore((s) => s.pushToast)
 
   const [reply, setReply] = useState('')
   const [resolution, setResolution] = useState('')
   const [internalNote, setInternalNote] = useState(false)
   const [showAi, setShowAi] = useState(true)
+  const [assigneeId, setAssigneeId] = useState('')
+  const [escalateDept, setEscalateDept] = useState<Department>('IT')
+  const [escalateAssignee, setEscalateAssignee] = useState('')
+  const [loadedTicketId, setLoadedTicketId] = useState<string | null>(null)
 
   usePageTitle(ticket ? `${ticket.id}: ${ticket.subject}` : 'Ticket Detail')
 
   useEffect(() => {
     if (ticketId) void fetchById(ticketId)
   }, [ticketId, fetchById])
+
+  if (ticket && loadedTicketId !== ticket.id) {
+    setLoadedTicketId(ticket.id)
+    setAssigneeId(ticket.assignedTo ?? '')
+    setEscalateDept(ticket.category)
+    setEscalateAssignee('')
+  }
+
+  const staffOptions = listAssignableStaff()
+  const escalateStaff = listAssignableStaff(escalateDept)
 
   if (loading && !ticket) {
     return (
@@ -58,6 +82,8 @@ export function AgentTicketDetailPage() {
 
   const status = ticket.status
   const priority = ticket.priority
+  const isAssigned = Boolean(ticket.assignedTo)
+  const assignedToMe = ticket.assignedTo === user?.id
 
   async function sendReply(event: FormEvent) {
     event.preventDefault()
@@ -69,6 +95,73 @@ export function AgentTicketDetailPage() {
     if (ok) {
       setReply('')
       setInternalNote(false)
+    }
+  }
+
+  async function assignToMe() {
+    if (!user || !ticket) return
+    const updated = await updateTicket(ticket.id, {
+      assignedTo: user.id,
+      assignedName: user.displayName,
+      status: ticket.status === 'open' ? 'in_progress' : ticket.status,
+    })
+    if (updated) {
+      setAssigneeId(user.id)
+      pushToast({
+        title: 'Ticket assigned',
+        body: `Assigned to ${user.displayName}.`,
+        tone: 'success',
+      })
+    }
+  }
+
+  async function applyAssignee() {
+    if (!ticket) return
+    if (!assigneeId) {
+      const updated = await updateTicket(ticket.id, { assignedTo: null })
+      if (updated) {
+        pushToast({
+          title: 'Ticket unassigned',
+          body: 'No agent is assigned to this ticket.',
+          tone: 'success',
+        })
+      }
+      return
+    }
+    const staff = staffOptions.find((s) => s.id === assigneeId)
+    const updated = await updateTicket(ticket.id, {
+      assignedTo: assigneeId,
+      assignedName: staff?.name,
+      status: ticket.status === 'open' ? 'in_progress' : ticket.status,
+    })
+    if (updated) {
+      pushToast({
+        title: isAssigned ? 'Ticket reassigned' : 'Ticket assigned',
+        body: `Now assigned to ${staff?.name ?? 'selected staff'}.`,
+        tone: 'success',
+      })
+    }
+  }
+
+  async function escalateTicket() {
+    if (!ticket) return
+    const updated = await updateTicket(ticket.id, {
+      category: escalateDept,
+      assignedTo: escalateAssignee || null,
+      assignedName: escalateAssignee
+        ? escalateStaff.find((s) => s.id === escalateAssignee)?.name
+        : null,
+    })
+    if (updated) {
+      setEscalateDept(escalateDept)
+      setAssigneeId(escalateAssignee)
+      pushToast({
+        title: 'Ticket escalated',
+        body: escalateAssignee
+          ? `Moved to ${escalateDept} and assigned.`
+          : `Moved to ${escalateDept} queue (unassigned).`,
+        tone: 'success',
+      })
     }
   }
 
@@ -172,6 +265,88 @@ export function AgentTicketDetailPage() {
               </dd>
             </div>
           </dl>
+
+          <div className={styles.assignPanel}>
+            <h2>Assign & escalate</h2>
+            <p className={styles.assignHint}>
+              Claim the ticket yourself, hand it to a teammate, or escalate to
+              another department.
+            </p>
+
+            <div className={styles.assignActions}>
+              <Button
+                size="sm"
+                variant="secondary"
+                disabled={mutating || assignedToMe}
+                onClick={() => void assignToMe()}
+              >
+                {assignedToMe ? 'Assigned to you' : 'Assign to me'}
+              </Button>
+            </div>
+
+            <Select
+              id="assign-staff"
+              label={isAssigned ? 'Reassign to' : 'Assign to'}
+              value={assigneeId}
+              onChange={(e) => setAssigneeId(e.target.value)}
+              options={[
+                { value: '', label: 'Unassigned' },
+                ...staffOptions.map((s) => ({
+                  value: s.id,
+                  label: `${s.name} · ${s.department}`,
+                })),
+              ]}
+            />
+            <Button
+              size="sm"
+              disabled={
+                mutating || (assigneeId || '') === (ticket.assignedTo ?? '')
+              }
+              onClick={() => void applyAssignee()}
+            >
+              {isAssigned ? 'Save reassignment' : 'Assign ticket'}
+            </Button>
+
+            <div className={styles.escalateBlock}>
+              <h3>Escalate</h3>
+              <Select
+                id="escalate-dept"
+                label="Department"
+                value={escalateDept}
+                onChange={(e) => {
+                  setEscalateDept(e.target.value as Department)
+                  setEscalateAssignee('')
+                }}
+                options={DEPARTMENTS.map((d) => ({ value: d, label: d }))}
+              />
+              <Select
+                id="escalate-staff"
+                label="Assignee in new department"
+                value={escalateAssignee}
+                onChange={(e) => setEscalateAssignee(e.target.value)}
+                options={[
+                  { value: '', label: 'Leave unassigned' },
+                  ...escalateStaff.map((s) => ({
+                    value: s.id,
+                    label: s.name,
+                  })),
+                ]}
+              />
+              <Button
+                size="sm"
+                variant="secondary"
+                disabled={
+                  mutating ||
+                  (escalateDept === ticket.category &&
+                    (escalateAssignee || '') === (ticket.assignedTo ?? ''))
+                }
+                onClick={() => void escalateTicket()}
+              >
+                Escalate ticket
+              </Button>
+            </div>
+          </div>
+
           {ticket.description ? (
             <div className={styles.description}>
               <h2>Details</h2>
