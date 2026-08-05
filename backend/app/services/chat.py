@@ -13,6 +13,7 @@ from app.db.base import TicketStatus
 from app.models import ChatConversation, ChatMessage, Ticket, User
 from app.schemas.chat import Citation, MessageCreate
 from app.schemas.kb import FaqSearchResult
+from app.services import departments as departments_service
 from app.services import kb as kb_service
 from app.services.kb_embedding import EmbeddingProviderError, embed_text
 
@@ -293,6 +294,9 @@ async def escalate_to_ticket(
     transcript = _format_transcript(messages, user)
     suggestion = await suggest_ticket_fields(transcript)
 
+    dept = await departments_service.get_or_create_department(
+        db, departments_service.department_name(user)
+    )
     ticket = Ticket(
         subject=(
             suggestion.subject
@@ -302,7 +306,8 @@ async def escalate_to_ticket(
         description=f"Escalated from the AI assistant chat.\n\n{transcript}",
         status=TicketStatus.OPEN,
         category=suggestion.category if suggestion else None,
-        department=user.department,
+        departmentId=dept.id if dept else None,
+        classificationSource="manual" if dept else None,
         createdById=user.id,
     )
     db.add(ticket)

@@ -13,6 +13,7 @@ from app.schemas.tickets import (
     TicketResponse,
     TicketUpdate,
 )
+from app.services import departments as departments_service
 from app.services import notifications as notification_service
 from app.services import sla as sla_service
 from app.services import users as users_service
@@ -23,6 +24,7 @@ from app.services import users as users_service
 _WITH_PEOPLE = (
     selectinload(Ticket.created_by),
     selectinload(Ticket.assigned_to),
+    selectinload(Ticket.department),
 )
 
 
@@ -74,17 +76,20 @@ async def get_ticket(db: AsyncSession, ticket_id: str, user: User) -> Ticket:
     sla_service.refresh_breach(ticket)
     if ticket.slaBreachedAt != before:
         await db.commit()
-        await db.refresh(ticket, ["created_by", "assigned_to"])
+        await db.refresh(ticket, ["created_by", "assigned_to", "department"])
     return ticket
 
 
 async def create_ticket(db: AsyncSession, user: User, data: TicketCreate) -> Ticket:
+    label = data.department or departments_service.department_name(user)
+    dept = await departments_service.get_or_create_department(db, label)
     ticket = Ticket(
         subject=data.subject,
         description=data.description,
         priority=data.priority,
         category=data.category,
-        department=data.department or user.department,
+        departmentId=dept.id if dept else None,
+        classificationSource="manual" if dept else None,
         createdById=user.id,
     )
     sla_service.apply_sla_clock(ticket, reset=True)
@@ -100,7 +105,7 @@ async def create_ticket(db: AsyncSession, user: User, data: TicketCreate) -> Tic
         )
     )
     await db.commit()
-    await db.refresh(ticket, ["created_by", "assigned_to"])
+    await db.refresh(ticket, ["created_by", "assigned_to", "department"])
     return ticket
 
 
@@ -114,6 +119,14 @@ async def update_ticket(db: AsyncSession, ticket_id: str, user: User, data: Tick
     # resolve to a STAFF/ADMIN account so students cannot be assigned tickets.
     if "assignedToId" in updates and updates["assignedToId"] is not None:
         await users_service.get_assignable_user(db, updates["assignedToId"])
+
+    # API still accepts free-text department; resolve to Department FK.
+    if "department" in updates:
+        dept_label = updates.pop("department")
+        dept = await departments_service.get_or_create_department(db, dept_label)
+        updates["departmentId"] = dept.id if dept else None
+        if dept is not None:
+            updates["classificationSource"] = "manual"
 
     previous_status = ticket.status
     previous_priority = ticket.priority
@@ -169,7 +182,7 @@ async def update_ticket(db: AsyncSession, ticket_id: str, user: User, data: Tick
     await notification_service.notify_many(db, pending_notes)
     await db.commit()
     # Reload the people relationships so a reassignment returns the new name.
-    await db.refresh(ticket, ["created_by", "assigned_to"])
+    await db.refresh(ticket, ["created_by", "assigned_to", "department"])
     return ticket
 
 
@@ -262,9 +275,23 @@ async def list_status_history(
 
 def ticket_to_response(ticket: Ticket) -> TicketResponse:
     sla_service.refresh_breach(ticket)
-    response = TicketResponse.model_validate(ticket)
-    # Relationships are eager-loaded by the queries above; fall back to None
-    # rather than triggering a lazy load if a caller passes a bare instance.
+    # `department` is a relationship; expose its name to keep the API string-shaped.
+    response = TicketResponse(
+        id=ticket.id,
+        subject=ticket.subject,
+        description=ticket.description,
+        status=ticket.status,
+        priority=ticket.priority,
+        category=ticket.category,
+        department=departments_service.department_name(ticket),
+        createdById=ticket.createdById,
+        assignedToId=ticket.assignedToId,
+        problemId=ticket.problemId,
+        createdAt=ticket.createdAt,
+        updatedAt=ticket.updatedAt,
+        slaDueAt=ticket.slaDueAt,
+        slaBreachedAt=ticket.slaBreachedAt,
+    )
     created_by = ticket.__dict__.get("created_by")
     assigned_to = ticket.__dict__.get("assigned_to")
     response.createdByName = created_by.displayName if created_by else None

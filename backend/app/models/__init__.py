@@ -17,6 +17,19 @@ def _now() -> datetime:
     return datetime.now()
 
 
+class Department(Base):
+    __tablename__ = "Department"
+
+    id: Mapped[str] = mapped_column(String, primary_key=True, default=lambda: str(uuid.uuid4()))
+    name: Mapped[str] = mapped_column(String, unique=True, nullable=False)
+    createdAt: Mapped[datetime] = mapped_column(
+        DateTime(timezone=False), server_default=func.now(), nullable=False
+    )
+
+    users: Mapped[list["User"]] = relationship("User", back_populates="department")
+    tickets: Mapped[list["Ticket"]] = relationship("Ticket", back_populates="department")
+
+
 class User(Base):
     __tablename__ = "User"
 
@@ -26,7 +39,9 @@ class User(Base):
     role: Mapped[Role] = mapped_column(
         Enum(Role, name="Role"), default=Role.STUDENT, nullable=False
     )
-    department: Mapped[str | None] = mapped_column(String, nullable=True)
+    departmentId: Mapped[str | None] = mapped_column(
+        String, ForeignKey("Department.id"), nullable=True
+    )
     passwordHash: Mapped[str | None] = mapped_column(String, nullable=True)
     externalId: Mapped[str | None] = mapped_column(String, nullable=True)
     createdAt: Mapped[datetime] = mapped_column(
@@ -53,6 +68,9 @@ class User(Base):
     ticket_comments: Mapped[list["TicketComment"]] = relationship(
         "TicketComment", back_populates="author"
     )
+    department: Mapped[Optional["Department"]] = relationship(
+        "Department", back_populates="users"
+    )
 
 
 class Ticket(Base):
@@ -68,7 +86,12 @@ class Ticket(Base):
         Enum(TicketPriority, name="TicketPriority"), default=TicketPriority.MEDIUM, nullable=False
     )
     category: Mapped[str | None] = mapped_column(String, nullable=True)
-    department: Mapped[str | None] = mapped_column(String, nullable=True)
+    departmentId: Mapped[str | None] = mapped_column(
+        String, ForeignKey("Department.id"), nullable=True
+    )
+    # "manual" | "rule-engine" — null means not yet classified. Distinguishes a
+    # human-assigned department from an automated routing-engine guess (NEG-6).
+    classificationSource: Mapped[str | None] = mapped_column(String, nullable=True)
     createdById: Mapped[str] = mapped_column(String, ForeignKey("User.id"), nullable=False)
     assignedToId: Mapped[str | None] = mapped_column(String, ForeignKey("User.id"), nullable=True)
     problemId: Mapped[str | None] = mapped_column(String, ForeignKey("Problem.id"), nullable=True)
@@ -100,6 +123,9 @@ class Ticket(Base):
         "TicketStatusHistory",
         back_populates="ticket",
         order_by="TicketStatusHistory.createdAt",
+    )
+    department: Mapped[Optional["Department"]] = relationship(
+        "Department", back_populates="tickets"
     )
 
 
