@@ -1,4 +1,5 @@
 import logging
+import re
 from dataclasses import dataclass
 
 from sqlalchemy import select
@@ -37,11 +38,56 @@ LLM_EMPTY_REPLY = (
     "a support ticket from this conversation."
 )
 
+# Soft prompts — avoid forcing "escalate" / FAQ chrome on greetings.
+CHITCHAT_KB_CONTEXT = (
+    "The user sent a greeting or small-talk message. Reply briefly and warmly. "
+    "Do not mention the knowledge base, tickets, or escalation unless they ask."
+)
+
 NO_KB_CONTEXT = (
     "No matching knowledge-base excerpts were found for this question. "
-    "Tell the user you are unsure and offer to escalate to a support ticket. "
-    "Do not invent policy details."
+    "Answer briefly without inventing specific university policy, deadlines, "
+    "fees, or contact details. If this is a concrete support issue, offer to "
+    "escalate to a ticket; otherwise just help as best you can."
 )
+
+_GREETING_RE = re.compile(
+    r"^(hi|hello|hey|howdy|greetings|good\s+(morning|afternoon|evening)|"
+    r"thanks|thank\s+you|thx|ty|ok|okay|cool|great|bye|goodbye|cheers|"
+    r"hello there|hi there|hey there)[\s!.?]*$",
+    re.IGNORECASE,
+)
+
+_SUPPORT_HINT_RE = re.compile(
+    r"\b(help|problem|issue|broken|error|bug|can't|cannot|unable|won't|dont|"
+    r"don't|how\s+(do|to|can)|where|when|why|ticket|login|password|vpn|"
+    r"wifi|grade|exam|pay|tuition|refund|register|appeal)\b",
+    re.IGNORECASE,
+)
+
+
+def is_chitchat_query(query: str) -> bool:
+    """True for greetings / tiny non-questions that should skip FAQ retrieval."""
+    text = " ".join(query.strip().split())
+    if not text:
+        return True
+    if _GREETING_RE.match(text):
+        return True
+    words = text.split()
+    # Short utterances without a question mark and without support keywords.
+    if len(words) <= 3 and "?" not in text and not _SUPPORT_HINT_RE.search(text):
+        return True
+    return False
+
+
+def looks_like_support_issue(query: str) -> bool:
+    """True when a weak/no-hit reply should still surface escalate affordances."""
+    text = query.strip()
+    if not text or is_chitchat_query(text):
+        return False
+    if "?" in text:
+        return True
+    return bool(_SUPPORT_HINT_RE.search(text))
 
 
 @dataclass
@@ -135,7 +181,18 @@ def _format_kb_context(hits: list[FaqSearchResult]) -> str:
 
 
 async def retrieve_for_query(db: AsyncSession, query: str) -> RetrievalBundle:
-    """Vector search with text fallback. Marks weak when top score is below threshold."""
+    """Vector search with text fallback. Skips RAG chrome for chitchat.
+
+    Weak hits no longer surface "closest articles" — empty citations keep the
+    UI clean while the model still gets a soft no-match instruction.
+    """
+    if is_chitchat_query(query):
+        return RetrievalBundle(
+            citations=[],
+            kb_context=CHITCHAT_KB_CONTEXT,
+            retrieval_weak=False,
+        )
+
     hits: list[FaqSearchResult] = []
     try:
         vector = await embed_text(query)
@@ -152,10 +209,12 @@ async def retrieve_for_query(db: AsyncSession, query: str) -> RetrievalBundle:
             retrieval_weak=False,
         )
 
+    # Low scores: do not pass noisy nearest-neighbour FAQs to the UI.
+    supportish = looks_like_support_issue(query)
     return RetrievalBundle(
-        citations=_citations_from_hits(hits[:3]),
-        kb_context=NO_KB_CONTEXT,
-        retrieval_weak=True,
+        citations=[],
+        kb_context=NO_KB_CONTEXT if supportish else CHITCHAT_KB_CONTEXT,
+        retrieval_weak=supportish,
     )
 
 
@@ -223,7 +282,9 @@ async def escalate_to_ticket(
     conversation = await get_conversation(db, conversation_id, user)
 
     if conversation.escalatedTicketId:
-        result = await db.execute(select(Ticket).where(Ticket.id == conversation.escalatedTicketId))
+        result = await db.execute(
+            select(Ticket).where(Ticket.id == conversation.escalatedTicketId)
+        )
         return EscalationResult(
             conversation=conversation,
             ticket=result.scalar_one(),
@@ -233,15 +294,17 @@ async def escalate_to_ticket(
 
     messages = await list_messages(db, conversation_id, user)
     if not any(m.sender == "user" and m.content.strip() for m in messages):
-        raise BadRequestError("Ask the assistant something before escalating to a ticket")
+        raise BadRequestError(
+            "Ask the assistant something before escalating to a ticket"
+        )
 
     transcript = _format_transcript(messages, user)
     suggestion = await suggest_ticket_fields(transcript)
 
     ticket = Ticket(
-        subject=suggestion.subject if suggestion else fallback_subject(
-            [(m.sender, m.content) for m in messages]
-        ),
+        subject=suggestion.subject
+        if suggestion
+        else fallback_subject([(m.sender, m.content) for m in messages]),
         description=f"Escalated from the AI assistant chat.\n\n{transcript}",
         status=TicketStatus.OPEN,
         category=suggestion.category if suggestion else None,
