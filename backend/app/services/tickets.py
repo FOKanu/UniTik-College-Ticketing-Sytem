@@ -17,6 +17,7 @@ from app.services import departments as departments_service
 from app.services import notifications as notification_service
 from app.services import sla as sla_service
 from app.services import users as users_service
+from app.services.ticket_routing import classify_ticket
 
 # Display names come from the requester/assignee relationships. Async SQLAlchemy
 # cannot lazy-load them during serialization, so every query that feeds
@@ -81,17 +82,32 @@ async def get_ticket(db: AsyncSession, ticket_id: str, user: User) -> Ticket:
 
 
 async def create_ticket(db: AsyncSession, user: User, data: TicketCreate) -> Ticket:
+    # Explicit department from the client is always treated as a human choice.
+    # Otherwise run the keyword router (NEG-6: ties / no-hits stay unclassified).
+    category = data.category
+    classification_source: str | None = None
     if data.department:
         dept = await departments_service.get_or_create_department(db, data.department)
+        classification_source = "manual" if dept else None
     else:
-        dept = await departments_service.department_for_user(db, user)
+        classification = classify_ticket(data.subject, data.description)
+        if classification.department:
+            dept = await departments_service.get_or_create_department(
+                db, classification.department
+            )
+            classification_source = classification.classification_source
+            if category is None:
+                category = classification.category
+        else:
+            dept = None
+
     ticket = Ticket(
         subject=data.subject,
         description=data.description,
         priority=data.priority,
-        category=data.category,
+        category=category,
         departmentId=dept.id if dept else None,
-        classificationSource="manual" if dept else None,
+        classificationSource=classification_source,
         createdById=user.id,
     )
     sla_service.apply_sla_clock(ticket, reset=True)
@@ -286,6 +302,7 @@ def ticket_to_response(ticket: Ticket) -> TicketResponse:
         priority=ticket.priority,
         category=ticket.category,
         department=departments_service.department_name(ticket),
+        classificationSource=ticket.classificationSource,
         createdById=ticket.createdById,
         assignedToId=ticket.assignedToId,
         problemId=ticket.problemId,

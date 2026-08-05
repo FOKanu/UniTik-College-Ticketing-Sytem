@@ -228,3 +228,47 @@ async def test_sla_and_status_history_on_create_update_reopen(client):
     assert "created" in reasons
     assert "staff_update" in reasons
     assert "reopen_on_reply" in reasons
+
+
+@pytest.mark.asyncio
+@integration
+async def test_create_ticket_auto_routes_when_department_omitted(client):
+    student_token, _ = await _register_and_login(client, role="STUDENT")
+    headers = {"Authorization": f"Bearer {student_token}"}
+
+    create_res = await client.post(
+        "/api/v1/tickets",
+        json={
+            "subject": "Cannot connect to campus wifi",
+            "description": "Laptop drops the wifi connection and I can't log into the portal.",
+        },
+        headers=headers,
+    )
+    assert create_res.status_code == 201, create_res.text
+    data = create_res.json()["data"]
+    assert data["department"] == "IT"
+    assert data["category"] == "it"
+    assert data["classificationSource"] == "rule-engine"
+
+
+@pytest.mark.asyncio
+@integration
+async def test_create_ticket_manual_department_skips_router(client):
+    student_token, _ = await _register_and_login(client, role="STUDENT")
+    headers = {"Authorization": f"Bearer {student_token}"}
+
+    create_res = await client.post(
+        "/api/v1/tickets",
+        json={
+            "subject": "Cannot connect to campus wifi",
+            "description": "Laptop drops the wifi connection.",
+            "department": "Finance",
+            "category": "billing",
+        },
+        headers=headers,
+    )
+    assert create_res.status_code == 201, create_res.text
+    data = create_res.json()["data"]
+    assert data["department"] == "Finance"
+    assert data["category"] == "billing"
+    assert data["classificationSource"] == "manual"
