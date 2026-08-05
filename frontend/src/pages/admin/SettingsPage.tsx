@@ -10,6 +10,7 @@ import {
   Toggle,
 } from '@/components/ui'
 import { mockArticles } from '@/mocks/data'
+import { useInstitutionStore } from '@/stores/institutionStore'
 import styles from './SettingsPage.module.css'
 
 type SettingsTab = 'institution' | 'departments' | 'people' | 'knowledge'
@@ -105,12 +106,11 @@ function tabFromPath(pathname: string): SettingsTab {
 export function SettingsPage() {
   const location = useLocation()
   const tab = tabFromPath(location.pathname)
+  const institution = useInstitutionStore((s) => s.institution)
 
-  const [displayName, setDisplayName] = useState('MediaDesign Hochschule')
-  const [shortCode, setShortCode] = useState('MDH')
-  const [emailDomains, setEmailDomains] = useState(
-    'stud.mdh-berlin.de, mdh-berlin.de',
-  )
+  const [displayName, setDisplayName] = useState(institution.name)
+  const [shortCode, setShortCode] = useState(institution.short)
+  const [emailDomains, setEmailDomains] = useState(institution.domains)
   const [logoName, setLogoName] = useState<string | null>(null)
   const [langDe, setLangDe] = useState(true)
   const [langEn, setLangEn] = useState(true)

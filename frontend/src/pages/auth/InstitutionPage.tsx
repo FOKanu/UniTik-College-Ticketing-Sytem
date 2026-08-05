@@ -4,6 +4,8 @@ import { RouteTitle } from '@/app/RouteTitle'
 import { ROUTES } from '@/app/routes'
 import { LanguageSelector } from '@/components/layout/LanguageSelector'
 import { IconCheck, IconChevronRight, IconSearch } from '@/components/ui/icons'
+import { INSTITUTIONS } from '@/lib/institutions'
+import { useInstitutionStore } from '@/stores/institutionStore'
 import styles from './InstitutionPage.module.css'
 
 const FEATURES = [
@@ -12,45 +14,12 @@ const FEATURES = [
   'SLA tracking and reporting',
 ] as const
 
-const INSTITUTIONS = [
-  {
-    id: 'mdh',
-    name: 'MediaDesign Hochschule',
-    short: 'MDH',
-    color: '#2574A9',
-    domains: 'mdh.de',
-    locations: 'Berlin, Munich, Düsseldorf',
-  },
-  {
-    id: 'tum',
-    name: 'Technische Universität München',
-    short: 'TUM',
-    color: '#1B6E3C',
-    domains: 'tum.de',
-    locations: 'Munich',
-  },
-  {
-    id: 'uhh',
-    name: 'Universität Hamburg',
-    short: 'UHH',
-    color: '#8B5A2B',
-    domains: 'uni-hamburg.de',
-    locations: 'Hamburg',
-  },
-  {
-    id: 'rwth',
-    name: 'RWTH Aachen',
-    short: 'RWTH',
-    color: '#A22633',
-    domains: 'rwth-aachen.de',
-    locations: 'Aachen',
-  },
-] as const
-
 export function InstitutionPage() {
   const navigate = useNavigate()
+  const setInstitution = useInstitutionStore((s) => s.setInstitution)
+  const currentInstitutionId = useInstitutionStore((s) => s.institutionId)
   const [query, setQuery] = useState('')
-  const [activeId, setActiveId] = useState<string | null>('mdh')
+  const [activeId, setActiveId] = useState<string | null>(currentInstitutionId)
 
   const filtered = useMemo(() => {
     const q = query.trim().toLowerCase()
@@ -66,6 +35,7 @@ export function InstitutionPage() {
 
   function selectInstitution(id: string) {
     setActiveId(id)
+    setInstitution(id)
     void navigate(ROUTES.login)
   }
 
