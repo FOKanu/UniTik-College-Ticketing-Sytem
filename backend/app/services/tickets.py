@@ -104,9 +104,7 @@ async def create_ticket(db: AsyncSession, user: User, data: TicketCreate) -> Tic
     return ticket
 
 
-async def update_ticket(
-    db: AsyncSession, ticket_id: str, user: User, data: TicketUpdate
-) -> Ticket:
+async def update_ticket(db: AsyncSession, ticket_id: str, user: User, data: TicketUpdate) -> Ticket:
     ticket = await get_ticket(db, ticket_id, user)
     if user.role == Role.STUDENT:
         raise ForbiddenError("Students cannot update tickets")
@@ -175,13 +173,9 @@ async def update_ticket(
     return ticket
 
 
-async def list_comments(
-    db: AsyncSession, ticket_id: str, user: User
-) -> list[TicketComment]:
+async def list_comments(db: AsyncSession, ticket_id: str, user: User) -> list[TicketComment]:
     await get_ticket(db, ticket_id, user)
-    result = await db.execute(
-        select(TicketComment).where(TicketComment.ticketId == ticket_id)
-    )
+    result = await db.execute(select(TicketComment).where(TicketComment.ticketId == ticket_id))
     comments = list(result.scalars().all())
     if user.role == Role.STUDENT:
         return [c for c in comments if not c.isInternal]

@@ -36,9 +36,9 @@ async def search_faq(db: AsyncSession, query: str, limit: int = 5) -> list[FaqSe
     """Text search fallback when embeddings are not yet populated."""
     pattern = f"%{query}%"
     result = await db.execute(
-        select(FaqEntry).where(
-            FaqEntry.question.ilike(pattern) | FaqEntry.answer.ilike(pattern)
-        ).limit(limit)
+        select(FaqEntry)
+        .where(FaqEntry.question.ilike(pattern) | FaqEntry.answer.ilike(pattern))
+        .limit(limit)
     )
     entries = list(result.scalars().all())
     return [
@@ -56,16 +56,14 @@ async def search_faq(db: AsyncSession, query: str, limit: int = 5) -> list[FaqSe
 async def search_faq_vector(
     db: AsyncSession, embedding: list[float], limit: int = 5
 ) -> list[FaqSearchResult]:
-    sql = text(
-        """
+    sql = text("""
         SELECT id, question, answer, category,
                1 - (embedding <=> :embedding) AS score
         FROM "FaqEntry"
         WHERE embedding IS NOT NULL
         ORDER BY embedding <=> :embedding
         LIMIT :limit
-        """
-    )
+        """)
     result = await db.execute(sql, {"embedding": str(embedding), "limit": limit})
     rows = result.mappings().all()
     return [

@@ -10,14 +10,11 @@ depends_on = None
 
 def upgrade() -> None:
     op.execute('CREATE EXTENSION IF NOT EXISTS "vector"')
-    op.execute('CREATE TYPE "Role" AS ENUM (\'STUDENT\', \'STAFF\', \'ADMIN\')')
-    op.execute(
-        'CREATE TYPE "TicketStatus" AS ENUM (\'OPEN\', \'IN_PROGRESS\', \'RESOLVED\', \'CLOSED\')'
-    )
-    op.execute('CREATE TYPE "TicketPriority" AS ENUM (\'LOW\', \'MEDIUM\', \'HIGH\')')
+    op.execute("CREATE TYPE \"Role\" AS ENUM ('STUDENT', 'STAFF', 'ADMIN')")
+    op.execute("CREATE TYPE \"TicketStatus\" AS ENUM ('OPEN', 'IN_PROGRESS', 'RESOLVED', 'CLOSED')")
+    op.execute("CREATE TYPE \"TicketPriority\" AS ENUM ('LOW', 'MEDIUM', 'HIGH')")
 
-    op.execute(
-        """
+    op.execute("""
         CREATE TABLE "User" (
             "id" TEXT NOT NULL,
             "email" TEXT NOT NULL,
@@ -30,12 +27,10 @@ def upgrade() -> None:
             "updatedAt" TIMESTAMP(3) NOT NULL,
             CONSTRAINT "User_pkey" PRIMARY KEY ("id")
         )
-        """
-    )
+        """)
     op.execute('CREATE UNIQUE INDEX "User_email_key" ON "User"("email")')
 
-    op.execute(
-        """
+    op.execute("""
         CREATE TABLE "Problem" (
             "id" TEXT NOT NULL,
             "title" TEXT NOT NULL,
@@ -46,11 +41,9 @@ def upgrade() -> None:
             "updatedAt" TIMESTAMP(3) NOT NULL,
             CONSTRAINT "Problem_pkey" PRIMARY KEY ("id")
         )
-        """
-    )
+        """)
 
-    op.execute(
-        """
+    op.execute("""
         CREATE TABLE "Ticket" (
             "id" TEXT NOT NULL,
             "subject" TEXT NOT NULL,
@@ -66,11 +59,9 @@ def upgrade() -> None:
             "updatedAt" TIMESTAMP(3) NOT NULL,
             CONSTRAINT "Ticket_pkey" PRIMARY KEY ("id")
         )
-        """
-    )
+        """)
 
-    op.execute(
-        """
+    op.execute("""
         CREATE TABLE "Attachment" (
             "id" TEXT NOT NULL,
             "ticketId" TEXT NOT NULL,
@@ -80,11 +71,9 @@ def upgrade() -> None:
             "uploadedAt" TIMESTAMP(3) NOT NULL DEFAULT CURRENT_TIMESTAMP,
             CONSTRAINT "Attachment_pkey" PRIMARY KEY ("id")
         )
-        """
-    )
+        """)
 
-    op.execute(
-        """
+    op.execute("""
         CREATE TABLE "FaqEntry" (
             "id" TEXT NOT NULL,
             "question" TEXT NOT NULL,
@@ -97,11 +86,9 @@ def upgrade() -> None:
             "updatedAt" TIMESTAMP(3) NOT NULL,
             CONSTRAINT "FaqEntry_pkey" PRIMARY KEY ("id")
         )
-        """
-    )
+        """)
 
-    op.execute(
-        """
+    op.execute("""
         CREATE TABLE "Notification" (
             "id" TEXT NOT NULL,
             "userId" TEXT NOT NULL,
@@ -112,11 +99,9 @@ def upgrade() -> None:
             "createdAt" TIMESTAMP(3) NOT NULL DEFAULT CURRENT_TIMESTAMP,
             CONSTRAINT "Notification_pkey" PRIMARY KEY ("id")
         )
-        """
-    )
+        """)
 
-    op.execute(
-        """
+    op.execute("""
         CREATE TABLE "AuditLog" (
             "id" TEXT NOT NULL,
             "actorId" TEXT,
@@ -127,11 +112,9 @@ def upgrade() -> None:
             "createdAt" TIMESTAMP(3) NOT NULL DEFAULT CURRENT_TIMESTAMP,
             CONSTRAINT "AuditLog_pkey" PRIMARY KEY ("id")
         )
-        """
-    )
+        """)
 
-    op.execute(
-        """
+    op.execute("""
         CREATE TABLE "ChatConversation" (
             "id" TEXT NOT NULL,
             "userId" TEXT NOT NULL,
@@ -139,11 +122,9 @@ def upgrade() -> None:
             "startedAt" TIMESTAMP(3) NOT NULL DEFAULT CURRENT_TIMESTAMP,
             CONSTRAINT "ChatConversation_pkey" PRIMARY KEY ("id")
         )
-        """
-    )
+        """)
 
-    op.execute(
-        """
+    op.execute("""
         CREATE TABLE "ChatMessage" (
             "id" TEXT NOT NULL,
             "conversationId" TEXT NOT NULL,
@@ -152,11 +133,9 @@ def upgrade() -> None:
             "createdAt" TIMESTAMP(3) NOT NULL DEFAULT CURRENT_TIMESTAMP,
             CONSTRAINT "ChatMessage_pkey" PRIMARY KEY ("id")
         )
-        """
-    )
+        """)
 
-    op.execute(
-        """
+    op.execute("""
         CREATE TABLE "TicketComment" (
             "id" TEXT NOT NULL,
             "ticketId" TEXT NOT NULL,
@@ -166,8 +145,7 @@ def upgrade() -> None:
             "createdAt" TIMESTAMP(3) NOT NULL DEFAULT CURRENT_TIMESTAMP,
             CONSTRAINT "TicketComment_pkey" PRIMARY KEY ("id")
         )
-        """
-    )
+        """)
 
     op.execute(
         'ALTER TABLE "Ticket" ADD CONSTRAINT "Ticket_createdById_fkey" '

@@ -47,9 +47,7 @@ async def _register_and_login(client, *, role: str, department: str | None = Non
             db.add(user)
             await db.commit()
 
-    login_res = await client.post(
-        "/api/v1/auth/login", json={"email": email, "password": password}
-    )
+    login_res = await client.post("/api/v1/auth/login", json={"email": email, "password": password})
     assert login_res.status_code == 200, login_res.text
     body = login_res.json()["data"]
     return body["token"], body["user"]["id"]
