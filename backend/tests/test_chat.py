@@ -13,7 +13,7 @@ from app.db.session import async_session_factory
 from app.models import ChatConversation, ChatMessage, User
 from app.services import chat as chat_service
 from app.services.chat import TRANSCRIPT_MAX_CHARS, _format_transcript
-from tests.conftest import integration
+from tests.conftest import department_id_for, integration
 
 # Reserved discard port — nothing is listening, so the client must fail fast.
 UNREACHABLE_BASE_URL = "http://127.0.0.1:9/v1"
@@ -100,7 +100,7 @@ async def _seed_conversation(db, *, with_messages: bool):
         email=f"escalate-{uuid.uuid4()}@student.university.edu",
         displayName="Ada Lovelace",
         role=Role.STUDENT,
-        department="IT",
+        departmentId=await department_id_for(db, "IT"),
     )
     db.add(user)
     await db.flush()
@@ -154,7 +154,9 @@ async def test_escalation_builds_ticket_from_transcript(monkeypatch):
         assert result.already_escalated is False
         assert result.ticket.subject == "WiFi drops in the library"
         assert result.ticket.category == "it"
-        assert result.ticket.department == "IT"
+        await db.refresh(result.ticket, ["department"])
+        assert result.ticket.department is not None
+        assert result.ticket.department.name == "IT"
         assert "Ada Lovelace: My WiFi keeps dropping in the library" in result.ticket.description
         assert "Assistant: Try forgetting the network" in result.ticket.description
         assert result.conversation.escalatedTicketId == result.ticket.id

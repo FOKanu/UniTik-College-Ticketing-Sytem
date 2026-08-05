@@ -6,7 +6,7 @@ from app.core.security import hash_password
 from app.db.base import Role, TicketStatus
 from app.db.session import async_session_factory
 from app.models import User
-from tests.conftest import integration
+from tests.conftest import department_id_for, integration
 
 
 async def _register_student(client):
@@ -38,7 +38,7 @@ async def _insert_staff(client, *, label: str = "Staff"):
             email=email,
             displayName=f"Test {label}",
             role=Role.STAFF,
-            department="IT",
+            departmentId=await department_id_for(db, "IT"),
             passwordHash=hash_password(password),
         )
         db.add(user)

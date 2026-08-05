@@ -294,9 +294,7 @@ async def escalate_to_ticket(
     transcript = _format_transcript(messages, user)
     suggestion = await suggest_ticket_fields(transcript)
 
-    dept = await departments_service.get_or_create_department(
-        db, departments_service.department_name(user)
-    )
+    dept = await departments_service.department_for_user(db, user)
     ticket = Ticket(
         subject=(
             suggestion.subject

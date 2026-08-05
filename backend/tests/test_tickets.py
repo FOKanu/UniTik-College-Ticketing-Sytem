@@ -1,13 +1,12 @@
 import uuid
 
 import pytest
-from sqlalchemy import select
 
 from app.core.security import hash_password
 from app.db.base import Role
 from app.db.session import async_session_factory
-from app.models import Department, User
-from tests.conftest import integration
+from app.models import User
+from tests.conftest import department_id_for, integration
 
 
 @pytest.mark.asyncio
@@ -38,22 +37,11 @@ async def _register_and_login(client, *, role: str, department: str | None = Non
         assert register_res.status_code == 201, register_res.text
     else:
         async with async_session_factory() as db:
-            dept_id = None
-            if department:
-                existing = await db.execute(
-                    select(Department).where(Department.name == department)
-                )
-                dept = existing.scalar_one_or_none()
-                if not dept:
-                    dept = Department(name=department)
-                    db.add(dept)
-                    await db.flush()
-                dept_id = dept.id
             user = User(
                 email=email,
                 displayName=f"Test {role.title()}",
                 role=Role(role),
-                departmentId=dept_id,
+                departmentId=await department_id_for(db, department),
                 passwordHash=hash_password(password),
             )
             db.add(user)

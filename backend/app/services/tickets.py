@@ -81,8 +81,10 @@ async def get_ticket(db: AsyncSession, ticket_id: str, user: User) -> Ticket:
 
 
 async def create_ticket(db: AsyncSession, user: User, data: TicketCreate) -> Ticket:
-    label = data.department or departments_service.department_name(user)
-    dept = await departments_service.get_or_create_department(db, label)
+    if data.department:
+        dept = await departments_service.get_or_create_department(db, data.department)
+    else:
+        dept = await departments_service.department_for_user(db, user)
     ticket = Ticket(
         subject=data.subject,
         description=data.description,

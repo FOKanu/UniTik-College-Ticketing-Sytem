@@ -3,7 +3,7 @@
 from sqlalchemy import select
 from sqlalchemy.ext.asyncio import AsyncSession
 
-from app.models import Department
+from app.models import Department, User
 
 
 async def get_or_create_department(
@@ -28,6 +28,17 @@ async def get_or_create_department(
     db.add(department)
     await db.flush()
     return department
+
+
+async def department_for_user(db: AsyncSession, user: User) -> Department | None:
+    """Return the user's Department, loading by FK when the relation isn't eager-loaded."""
+    rel = user.__dict__.get("department")
+    if rel is not None:
+        return rel
+    if not user.departmentId:
+        return None
+    result = await db.execute(select(Department).where(Department.id == user.departmentId))
+    return result.scalar_one_or_none()
 
 
 def department_name(entity) -> str | None:
