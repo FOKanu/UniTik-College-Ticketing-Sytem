@@ -4,6 +4,7 @@ from sqlalchemy.ext.asyncio import AsyncSession
 from app.core.exceptions import NotFoundError
 from app.models import FaqEntry
 from app.schemas.kb import FaqCreate, FaqResponse, FaqSearchResult
+from app.services import embedding_jobs as jobs_service
 
 
 async def list_faq(db: AsyncSession) -> list[FaqEntry]:
@@ -25,8 +26,11 @@ async def create_faq(db: AsyncSession, data: FaqCreate) -> FaqEntry:
         answer=data.answer,
         language=data.language,
         category=data.category,
+        contextBlob=f"{data.question}\n\n{data.answer}",
     )
     db.add(entry)
+    await db.flush()
+    await jobs_service.enqueue_embedding(db, entry.id)
     await db.commit()
     await db.refresh(entry)
     return entry
@@ -91,9 +95,14 @@ async def upsert_faq_entry(
     language: str,
     category: str | None,
     context_blob: str | None,
-    embedding: list[float],
+    embedding: list[float] | None = None,
+    update_embedding: bool = True,
 ) -> FaqEntry:
-    """Insert or update one corpus entry without committing or deleting stale rows."""
+    """Insert or update one corpus entry without committing or deleting stale rows.
+
+    When ``update_embedding`` is False the existing vector is left untouched
+    (async ingest enqueues a worker job instead).
+    """
     result = await db.execute(select(FaqEntry).where(FaqEntry.id == id))
     entry = result.scalar_one_or_none()
     if entry is None:
@@ -105,5 +114,20 @@ async def upsert_faq_entry(
     entry.language = language
     entry.category = category
     entry.contextBlob = context_blob
-    entry.embedding = embedding
+    if update_embedding:
+        entry.embedding = embedding
     return entry
+
+
+async def enqueue_reembed(
+    db: AsyncSession,
+    *,
+    missing_only: bool = False,
+) -> int:
+    """Enqueue embedding jobs for FAQ rows. Returns number of jobs enqueued/reset."""
+    stmt = select(FaqEntry.id)
+    if missing_only:
+        stmt = stmt.where(FaqEntry.embedding.is_(None))
+    result = await db.execute(stmt)
+    faq_ids = [row[0] for row in result.all()]
+    return await jobs_service.enqueue_for_entries(db, faq_ids)

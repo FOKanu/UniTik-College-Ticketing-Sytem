@@ -127,19 +127,39 @@ this corpus.
 From `backend/`, an administrator runs:
 
 ```bash
+# Upsert FAQ text and enqueue embedding jobs (default)
 python -m scripts.ingest_kb
+
+# Drain the queue (one-shot) — or leave the worker running
+python -m scripts.embedding_worker --once
+
+# Continuous worker (polls every 2s)
+python -m scripts.embedding_worker
+
+# Legacy: embed in-process before commit
+python -m scripts.ingest_kb --sync
 ```
 
-Prerequisites are a migrated PostgreSQL database with the pgvector extension, a reachable LLM provider that
-exposes OpenAI-compatible embeddings, and an embedding model that returns **exactly 768** dimensions
+Prerequisites are a migrated PostgreSQL database with the pgvector extension (through
+Alembic `006_embedding_job`), a reachable LLM provider that exposes OpenAI-compatible
+embeddings, and an embedding model that returns **exactly 768** dimensions
 (see `backend/.env.example`: `OLLAMA_EMBEDDING_MODEL=nomic-embed-text:latest`, or
 `OPENAI_EMBEDDING_MODEL=text-embedding-3-small` with `dimensions=768`). Chat can stay on Ollama while
 embeddings use the same Funnel endpoint.
 
-Ingestion does not run at FastAPI startup. It reads and validates the complete corpus before database work,
-obtains embeddings before opening the database session, then performs insert-or-update operations in one
-session and one commit. A failure rolls back the transaction. The process does not automatically delete
-stale rows; removal requires a separate reviewed administrative operation.
+Ingestion does not run at FastAPI startup. Default mode validates the corpus, upserts
+FAQ rows (leaving existing vectors until refreshed), and inserts `EmbeddingJob` rows.
+A separate worker process claims jobs with `FOR UPDATE SKIP LOCKED`, calls the embedding
+provider, and writes vectors onto `FaqEntry`. Use `--sync` only for emergency/CI when no
+worker is available. The process does not automatically delete stale rows; removal requires
+a separate reviewed administrative operation.
+
+Admins can also enqueue re-embeds without re-parsing Markdown:
+
+```bash
+# All FAQs, or only those missing a vector
+curl -X POST "$API/api/v1/kb/admin/reembed?missing=1" -H "Authorization: Bearer $ADMIN_TOKEN"
+```
 
 ## Verification
 
@@ -150,7 +170,8 @@ backend/.venv/bin/pytest \
   backend/tests/test_kb_content_parser.py \
   backend/tests/test_kb_synthetic_content.py \
   backend/tests/test_kb_embedding.py \
-  backend/tests/test_kb_ingestion.py
+  backend/tests/test_kb_ingestion.py \
+  backend/tests/test_embedding_jobs.py
 ```
 
 The tests use mocks for the embedding provider and ingestion transaction. They validate software behavior;

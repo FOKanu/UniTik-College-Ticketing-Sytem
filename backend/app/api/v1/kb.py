@@ -1,6 +1,6 @@
 from typing import Annotated
 
-from fastapi import APIRouter, Depends
+from fastapi import APIRouter, Depends, Query
 
 from app.core.deps import DbSession, require_roles
 from app.core.responses import success_response
@@ -12,6 +12,7 @@ from app.services import kb as kb_service
 router = APIRouter(prefix="/kb", tags=["knowledge-base"])
 
 StaffOrAdmin = Annotated[User, Depends(require_roles(Role.STAFF, Role.ADMIN))]
+AdminOnly = Annotated[User, Depends(require_roles(Role.ADMIN))]
 
 
 @router.get("/faq")
@@ -40,3 +41,15 @@ async def create_faq(
 async def search_faq(db: DbSession, body: FaqSearchRequest):
     results = await kb_service.search_faq(db, body.query, body.limit)
     return success_response([r.model_dump() for r in results])
+
+
+@router.post("/admin/reembed")
+async def reembed_faq(
+    db: DbSession,
+    _user: AdminOnly,
+    missing: Annotated[bool, Query()] = False,
+):
+    """Enqueue embedding jobs for FAQ entries (worker must be running)."""
+    enqueued = await kb_service.enqueue_reembed(db, missing_only=missing)
+    await db.commit()
+    return success_response({"enqueued": enqueued})
