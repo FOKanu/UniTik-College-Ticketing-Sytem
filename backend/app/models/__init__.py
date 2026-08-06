@@ -205,6 +205,35 @@ class EmbeddingJob(Base):
     )
 
 
+class NotifyJob(Base):
+    """Outbound email delivery work item (Postgres queue; no Redis)."""
+
+    __tablename__ = "NotifyJob"
+
+    id: Mapped[str] = mapped_column(String, primary_key=True, default=lambda: str(uuid.uuid4()))
+    userId: Mapped[str] = mapped_column(
+        String, ForeignKey("User.id", ondelete="CASCADE"), nullable=False
+    )
+    ticketId: Mapped[str | None] = mapped_column(String, nullable=True)
+    notificationId: Mapped[str | None] = mapped_column(String, nullable=True)
+    toEmail: Mapped[str] = mapped_column(String, nullable=False)
+    subject: Mapped[str] = mapped_column(String, nullable=False)
+    body: Mapped[str] = mapped_column(Text, nullable=False)
+    # pending | processing | done | failed
+    status: Mapped[str] = mapped_column(String, default="pending", nullable=False)
+    attempts: Mapped[int] = mapped_column(Integer, default=0, nullable=False)
+    maxAttempts: Mapped[int] = mapped_column(Integer, default=3, nullable=False)
+    lastError: Mapped[str | None] = mapped_column(Text, nullable=True)
+    lockedAt: Mapped[datetime | None] = mapped_column(DateTime(timezone=False), nullable=True)
+    lockedBy: Mapped[str | None] = mapped_column(String, nullable=True)
+    createdAt: Mapped[datetime] = mapped_column(
+        DateTime(timezone=False), server_default=func.now(), nullable=False
+    )
+    updatedAt: Mapped[datetime] = mapped_column(
+        DateTime(timezone=False), default=_now, onupdate=_now, nullable=False
+    )
+
+
 class Notification(Base):
     __tablename__ = "Notification"
 

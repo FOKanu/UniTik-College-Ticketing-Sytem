@@ -18,6 +18,13 @@ class Settings(BaseSettings):
     # process cwd when not absolute — run uvicorn from `backend/`.
     upload_dir: str = "uploads"
     max_upload_mb: int = 10
+    # Outbound email (empty SMTP_HOST → console provider for local/dev).
+    smtp_host: str = ""
+    smtp_port: int = 587
+    smtp_user: str = ""
+    smtp_password: str = ""
+    smtp_from: str = "noreply@university.example"
+    smtp_use_tls: bool = True
     # LLM settings live in app.ai.llm_config
 
     @property
