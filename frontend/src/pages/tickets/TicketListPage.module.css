@@ -57,6 +57,12 @@
   white-space: nowrap;
 }
 
+.idCell {
+  color: var(--neutral-500);
+  cursor: text;
+  user-select: text;
+}
+
 .table tbody tr:last-child td {
   border-bottom: none;
 }
