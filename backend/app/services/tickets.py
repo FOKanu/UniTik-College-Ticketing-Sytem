@@ -29,6 +29,22 @@ _WITH_PEOPLE = (
 )
 
 
+def _staff_department_mismatch(user: User, ticket: Ticket) -> bool:
+    """True when a STAFF user may not access a ticket due to department scope."""
+    if user.role != Role.STAFF:
+        return False
+    if user.departmentId is None or ticket.departmentId is None:
+        return False
+    return ticket.departmentId != user.departmentId
+
+
+def _staff_list_department_filter(user: User):
+    """SQLAlchemy filter for department-scoped STAFF ticket lists."""
+    if user.departmentId:
+        return (Ticket.departmentId == user.departmentId) | (Ticket.departmentId.is_(None))
+    return Ticket.departmentId.is_(None)
+
+
 def _record_status_change(
     *,
     ticket_id: str,
@@ -50,6 +66,8 @@ async def list_tickets(db: AsyncSession, user: User) -> list[Ticket]:
     stmt = select(Ticket).options(*_WITH_PEOPLE)
     if user.role == Role.STUDENT:
         stmt = stmt.where(Ticket.createdById == user.id)
+    elif user.role == Role.STAFF:
+        stmt = stmt.where(_staff_list_department_filter(user))
     result = await db.execute(stmt)
     tickets = list(result.scalars().all())
     # Refresh breach stamps for open tickets so list payloads stay current.
@@ -63,7 +81,6 @@ async def list_tickets(db: AsyncSession, user: User) -> list[Ticket]:
         await db.commit()
     return tickets
 
-
 async def get_ticket(db: AsyncSession, ticket_id: str, user: User) -> Ticket:
     result = await db.execute(
         select(Ticket).options(*_WITH_PEOPLE).where(Ticket.id == ticket_id)
@@ -73,6 +90,8 @@ async def get_ticket(db: AsyncSession, ticket_id: str, user: User) -> Ticket:
         raise NotFoundError("Ticket not found")
     if user.role == Role.STUDENT and ticket.createdById != user.id:
         raise ForbiddenError("Students may only view their own tickets")
+    if _staff_department_mismatch(user, ticket):
+        raise ForbiddenError("Staff may only view tickets in their department")
     before = ticket.slaBreachedAt
     sla_service.refresh_breach(ticket)
     if ticket.slaBreachedAt != before:

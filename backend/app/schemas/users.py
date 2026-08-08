@@ -13,3 +13,12 @@ class StaffMemberResponse(BaseModel):
     department: str | None
 
     model_config = {"from_attributes": True}
+
+
+class ProfileUpdateRequest(BaseModel):
+    displayName: str | None = None
+    department: str | None = None
+
+
+class RoleUpdateRequest(BaseModel):
+    role: Role

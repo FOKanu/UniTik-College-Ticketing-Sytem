@@ -5,10 +5,22 @@ from sqlalchemy.orm import selectinload
 from app.core.exceptions import BadRequestError, NotFoundError
 from app.db.base import Role
 from app.models import Department, User
-from app.schemas.users import StaffMemberResponse
+from app.schemas.auth import UserResponse
+from app.schemas.users import ProfileUpdateRequest, RoleUpdateRequest, StaffMemberResponse
 from app.services import departments as departments_service
 
 STAFF_ROLES = (Role.STAFF, Role.ADMIN)
+
+
+def user_to_response(user: User) -> UserResponse:
+    return UserResponse(
+        id=user.id,
+        email=user.email,
+        displayName=user.displayName,
+        role=user.role,
+        department=departments_service.department_name(user),
+        createdAt=user.createdAt,
+    )
 
 
 async def list_staff(
@@ -64,3 +76,34 @@ def staff_to_response(user: User) -> StaffMemberResponse:
         role=user.role,
         department=departments_service.department_name(user),
     )
+
+
+async def update_profile(db: AsyncSession, user: User, data: ProfileUpdateRequest) -> User:
+    updates = data.model_dump(exclude_unset=True)
+    if "department" in updates:
+        dept_label = updates.pop("department")
+        dept = await departments_service.get_or_create_department(db, dept_label)
+        user.departmentId = dept.id if dept else None
+    for key, value in updates.items():
+        setattr(user, key, value)
+    await db.commit()
+    await db.refresh(user, ["department"])
+    return user
+
+
+async def list_users(db: AsyncSession) -> list[User]:
+    result = await db.execute(select(User).options(selectinload(User.department)))
+    return list(result.scalars().all())
+
+
+async def update_role(db: AsyncSession, user_id: str, data: RoleUpdateRequest) -> User:
+    result = await db.execute(
+        select(User).options(selectinload(User.department)).where(User.id == user_id)
+    )
+    target = result.scalar_one_or_none()
+    if not target:
+        raise NotFoundError("User not found")
+    target.role = data.role
+    await db.commit()
+    await db.refresh(target, ["department"])
+    return target
