@@ -67,7 +67,11 @@ async def test_sql_injection_attempt_in_login_fails_cleanly(client):
 async def test_alg_none_attack_is_rejected(client):
     """Classic JWT vulnerability: crafting a token with alg=none and no
     signature, hoping the server skips verification entirely."""
-    header = base64.urlsafe_b64encode(json.dumps({"alg": "none", "typ": "JWT"}).encode()).rstrip(b"=").decode()
+    header = (
+        base64.urlsafe_b64encode(json.dumps({"alg": "none", "typ": "JWT"}).encode())
+        .rstrip(b"=")
+        .decode()
+    )
     payload = base64.urlsafe_b64encode(
         json.dumps({"sub": "some-fake-user-id", "role": "ADMIN"}).encode()
     ).rstrip(b"=").decode()
