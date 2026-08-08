@@ -7,7 +7,9 @@ const universityEmail = z
   .email('Enter a valid email address.')
   .refine(
     (value) =>
-      /@(?:[\w-]+\.)*(?:edu|university\.edu|mdh\.de|campus\.edu)$/i.test(value),
+      /@(?:[\w-]+\.)*(?:edu|university\.edu|mdh\.de|mdh-berlin\.de|campus\.edu|tum\.de|uni-hamburg\.de|rwth-aachen\.de)$/i.test(
+        value,
+      ),
     'Use your university email address (e.g. you@stud.mdh.de).',
   )
 

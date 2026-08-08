@@ -1,30 +1,38 @@
 import { create } from 'zustand'
 import { persist } from 'zustand/middleware'
-import { DEFAULT_INSTITUTION_ID, getInstitution } from '@/lib/institutions'
-import type { Institution } from '@/lib/institutions'
+import {
+  DEFAULT_INSTITUTION_ID,
+  findInstitution,
+  type Institution,
+} from '@/lib/institutions'
 
 interface InstitutionState {
   institutionId: string
-  institution: Institution
+  setInstitutionId: (id: string) => void
+  /** Alias used by earlier main call sites. */
   setInstitution: (id: string) => void
+  getInstitution: () => Institution
+  clearInstitution: () => void
 }
 
 export const useInstitutionStore = create<InstitutionState>()(
   persist(
-    (set) => ({
+    (set, get) => ({
       institutionId: DEFAULT_INSTITUTION_ID,
-      institution: getInstitution(DEFAULT_INSTITUTION_ID),
-      setInstitution: (id) =>
-        set({ institutionId: id, institution: getInstitution(id) }),
+      setInstitutionId: (id) => {
+        const next = findInstitution(id)
+        set({ institutionId: next.id })
+      },
+      setInstitution: (id) => {
+        const next = findInstitution(id)
+        set({ institutionId: next.id })
+      },
+      getInstitution: () => findInstitution(get().institutionId),
+      clearInstitution: () => set({ institutionId: DEFAULT_INSTITUTION_ID }),
     }),
     {
       name: 'tss-institution',
       partialize: (state) => ({ institutionId: state.institutionId }),
-      onRehydrateStorage: () => (state) => {
-        // Recompute the full institution record from the persisted id,
-        // so edits to INSTITUTIONS data are always reflected.
-        if (state) state.institution = getInstitution(state.institutionId)
-      },
     },
   ),
 )

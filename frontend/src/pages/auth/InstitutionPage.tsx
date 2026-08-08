@@ -5,7 +5,7 @@ import { ROUTES } from '@/app/routes'
 import { LanguageSelector } from '@/components/layout/LanguageSelector'
 import { IconCheck, IconChevronRight, IconSearch } from '@/components/ui/icons'
 import { INSTITUTIONS } from '@/lib/institutions'
-import { useInstitutionStore } from '@/stores/institutionStore'
+import { useInstitutionStore } from '@/stores'
 import styles from './InstitutionPage.module.css'
 
 const FEATURES = [
@@ -16,10 +16,10 @@ const FEATURES = [
 
 export function InstitutionPage() {
   const navigate = useNavigate()
-  const setInstitution = useInstitutionStore((s) => s.setInstitution)
-  const currentInstitutionId = useInstitutionStore((s) => s.institutionId)
+  const institutionId = useInstitutionStore((s) => s.institutionId)
+  const setInstitutionId = useInstitutionStore((s) => s.setInstitutionId)
   const [query, setQuery] = useState('')
-  const [activeId, setActiveId] = useState<string | null>(currentInstitutionId)
+  const [activeId, setActiveId] = useState<string | null>(institutionId)
 
   const filtered = useMemo(() => {
     const q = query.trim().toLowerCase()
@@ -29,13 +29,14 @@ export function InstitutionPage() {
         item.name.toLowerCase().includes(q) ||
         item.domains.toLowerCase().includes(q) ||
         item.short.toLowerCase().includes(q) ||
-        item.locations.toLowerCase().includes(q),
+        item.locations.toLowerCase().includes(q) ||
+        item.emailDomains.some((d) => d.toLowerCase().includes(q)),
     )
   }, [query])
 
   function selectInstitution(id: string) {
     setActiveId(id)
-    setInstitution(id)
+    setInstitutionId(id)
     void navigate(ROUTES.login)
   }
 

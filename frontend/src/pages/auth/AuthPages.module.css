@@ -34,10 +34,27 @@
 }
 
 .hint {
-  margin: 0;
+  margin: 0 0 1rem;
   font-size: var(--text-caption);
   color: var(--neutral-500);
-  line-height: 1.4;
+  line-height: 1.45;
+  text-align: center;
+}
+
+.hint a {
+  color: var(--brand-600);
+  font-weight: 700;
+  text-decoration: none;
+}
+
+.hint a:hover {
+  text-decoration: underline;
+  text-underline-offset: 2px;
+}
+
+.hint strong {
+  color: var(--neutral-700);
+  font-weight: 650;
 }
 
 .error {

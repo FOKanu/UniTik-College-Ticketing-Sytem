@@ -3,11 +3,14 @@ export interface Institution {
   name: string
   short: string
   color: string
+  /** Primary domain shown in the picker */
   domains: string
   locations: string
+  /** Email domains accepted for this campus (demo + validation). */
+  emailDomains: string[]
 }
 
-export const INSTITUTIONS: readonly Institution[] = [
+export const INSTITUTIONS: Institution[] = [
   {
     id: 'mdh',
     name: 'MediaDesign Hochschule',
@@ -15,6 +18,14 @@ export const INSTITUTIONS: readonly Institution[] = [
     color: '#2574A9',
     domains: 'mdh.de',
     locations: 'Berlin, Munich, Düsseldorf',
+    emailDomains: [
+      'mdh.de',
+      'stud.mdh.de',
+      'mdh-berlin.de',
+      'stud.mdh-berlin.de',
+      'campus.edu',
+      'university.edu',
+    ],
   },
   {
     id: 'tum',
@@ -23,6 +34,7 @@ export const INSTITUTIONS: readonly Institution[] = [
     color: '#1B6E3C',
     domains: 'tum.de',
     locations: 'Munich',
+    emailDomains: ['tum.de', 'stud.tum.de', 'campus.edu', 'university.edu'],
   },
   {
     id: 'uhh',
@@ -31,6 +43,12 @@ export const INSTITUTIONS: readonly Institution[] = [
     color: '#8B5A2B',
     domains: 'uni-hamburg.de',
     locations: 'Hamburg',
+    emailDomains: [
+      'uni-hamburg.de',
+      'stud.uni-hamburg.de',
+      'campus.edu',
+      'university.edu',
+    ],
   },
   {
     id: 'rwth',
@@ -39,14 +57,30 @@ export const INSTITUTIONS: readonly Institution[] = [
     color: '#A22633',
     domains: 'rwth-aachen.de',
     locations: 'Aachen',
+    emailDomains: [
+      'rwth-aachen.de',
+      'stud.rwth-aachen.de',
+      'campus.edu',
+      'university.edu',
+    ],
   },
-] as const
+]
 
-export const DEFAULT_INSTITUTION_ID = 'mdh'
+export const DEFAULT_INSTITUTION_ID = INSTITUTIONS[0].id
 
-export function getInstitution(id: string | null | undefined): Institution {
+export function findInstitution(id: string | null | undefined): Institution {
   return (
     INSTITUTIONS.find((item) => item.id === id) ??
     INSTITUTIONS.find((item) => item.id === DEFAULT_INSTITUTION_ID)!
   )
+}
+
+/** @deprecated Prefer `findInstitution` — kept for call sites that used main’s name. */
+export const getInstitution = findInstitution
+
+export function institutionEmailHint(institution: Institution): string {
+  const primary =
+    institution.emailDomains.find((d) => d.startsWith('stud.')) ??
+    institution.emailDomains[0]
+  return `you@${primary}`
 }

@@ -5,13 +5,17 @@ import { Link, useNavigate } from 'react-router-dom'
 import { ROUTES } from '@/app/routes'
 import { Button, Input } from '@/components/ui'
 import { authApi, isApiError } from '@/lib/api'
+import { findInstitution, institutionEmailHint } from '@/lib/institutions'
 import { registerSchema, type RegisterFormValues } from '@/lib/validation'
-import { useAuthStore } from '@/stores/authStore'
+import { useAuthStore, useInstitutionStore } from '@/stores'
 import styles from './AuthPages.module.css'
 
 export function RegisterPage() {
   const navigate = useNavigate()
   const setSession = useAuthStore((s) => s.setSession)
+  const institutionId = useInstitutionStore((s) => s.institutionId)
+  const institution = findInstitution(institutionId)
+  const emailHint = institutionEmailHint(institution)
   const [apiError, setApiError] = useState<string | null>(null)
 
   const {
@@ -49,7 +53,11 @@ export function RegisterPage() {
 
   return (
     <div>
-      <h1 className={styles.title}>Create your account</h1>
+      <h1 className={styles.title}>Join {institution.short}</h1>
+      <p className={styles.hint}>
+        Creating an account for <strong>{institution.name}</strong>.{' '}
+        <Link to={ROUTES.institution}>Choose a different institution</Link>
+      </p>
       <form
         className={styles.form}
         onSubmit={(e) => void handleSubmit(onSubmit)(e)}
@@ -66,7 +74,7 @@ export function RegisterPage() {
           id="register-email"
           label="University Email"
           type="email"
-          placeholder="you@stud.university.edu"
+          placeholder={emailHint}
           autoComplete="email"
           error={errors.email?.message}
           {...register('email')}
@@ -88,8 +96,8 @@ export function RegisterPage() {
           {...register('confirmPassword')}
         />
         <p className={styles.hint}>
-          Student and staff accounts are verified via your university email
-          domain.
+          Use an @{institution.domains} email for this campus. Student and
+          staff accounts are verified via your university email domain.
         </p>
         {apiError ? <p className={styles.error} role="alert">{apiError}</p> : null}
         <Button type="submit" fullWidth size="lg" disabled={isSubmitting}>
