@@ -20,6 +20,7 @@ from app.schemas.auth import (
     UserResponse,
 )
 from app.services import departments as departments_service
+from app.services import tenants as tenants_service
 
 
 def _user_to_response(user: User) -> UserResponse:
@@ -53,8 +54,12 @@ async def register(db: AsyncSession, data: RegisterRequest) -> AuthTokenResponse
         raise ConflictError("Email already registered")
     if data.role != Role.STUDENT:
         raise ConflictError("Only student self-registration is allowed")
-    dept = await departments_service.get_or_create_department(db, data.department)
+    tenant_id = await tenants_service.resolve_tenant_id_for_email(db, data.email)
+    dept = await departments_service.get_or_create_department(
+        db, data.department, tenant_id=tenant_id
+    )
     user = User(
+        tenantId=tenant_id,
         email=data.email,
         displayName=data.displayName,
         role=data.role,

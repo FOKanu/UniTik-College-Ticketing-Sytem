@@ -13,6 +13,7 @@ from app.db.session import async_session_factory
 from app.models import ChatConversation, ChatMessage, User
 from app.services import chat as chat_service
 from app.services.chat import TRANSCRIPT_MAX_CHARS, _format_transcript
+from app.services.tenants import DEFAULT_TENANT_ID
 from tests.conftest import department_id_for, integration
 
 # Reserved discard port — nothing is listening, so the client must fail fast.
@@ -97,6 +98,7 @@ async def test_invalid_mode_is_rejected(client):
 
 async def _seed_conversation(db, *, with_messages: bool):
     user = User(
+        tenantId=DEFAULT_TENANT_ID,
         email=f"escalate-{uuid.uuid4()}@student.university.edu",
         displayName="Ada Lovelace",
         role=Role.STUDENT,

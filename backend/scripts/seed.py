@@ -13,8 +13,10 @@ from app.core.security import hash_password
 from app.db.base import Role, TicketPriority, TicketStatus
 from app.db.session import async_session_factory
 from app.models import Attachment, Department, Problem, Ticket, TicketStatusHistory, User
+from app.services.tenants import DEFAULT_TENANT_ID
 
 DEMO_PASSWORD = "demo1234"
+MDH_TENANT_ID = DEFAULT_TENANT_ID
 
 DEPARTMENT_NAMES = [
     "IT Administration",
@@ -43,13 +45,15 @@ async def seed() -> None:
             return
 
         departments = {
-            name: Department(id=str(uuid.uuid4()), name=name) for name in DEPARTMENT_NAMES
+            name: Department(id=str(uuid.uuid4()), tenantId=MDH_TENANT_ID, name=name)
+            for name in DEPARTMENT_NAMES
         }
         db.add_all(departments.values())
         await db.flush()
 
         admin = User(
             id=str(uuid.uuid4()),
+            tenantId=MDH_TENANT_ID,
             email="elena.voss@university.edu",
             displayName="Elena Voss",
             role=Role.ADMIN,
@@ -58,6 +62,7 @@ async def seed() -> None:
         )
         staff_tier1 = User(
             id=str(uuid.uuid4()),
+            tenantId=MDH_TENANT_ID,
             email="marcus.whitfield@university.edu",
             displayName="Marcus Whitfield",
             role=Role.STAFF,
@@ -66,6 +71,7 @@ async def seed() -> None:
         )
         staff_tier2 = User(
             id=str(uuid.uuid4()),
+            tenantId=MDH_TENANT_ID,
             email="priya.nandakumar@university.edu",
             displayName="Priya Nandakumar",
             role=Role.STAFF,
@@ -74,6 +80,7 @@ async def seed() -> None:
         )
         student_jordan = User(
             id=str(uuid.uuid4()),
+            tenantId=MDH_TENANT_ID,
             email="jordan.alvarez@student.university.edu",
             displayName="Jordan Alvarez",
             role=Role.STUDENT,
@@ -82,6 +89,7 @@ async def seed() -> None:
         )
         student_sophie = User(
             id=str(uuid.uuid4()),
+            tenantId=MDH_TENANT_ID,
             email="sophie.tan@student.university.edu",
             displayName="Sophie Tan",
             role=Role.STUDENT,
@@ -90,6 +98,7 @@ async def seed() -> None:
         )
         student_liam = User(
             id=str(uuid.uuid4()),
+            tenantId=MDH_TENANT_ID,
             email="liam.oconnor@student.university.edu",
             displayName="Liam O'Connor",
             role=Role.STUDENT,
@@ -101,6 +110,7 @@ async def seed() -> None:
 
         portal_ticket = Ticket(
             id=str(uuid.uuid4()),
+            tenantId=MDH_TENANT_ID,
             subject="Cannot access course portal",
             description="Login page redirects back to itself after entering valid credentials.",
             status=TicketStatus.OPEN,
@@ -114,6 +124,7 @@ async def seed() -> None:
         )
         wifi_ticket = Ticket(
             id=str(uuid.uuid4()),
+            tenantId=MDH_TENANT_ID,
             subject="Lab WiFi outage in Biology building",
             description=(
                 "WiFi has been dropping every few minutes in the second-floor labs since Monday."
@@ -129,6 +140,7 @@ async def seed() -> None:
         )
         grade_ticket = Ticket(
             id=str(uuid.uuid4()),
+            tenantId=MDH_TENANT_ID,
             subject="Grade appeal not reflected in transcript",
             description="Approved grade change from last semester still shows the old grade.",
             status=TicketStatus.RESOLVED,
@@ -142,6 +154,7 @@ async def seed() -> None:
         )
         vpn_ticket = Ticket(
             id=str(uuid.uuid4()),
+            tenantId=MDH_TENANT_ID,
             subject="Intermittent VPN disconnects",
             description="VPN connection drops every 10-15 minutes when working from off campus.",
             status=TicketStatus.IN_PROGRESS,
@@ -155,6 +168,7 @@ async def seed() -> None:
         )
         unclassified_ticket = Ticket(
             id=str(uuid.uuid4()),
+            tenantId=MDH_TENANT_ID,
             subject="App keeps crashing, not sure who to contact",
             description="The mobile app crashes on launch.",
             status=TicketStatus.OPEN,

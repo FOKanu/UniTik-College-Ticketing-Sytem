@@ -31,9 +31,9 @@ async def get_faq(db: DbSession, faq_id: str):
 async def create_faq(
     db: DbSession,
     body: FaqCreate,
-    _user: StaffOrAdmin,
+    user: StaffOrAdmin,
 ):
-    entry = await kb_service.create_faq(db, body)
+    entry = await kb_service.create_faq(db, body, user=user)
     return success_response(kb_service.faq_to_response(entry).model_dump(), status_code=201)
 
 

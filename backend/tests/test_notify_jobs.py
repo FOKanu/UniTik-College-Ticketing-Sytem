@@ -13,6 +13,7 @@ from app.db.base import Role, TicketStatus
 from app.db.session import async_session_factory
 from app.models import NotifyJob, User
 from app.services.email import ConsoleEmailProvider, SmtpEmailProvider, get_email_provider
+from app.services.tenants import DEFAULT_TENANT_ID
 from scripts import notify_worker
 from tests.conftest import department_id_for, integration
 
@@ -82,6 +83,7 @@ async def test_ticket_hooks_enqueue_notify_jobs(client):
     staff_email = f"staff-{uuid.uuid4().hex[:8]}@university.edu"
     async with async_session_factory() as db:
         staff = User(
+            tenantId=DEFAULT_TENANT_ID,
             email=staff_email,
             displayName="Staff",
             role=Role.STAFF,

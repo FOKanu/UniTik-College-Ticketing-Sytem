@@ -63,7 +63,7 @@ def _record_status_change(
 
 
 async def list_tickets(db: AsyncSession, user: User) -> list[Ticket]:
-    stmt = select(Ticket).options(*_WITH_PEOPLE)
+    stmt = select(Ticket).options(*_WITH_PEOPLE).where(Ticket.tenantId == user.tenantId)
     if user.role == Role.STUDENT:
         stmt = stmt.where(Ticket.createdById == user.id)
     elif user.role == Role.STAFF:
@@ -88,6 +88,8 @@ async def get_ticket(db: AsyncSession, ticket_id: str, user: User) -> Ticket:
     ticket = result.scalar_one_or_none()
     if not ticket:
         raise NotFoundError("Ticket not found")
+    if ticket.tenantId != user.tenantId:
+        raise ForbiddenError("Tickets are scoped to your institution")
     if user.role == Role.STUDENT and ticket.createdById != user.id:
         raise ForbiddenError("Students may only view their own tickets")
     if _staff_department_mismatch(user, ticket):
@@ -106,13 +108,15 @@ async def create_ticket(db: AsyncSession, user: User, data: TicketCreate) -> Tic
     category = data.category
     classification_source: str | None = None
     if data.department:
-        dept = await departments_service.get_or_create_department(db, data.department)
+        dept = await departments_service.get_or_create_department(
+            db, data.department, tenant_id=user.tenantId
+        )
         classification_source = "manual" if dept else None
     else:
         classification = classify_ticket(data.subject, data.description)
         if classification.department:
             dept = await departments_service.get_or_create_department(
-                db, classification.department
+                db, classification.department, tenant_id=user.tenantId
             )
             classification_source = classification.classification_source
             if category is None:
@@ -121,6 +125,7 @@ async def create_ticket(db: AsyncSession, user: User, data: TicketCreate) -> Tic
             dept = None
 
     ticket = Ticket(
+        tenantId=user.tenantId,
         subject=data.subject,
         description=data.description,
         priority=data.priority,
@@ -155,12 +160,16 @@ async def update_ticket(db: AsyncSession, ticket_id: str, user: User, data: Tick
     # Validate assignee before applying — null clears assignment; any id must
     # resolve to a STAFF/ADMIN account so students cannot be assigned tickets.
     if "assignedToId" in updates and updates["assignedToId"] is not None:
-        await users_service.get_assignable_user(db, updates["assignedToId"])
+        await users_service.get_assignable_user(
+            db, updates["assignedToId"], tenant_id=ticket.tenantId
+        )
 
     # API still accepts free-text department; resolve to Department FK.
     if "department" in updates:
         dept_label = updates.pop("department")
-        dept = await departments_service.get_or_create_department(db, dept_label)
+        dept = await departments_service.get_or_create_department(
+            db, dept_label, tenant_id=ticket.tenantId
+        )
         updates["departmentId"] = dept.id if dept else None
         if dept is not None:
             updates["classificationSource"] = "manual"

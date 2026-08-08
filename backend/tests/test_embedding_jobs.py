@@ -10,6 +10,7 @@ from app.db.base import Role
 from app.db.session import async_session_factory
 from app.models import EmbeddingJob, FaqEntry, User
 from app.services import embedding_jobs as jobs_service
+from app.services.tenants import DEFAULT_TENANT_ID
 from scripts import embedding_worker
 from tests.conftest import integration
 
@@ -21,6 +22,7 @@ async def test_enqueue_coalesces_active_jobs():
     async with async_session_factory() as db:
         db.add(
             FaqEntry(
+                tenantId=DEFAULT_TENANT_ID,
                 id=faq_id,
                 question="Q",
                 answer="A",
@@ -54,6 +56,7 @@ async def test_fail_job_retries_then_marks_failed():
     async with async_session_factory() as db:
         db.add(
             FaqEntry(
+                tenantId=DEFAULT_TENANT_ID,
                 id=faq_id,
                 question="Q",
                 answer="A",
@@ -90,6 +93,7 @@ async def test_worker_once_embeds_pending_job():
     async with async_session_factory() as db:
         db.add(
             FaqEntry(
+                tenantId=DEFAULT_TENANT_ID,
                 id=faq_id,
                 question="Reset password",
                 answer="Use the portal",
@@ -130,6 +134,7 @@ async def _admin_token(client) -> str:
     async with async_session_factory() as db:
         db.add(
             User(
+                tenantId=DEFAULT_TENANT_ID,
                 email=email,
                 displayName="Admin",
                 role=Role.ADMIN,
@@ -151,6 +156,7 @@ async def test_reembed_requires_admin_and_enqueues(client):
     async with async_session_factory() as db:
         db.add(
             FaqEntry(
+                tenantId=DEFAULT_TENANT_ID,
                 id=faq_id,
                 question="Q",
                 answer="A",

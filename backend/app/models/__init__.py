@@ -7,7 +7,7 @@ from sqlalchemy import Boolean, DateTime, Enum, ForeignKey, Integer, String, Tex
 from sqlalchemy.dialects.postgresql import JSONB
 from sqlalchemy.orm import Mapped, mapped_column, relationship
 
-from app.db.base import Base, Role, TicketPriority, TicketStatus
+from app.db.base import Base, FaqStatus, FaqVisibility, Role, TicketPriority, TicketStatus
 
 if TYPE_CHECKING:
     pass
@@ -17,15 +17,60 @@ def _now() -> datetime:
     return datetime.now()
 
 
+class Tenant(Base):
+    """A client institution using the platform."""
+
+    __tablename__ = "Tenant"
+
+    id: Mapped[str] = mapped_column(String, primary_key=True, default=lambda: str(uuid.uuid4()))
+    name: Mapped[str] = mapped_column(String, nullable=False)
+    shortCode: Mapped[str] = mapped_column(String, unique=True, nullable=False)
+    defaultLanguage: Mapped[str] = mapped_column(String, default="en", nullable=False)
+    enabledLanguages: Mapped[list | None] = mapped_column(JSONB, nullable=True)
+    isActive: Mapped[bool] = mapped_column(Boolean, default=True, nullable=False)
+    createdAt: Mapped[datetime] = mapped_column(
+        DateTime(timezone=False), server_default=func.now(), nullable=False
+    )
+    updatedAt: Mapped[datetime] = mapped_column(
+        DateTime(timezone=False), default=_now, onupdate=_now, nullable=False
+    )
+
+    domains: Mapped[list["TenantDomain"]] = relationship(
+        "TenantDomain", back_populates="tenant", cascade="all, delete-orphan"
+    )
+    departments: Mapped[list["Department"]] = relationship(
+        "Department", back_populates="tenant"
+    )
+    users: Mapped[list["User"]] = relationship("User", back_populates="tenant")
+
+
+class TenantDomain(Base):
+    """Email domain that maps to a tenant at sign-up/sign-in."""
+
+    __tablename__ = "TenantDomain"
+
+    id: Mapped[str] = mapped_column(String, primary_key=True, default=lambda: str(uuid.uuid4()))
+    tenantId: Mapped[str] = mapped_column(String, ForeignKey("Tenant.id"), nullable=False)
+    domain: Mapped[str] = mapped_column(String, unique=True, nullable=False)
+
+    tenant: Mapped["Tenant"] = relationship("Tenant", back_populates="domains")
+
+
 class Department(Base):
     __tablename__ = "Department"
 
     id: Mapped[str] = mapped_column(String, primary_key=True, default=lambda: str(uuid.uuid4()))
-    name: Mapped[str] = mapped_column(String, unique=True, nullable=False)
+    tenantId: Mapped[str] = mapped_column(String, ForeignKey("Tenant.id"), nullable=False)
+    name: Mapped[str] = mapped_column(String, nullable=False)
+    description: Mapped[str | None] = mapped_column(String, nullable=True)
     createdAt: Mapped[datetime] = mapped_column(
         DateTime(timezone=False), server_default=func.now(), nullable=False
     )
+    updatedAt: Mapped[datetime] = mapped_column(
+        DateTime(timezone=False), default=_now, onupdate=_now, nullable=False
+    )
 
+    tenant: Mapped["Tenant"] = relationship("Tenant", back_populates="departments")
     users: Mapped[list["User"]] = relationship("User", back_populates="department")
     tickets: Mapped[list["Ticket"]] = relationship("Ticket", back_populates="department")
 
@@ -34,6 +79,7 @@ class User(Base):
     __tablename__ = "User"
 
     id: Mapped[str] = mapped_column(String, primary_key=True, default=lambda: str(uuid.uuid4()))
+    tenantId: Mapped[str] = mapped_column(String, ForeignKey("Tenant.id"), nullable=False)
     email: Mapped[str] = mapped_column(String, unique=True, nullable=False)
     displayName: Mapped[str] = mapped_column(String, nullable=False)
     role: Mapped[Role] = mapped_column(
@@ -51,6 +97,7 @@ class User(Base):
         DateTime(timezone=False), default=_now, onupdate=_now, nullable=False
     )
 
+    tenant: Mapped["Tenant"] = relationship("Tenant", back_populates="users")
     tickets_created: Mapped[list["Ticket"]] = relationship(
         "Ticket", back_populates="created_by", foreign_keys="Ticket.createdById"
     )
@@ -77,6 +124,7 @@ class Ticket(Base):
     __tablename__ = "Ticket"
 
     id: Mapped[str] = mapped_column(String, primary_key=True, default=lambda: str(uuid.uuid4()))
+    tenantId: Mapped[str] = mapped_column(String, ForeignKey("Tenant.id"), nullable=False)
     subject: Mapped[str] = mapped_column(String, nullable=False)
     description: Mapped[str] = mapped_column(Text, nullable=False)
     status: Mapped[TicketStatus] = mapped_column(
@@ -127,6 +175,7 @@ class Ticket(Base):
     department: Mapped[Optional["Department"]] = relationship(
         "Department", back_populates="tickets"
     )
+    tenant: Mapped["Tenant"] = relationship("Tenant")
 
 
 class Attachment(Base):
@@ -164,13 +213,24 @@ class Problem(Base):
 
 
 class FaqEntry(Base):
+    """Knowledge-base article. Staff-authored; students never create these."""
+
     __tablename__ = "FaqEntry"
 
     id: Mapped[str] = mapped_column(String, primary_key=True, default=lambda: str(uuid.uuid4()))
+    tenantId: Mapped[str] = mapped_column(String, ForeignKey("Tenant.id"), nullable=False)
     question: Mapped[str] = mapped_column(Text, nullable=False)
     answer: Mapped[str] = mapped_column(Text, nullable=False)
     language: Mapped[str] = mapped_column(String, default="en", nullable=False)
     category: Mapped[str | None] = mapped_column(String, nullable=True)
+    visibility: Mapped[FaqVisibility] = mapped_column(
+        Enum(FaqVisibility, name="FaqVisibility"),
+        default=FaqVisibility.STUDENTS_AND_AI,
+        nullable=False,
+    )
+    status: Mapped[FaqStatus] = mapped_column(
+        Enum(FaqStatus, name="FaqStatus"), default=FaqStatus.PUBLISHED, nullable=False
+    )
     contextBlob: Mapped[str | None] = mapped_column(Text, nullable=True)
     embedding = mapped_column(Vector(768), nullable=True)
     createdAt: Mapped[datetime] = mapped_column(

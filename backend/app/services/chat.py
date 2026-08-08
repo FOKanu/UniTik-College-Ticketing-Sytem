@@ -296,6 +296,7 @@ async def escalate_to_ticket(
 
     dept = await departments_service.department_for_user(db, user)
     ticket = Ticket(
+        tenantId=user.tenantId,
         subject=(
             suggestion.subject
             if suggestion

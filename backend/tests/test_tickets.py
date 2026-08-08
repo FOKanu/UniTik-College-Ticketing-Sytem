@@ -6,6 +6,7 @@ from app.core.security import hash_password
 from app.db.base import Role
 from app.db.session import async_session_factory
 from app.models import User
+from app.services.tenants import DEFAULT_TENANT_ID
 from tests.conftest import department_id_for, integration
 
 
@@ -38,6 +39,7 @@ async def _register_and_login(client, *, role: str, department: str | None = Non
     else:
         async with async_session_factory() as db:
             user = User(
+                tenantId=DEFAULT_TENANT_ID,
                 email=email,
                 displayName=f"Test {role.title()}",
                 role=Role(role),

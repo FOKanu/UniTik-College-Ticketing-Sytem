@@ -24,13 +24,16 @@ def user_to_response(user: User) -> UserResponse:
 
 
 async def list_staff(
-    db: AsyncSession, *, department: str | None = None
+    db: AsyncSession,
+    *,
+    tenant_id: str,
+    department: str | None = None,
 ) -> list[User]:
-    """Return STAFF + ADMIN users, optionally filtered by department substring."""
+    """Return STAFF + ADMIN users in a tenant, optionally filtered by department."""
     stmt = (
         select(User)
         .options(selectinload(User.department))
-        .where(User.role.in_(STAFF_ROLES))
+        .where(User.role.in_(STAFF_ROLES), User.tenantId == tenant_id)
         .order_by(User.displayName.asc())
     )
     if department and department.strip():
@@ -43,22 +46,30 @@ async def list_staff(
     return list(result.scalars().unique().all())
 
 
-async def list_staff_departments(db: AsyncSession) -> list[str]:
-    """Distinct non-null department labels from staff/admin accounts."""
+async def list_staff_departments(db: AsyncSession, *, tenant_id: str) -> list[str]:
+    """Distinct non-null department labels from staff/admin accounts in a tenant."""
     result = await db.execute(
         select(Department.name)
         .join(User, User.departmentId == Department.id)
-        .where(User.role.in_(STAFF_ROLES), Department.name.is_not(None))
+        .where(
+            User.role.in_(STAFF_ROLES),
+            User.tenantId == tenant_id,
+            Department.name.is_not(None),
+        )
         .distinct()
         .order_by(Department.name.asc())
     )
     return [row[0] for row in result.all() if row[0]]
 
 
-async def get_assignable_user(db: AsyncSession, user_id: str) -> User:
-    """Load a user that is allowed to own tickets (STAFF or ADMIN)."""
+async def get_assignable_user(
+    db: AsyncSession, user_id: str, *, tenant_id: str
+) -> User:
+    """Load a user that is allowed to own tickets (STAFF or ADMIN) in the tenant."""
     result = await db.execute(
-        select(User).options(selectinload(User.department)).where(User.id == user_id)
+        select(User)
+        .options(selectinload(User.department))
+        .where(User.id == user_id, User.tenantId == tenant_id)
     )
     user = result.scalar_one_or_none()
     if not user:
@@ -82,7 +93,9 @@ async def update_profile(db: AsyncSession, user: User, data: ProfileUpdateReques
     updates = data.model_dump(exclude_unset=True)
     if "department" in updates:
         dept_label = updates.pop("department")
-        dept = await departments_service.get_or_create_department(db, dept_label)
+        dept = await departments_service.get_or_create_department(
+            db, dept_label, tenant_id=user.tenantId
+        )
         user.departmentId = dept.id if dept else None
     for key, value in updates.items():
         setattr(user, key, value)
@@ -91,8 +104,12 @@ async def update_profile(db: AsyncSession, user: User, data: ProfileUpdateReques
     return user
 
 
-async def list_users(db: AsyncSession) -> list[User]:
-    result = await db.execute(select(User).options(selectinload(User.department)))
+async def list_users(db: AsyncSession, *, tenant_id: str) -> list[User]:
+    result = await db.execute(
+        select(User)
+        .options(selectinload(User.department))
+        .where(User.tenantId == tenant_id)
+    )
     return list(result.scalars().all())
 
 

@@ -31,8 +31,8 @@ async def update_my_profile(db: DbSession, user: CurrentUser, body: ProfileUpdat
 
 
 @router.get("")
-async def list_all_users(db: DbSession, _user: StaffOrAdmin):
-    users = await users_service.list_users(db)
+async def list_all_users(db: DbSession, user: StaffOrAdmin):
+    users = await users_service.list_users(db, tenant_id=user.tenantId)
     return success_response(
         [users_service.user_to_response(u).model_dump(mode="json") for u in users]
     )
@@ -51,18 +51,20 @@ async def update_user_role(
 @router.get("/staff")
 async def list_staff(
     db: DbSession,
-    _user: StaffOrAdmin,
+    user: StaffOrAdmin,
     department: Annotated[str | None, Query()] = None,
 ):
     """Staff directory for assignee / routing dropdowns (STAFF + ADMIN only)."""
-    members = await users_service.list_staff(db, department=department)
+    members = await users_service.list_staff(
+        db, tenant_id=user.tenantId, department=department
+    )
     return success_response(
         [users_service.staff_to_response(m).model_dump() for m in members]
     )
 
 
 @router.get("/departments")
-async def list_staff_departments(db: DbSession, _user: StaffOrAdmin):
+async def list_staff_departments(db: DbSession, user: StaffOrAdmin):
     """Distinct department labels from staff/admin accounts (for routing filters)."""
-    departments = await users_service.list_staff_departments(db)
+    departments = await users_service.list_staff_departments(db, tenant_id=user.tenantId)
     return success_response(departments)
