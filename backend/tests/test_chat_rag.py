@@ -1,5 +1,5 @@
 from types import SimpleNamespace
-from unittest.mock import AsyncMock
+from unittest.mock import ANY, AsyncMock
 
 import pytest
 
@@ -46,6 +46,37 @@ async def test_retrieve_marks_strong_hits(monkeypatch):
     assert bundle.retrieval_weak is False
     assert bundle.citations[0].id == "faq-it-support-001"
     assert "faq-it-support-001" in bundle.kb_context
+
+
+@pytest.mark.asyncio
+async def test_retrieve_uses_authoritative_german_locale(monkeypatch):
+    hit = FaqSearchResult(
+        id="faq-it-support-001",
+        question="Wie setze ich mein Passwort zurück?",
+        answer="Nutzen Sie das Formular zum Zurücksetzen.",
+        category="IT Support",
+        score=0.9,
+    )
+    search = AsyncMock(return_value=[hit])
+    monkeypatch.setattr(chat_service, "embed_text", AsyncMock(return_value=[0.1] * 8))
+    monkeypatch.setattr(chat_service.kb_service, "search_faq_vector", search)
+
+    bundle = await chat_service.retrieve_for_query(
+        SimpleNamespace(), "Passwort vergessen", language="de"
+    )
+
+    search.assert_awaited_once_with(
+        ANY, [0.1] * 8, limit=chat_service.RAG_TOP_K, language="de"
+    )
+    assert bundle.citations == [
+        chat_service.Citation(
+            id="faq-it-support-001",
+            question="Wie setze ich mein Passwort zurück?",
+            category="IT Support",
+            score=0.9,
+        )
+    ]
+    assert "Respond in German" in bundle.kb_context
 
 
 @pytest.mark.asyncio

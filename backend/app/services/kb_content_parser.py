@@ -6,13 +6,18 @@ import re
 from dataclasses import dataclass
 from pathlib import Path
 
+_CORPUS = {
+    "academics": ("Academics", "faq-academics-", 30),
+    "finance": ("Finance", "faq-finance-", 15),
+    "it-support": ("IT Support", "faq-it-support-", 15),
+    "maintenance": ("Maintenance", "faq-maintenance-", 15),
+    "registrar": ("Registrar", "faq-registrar-", 55),
+    "housing": ("Housing", "faq-housing-", 53),
+}
 CANONICAL_FILES = {
-    "academics.md": ("Academics", "faq-academics-", 30),
-    "finance.md": ("Finance", "faq-finance-", 15),
-    "it-support.md": ("IT Support", "faq-it-support-", 15),
-    "maintenance.md": ("Maintenance", "faq-maintenance-", 15),
-    "registrar.md": ("Registrar", "faq-registrar-", 55),
-    "housing.md": ("Housing", "faq-housing-", 53),
+    f"{name}_{language.upper()}.md": (*spec, language)
+    for name, spec in _CORPUS.items()
+    for language in ("en", "de")
 }
 TOTAL_CANONICAL_ENTRIES = sum(spec[2] for spec in CANONICAL_FILES.values())
 REQUIRED_METADATA = ("department", "audience", "language", "status", "source", "entryCount")
@@ -76,13 +81,14 @@ def _parse_front_matter(text: str, file_path: str) -> tuple[dict[str, str], str]
 
     expected_values = {
         "audience": "Student",
-        "language": "en",
         "status": "synthetic-draft",
         "source": "team-synthetic-data",
     }
     for key, expected in expected_values.items():
         if fields[key] != expected:
             raise ValueError(f"{file_path}: {key} must be '{expected}'")
+    if fields["language"] not in {"en", "de"}:
+        raise ValueError(f"{file_path}: language must be 'en' or 'de'")
     return fields, normalized[closing_index + 5 :]
 
 
@@ -198,13 +204,15 @@ def parse_knowledge_base_document(text: str, file_path: str) -> KnowledgeBaseDoc
 
 def load_corpus(directory: Path) -> list[KnowledgeBaseDocument]:
     documents = []
-    for filename, (department, _prefix, _count) in CANONICAL_FILES.items():
+    for filename, (department, _prefix, _count, language) in CANONICAL_FILES.items():
         path = directory / filename
         if not path.exists():
             raise ValueError(f"missing canonical file: {filename}")
         document = parse_knowledge_base_document(path.read_text(encoding="utf-8"), filename)
         if document.department != department:
             raise ValueError(f"{filename}: expected department '{department}'")
+        if document.language != language:
+            raise ValueError(f"{filename}: expected language '{language}'")
         documents.append(document)
     return documents
 
@@ -228,27 +236,31 @@ def validate_corpus(documents: list[KnowledgeBaseDocument]) -> list[KnowledgeBas
         raise ValueError("corpus: contains an unexpected canonical filename")
 
     all_entries: list[KnowledgeBaseEntry] = []
-    seen_ids: set[str] = set()
-    seen_questions: set[str] = set()
-    for filename, (department, prefix, expected_count) in CANONICAL_FILES.items():
+    seen_ids: set[tuple[str, str]] = set()
+    seen_questions: set[tuple[str, str]] = set()
+    for filename, (department, prefix, expected_count, language) in CANONICAL_FILES.items():
         document = documents_by_file[filename]
         if document.department != department:
             raise ValueError(f"{filename}: expected department '{department}'")
+        if document.language != language:
+            raise ValueError(f"{filename}: expected language '{language}'")
         if len(document.entries) != expected_count or document.entry_count != expected_count:
             raise ValueError(f"{filename}: expected exactly {expected_count} entries")
         for index, entry in enumerate(document.entries, start=1):
             expected_id = f"{prefix}{index:03d}"
-            if entry.id in seen_ids:
+            identity = (entry.id, entry.language)
+            if identity in seen_ids:
                 raise ValueError(f"duplicate FAQ ID across corpus: '{entry.id}'")
-            seen_ids.add(entry.id)
+            seen_ids.add(identity)
             if entry.id != expected_id:
                 raise ValueError(
                     f"{filename}: expected sequential ID '{expected_id}', got '{entry.id}'"
                 )
             normalized = normalize_question(entry.question)
-            if normalized in seen_questions:
+            question_identity = (normalized, entry.language)
+            if question_identity in seen_questions:
                 raise ValueError(f"duplicate normalized question across corpus: '{entry.question}'")
-            seen_questions.add(normalized)
+            seen_questions.add(question_identity)
             all_entries.append(entry)
     if len(all_entries) != TOTAL_CANONICAL_ENTRIES:
         raise ValueError(

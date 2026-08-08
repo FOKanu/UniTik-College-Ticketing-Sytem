@@ -1,4 +1,5 @@
 from datetime import datetime
+from typing import Literal
 
 from pydantic import BaseModel, Field
 
@@ -12,6 +13,7 @@ class ConversationCreate(BaseModel):
 class MessageCreate(BaseModel):
     content: str = Field(min_length=1)
     mode: ChatMode = ChatMode.QUICK
+    language: Literal["en", "de"] = "en"
 
 
 class ConversationResponse(BaseModel):

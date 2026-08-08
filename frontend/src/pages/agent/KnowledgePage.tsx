@@ -1,5 +1,6 @@
 import { Fragment, useEffect, useMemo, useState } from 'react'
 import type { FormEvent } from 'react'
+import { useTranslation } from 'react-i18next'
 import {
   Badge,
   Button,
@@ -12,8 +13,11 @@ import { knowledgeApi } from '@/lib/api'
 import { renderKnowledgeBody } from '@/lib/knowledge/renderBody'
 import type { Department, KnowledgeArticle } from '@/types'
 import styles from './KnowledgePage.module.css'
+import { browserLocale } from '@/i18n'
 
 export function KnowledgePage() {
+  const { t, i18n } = useTranslation()
+  const locale = browserLocale(i18n.resolvedLanguage)
   const [query, setQuery] = useState('')
   const [category, setCategory] = useState<Department | 'all'>('all')
   const [visibility, setVisibility] = useState<'all' | 'published' | 'draft'>(
@@ -47,7 +51,7 @@ export function KnowledgePage() {
         setError(
           err instanceof Error
             ? err.message
-            : 'Could not load the knowledge base. Check your connection and try again.',
+            : t('knowledge.loadError'),
         )
       } finally {
         if (!cancelled) setLoading(false)
@@ -56,7 +60,7 @@ export function KnowledgePage() {
     return () => {
       cancelled = true
     }
-  }, [reloadKey])
+  }, [i18n.resolvedLanguage, reloadKey, t])
 
   function refresh() {
     setLoading(true)
@@ -103,7 +107,7 @@ export function KnowledgePage() {
       refresh()
     } catch (err) {
       setFormError(
-        err instanceof Error ? err.message : 'Could not save the article.',
+        err instanceof Error ? err.message : t('knowledge.saveError'),
       )
     } finally {
       setSaving(false)
@@ -114,41 +118,36 @@ export function KnowledgePage() {
     <div className={styles.page}>
       <header className={styles.header}>
         <div>
-          <h1>Knowledge Base</h1>
-          <p>
-            Canonical FAQ answers for student self-service and staff replies.
-          </p>
+          <h1>{t('nav.knowledge')}</h1><p>{t('knowledge.description')}</p>
         </div>
         <Button
           size="sm"
           aria-expanded={formOpen}
           onClick={() => setFormOpen((v) => !v)}
         >
-          {formOpen ? 'Close' : '+ New article'}
+          {formOpen ? t('common.close') : t('admin.addArticle')}
         </Button>
       </header>
 
       <div className={styles.banner} role="note">
-        <strong>Publishing tip:</strong> Use the exact FAQ wording below when
-        helping students. Published articles appear in the student FAQ and AI
-        assistant suggestions.
+        <strong>{t('knowledge.tip')}</strong> {t('knowledge.tipBody')}
       </div>
 
       {formOpen ? (
         <form className={styles.createForm} onSubmit={handleCreate}>
-          <h2>New FAQ article</h2>
+          <h2>{t('knowledge.newArticle')}</h2>
           <Input
             id="kb-new-question"
-            label="Question"
-            placeholder="e.g. How do I reset my university email password?"
+            label={t('knowledge.question')}
+            placeholder={t('knowledge.questionPlaceholder')}
             value={question}
             onChange={(e) => setQuestion(e.target.value)}
             required
           />
           <Textarea
             id="kb-new-answer"
-            label="Answer"
-            placeholder="Write the answer students should see…"
+            label={t('knowledge.answer')}
+            placeholder={t('knowledge.answerPlaceholder')}
             value={answer}
             onChange={(e) => setAnswer(e.target.value)}
             required
@@ -156,18 +155,18 @@ export function KnowledgePage() {
           <div className={styles.formRow}>
             <Select
               id="kb-new-category"
-              aria-label="Category"
+              aria-label={t('common.category')}
               value={newCategory}
               onChange={(e) => setNewCategory(e.target.value as Department)}
               options={[
                 { value: 'IT', label: 'IT' },
-                { value: 'Academics', label: 'Academics' },
-                { value: 'Finance', label: 'Finance' },
-                { value: 'Maintenance', label: 'Maintenance' },
+                { value: 'Academics', label: t('departments.academics') },
+                { value: 'Finance', label: t('departments.finance') },
+                { value: 'Maintenance', label: t('departments.maintenance') },
               ]}
             />
             <Button type="submit" size="sm" disabled={saving}>
-              {saving ? 'Saving…' : 'Publish article'}
+              {saving ? t('knowledge.saving') : t('knowledge.publish')}
             </Button>
           </div>
           {formError ? (
@@ -181,33 +180,33 @@ export function KnowledgePage() {
       <div className={styles.toolbar}>
         <Select
           id="kb-visibility"
-          aria-label="Visibility"
+          aria-label={t('knowledge.visibility')}
           value={visibility}
           onChange={(e) =>
             setVisibility(e.target.value as 'all' | 'published' | 'draft')
           }
           options={[
-            { value: 'all', label: 'Visibility: All' },
-            { value: 'published', label: 'Published' },
-            { value: 'draft', label: 'Draft' },
+            { value: 'all', label: t('knowledge.visibilityAll') },
+            { value: 'published', label: t('knowledge.published') },
+            { value: 'draft', label: t('knowledge.draft') },
           ]}
         />
         <Select
           id="kb-cat"
-          aria-label="Category"
+          aria-label={t('common.category')}
           value={category}
           onChange={(e) => setCategory(e.target.value as Department | 'all')}
           options={[
-            { value: 'all', label: 'Category: All' },
-            { value: 'Academics', label: 'Academics' },
+            { value: 'all', label: t('knowledge.categoryAll') },
+            { value: 'Academics', label: t('departments.academics') },
             { value: 'IT', label: 'IT' },
-            { value: 'Finance', label: 'Finance' },
-            { value: 'Maintenance', label: 'Maintenance' },
+            { value: 'Finance', label: t('departments.finance') },
+            { value: 'Maintenance', label: t('departments.maintenance') },
           ]}
         />
         <SearchField
           id="kb-search"
-          placeholder="Search by title, FAQ ID, or answer text..."
+          placeholder={t('knowledge.search')}
           value={query}
           onChange={(e) => setQuery(e.target.value)}
           className={styles.search}
@@ -218,22 +217,22 @@ export function KnowledgePage() {
         <div className={styles.stateBox} role="alert">
           <p>{error}</p>
           <Button variant="secondary" size="sm" onClick={refresh}>
-            Try again
+            {t('common.retry')}
           </Button>
         </div>
       ) : null}
 
       <div className={styles.tableWrap}>
         <table className={styles.table} aria-busy={loading}>
-          <caption className="sr-only">Knowledge base articles</caption>
+          <caption className="sr-only">{t('knowledge.caption')}</caption>
           <thead>
             <tr>
-              <th scope="col">Title</th>
+              <th scope="col">{t('tickets.titleLabel')}</th>
               <th scope="col">FAQ ID</th>
-              <th scope="col">Category</th>
-              <th scope="col">Status</th>
-              <th scope="col">Views</th>
-              <th scope="col">Updated</th>
+              <th scope="col">{t('common.category')}</th>
+              <th scope="col">{t('common.status')}</th>
+              <th scope="col">{t('knowledge.views', { defaultValue: 'Views' })}</th>
+              <th scope="col">{t('tickets.updated')}</th>
             </tr>
           </thead>
           <tbody>
@@ -274,12 +273,12 @@ export function KnowledgePage() {
                       </td>
                       <td>
                         {article.views > 0
-                          ? article.views.toLocaleString()
+                          ? article.views.toLocaleString(locale)
                           : '—'}
                       </td>
                       <td>
                         {new Date(article.updatedAt).toLocaleDateString(
-                          undefined,
+                          locale,
                           {
                             month: 'short',
                             day: 'numeric',
@@ -294,7 +293,7 @@ export function KnowledgePage() {
                             id={`kb-answer-${article.id}`}
                             className={styles.answer}
                           >
-                            <h3>Canonical answer</h3>
+                            <h3>{t('knowledge.answer')}</h3>
                             <p>{renderKnowledgeBody(article.body)}</p>
                           </div>
                         </td>

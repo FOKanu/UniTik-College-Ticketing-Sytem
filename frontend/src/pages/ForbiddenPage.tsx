@@ -1,4 +1,5 @@
 import { useLocation } from 'react-router-dom'
+import { useTranslation } from 'react-i18next'
 import { ROUTES } from '@/app/routes'
 import { ButtonLink } from '@/components/ui'
 import { homePathForRole } from '@/lib/auth'
@@ -11,6 +12,7 @@ import styles from './ForbiddenPage.module.css'
 
 
 export function ForbiddenPage() {
+  const { t } = useTranslation()
 
   const user = useAuthStore((s) => s.user)
 
@@ -36,11 +38,11 @@ export function ForbiddenPage() {
 
         <p className={styles.code}>403</p>
 
-        <h1>Access denied</h1>
+        <h1>{t('errors.denied')}</h1>
 
         <p className={styles.copy}>
 
-          Your account
+          {t('errors.noPermission')}
 
           {user ? (
 
@@ -54,13 +56,12 @@ export function ForbiddenPage() {
 
           ) : null}{' '}
 
-          does not have permission to view this page
 
           {requiredRoles?.length ? (
 
             <>
 
-              . Required role{requiredRoles.length > 1 ? 's' : ''}:{' '}
+              {' '}{t('common.role', { defaultValue: 'Role' })}:{' '}
 
               <strong>{requiredRoles.join(', ')}</strong>
 
@@ -68,7 +69,7 @@ export function ForbiddenPage() {
 
           ) : (
 
-            '.'
+            ''
 
           )}
 
@@ -76,7 +77,7 @@ export function ForbiddenPage() {
 
         <div className={styles.actions}>
 
-          <ButtonLink to={home}>Go to my home</ButtonLink>
+          <ButtonLink to={home}>{t('errors.home')}</ButtonLink>
 
           <ButtonLink to={ROUTES.faq} variant="secondary">
 
@@ -93,5 +94,4 @@ export function ForbiddenPage() {
   )
 
 }
-
 

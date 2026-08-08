@@ -2,6 +2,7 @@ import { zodResolver } from '@hookform/resolvers/zod'
 import { useState } from 'react'
 import { Controller, useForm } from 'react-hook-form'
 import { useNavigate } from 'react-router-dom'
+import { useTranslation } from 'react-i18next'
 import { ROUTES } from '@/app/routes'
 import {
   Button,
@@ -24,6 +25,7 @@ const CATEGORIES: Department[] = ['Academics', 'IT', 'Finance', 'Maintenance']
 const PRIORITIES: TicketPriority[] = ['low', 'medium', 'high']
 
 export function TicketCreatePage() {
+  const { t } = useTranslation()
   const navigate = useNavigate()
   const createTicket = useTicketStore((s) => s.createTicket)
   const mutating = useTicketStore((s) => s.mutating)
@@ -59,10 +61,10 @@ export function TicketCreatePage() {
     if (ticket) {
       const uploadFailed = Boolean(pendingFile && useTicketStore.getState().error)
       pushToast({
-        title: uploadFailed ? 'Ticket created with upload warning' : 'Ticket created',
+        title: uploadFailed ? t('tickets.createdWarning') : t('tickets.created'),
         body: uploadFailed
-          ? `${ticket.id} was submitted, but the attachment failed to upload.`
-          : `${ticket.id} was submitted.`,
+          ? t('tickets.uploadFailed', { id: ticket.id })
+          : t('tickets.wasSubmitted', { id: ticket.id }),
         tone: uploadFailed ? 'error' : 'success',
       })
       void navigate(ROUTES.tickets)
@@ -74,10 +76,8 @@ export function TicketCreatePage() {
       <div className={styles.layout}>
         <section className={styles.formCard}>
           <header>
-            <h1>Create a New Ticket</h1>
-            <p>
-              Tell us what went wrong and we will route it to the right team.
-            </p>
+            <h1>{t('tickets.createHeading')}</h1>
+            <p>{t('tickets.createHelp')}</p>
           </header>
 
           <form
@@ -91,10 +91,10 @@ export function TicketCreatePage() {
               render={({ field }) => (
                 <PillRadioGroup
                   name="ticket-category"
-                  legend="Category"
+                  legend={t('common.category')}
                   value={field.value}
                   onChange={field.onChange}
-                  error={errors.category?.message}
+                  error={errors.category?.message ? t(errors.category.message) : undefined}
                   options={CATEGORIES.map((item) => ({
                     value: item,
                     label: item,
@@ -105,16 +105,16 @@ export function TicketCreatePage() {
 
             <Input
               id="subject"
-              label="Subject"
-              placeholder="Brief summary of the issue"
-              error={errors.subject?.message}
+              label={t('tickets.subject')}
+              placeholder={t('tickets.summaryPlaceholder')}
+              error={errors.subject?.message ? t(errors.subject.message) : undefined}
               {...register('subject')}
             />
             <Textarea
               id="description"
-              label="Description"
-              placeholder="Describe your issue in detail..."
-              error={errors.description?.message}
+              label={t('tickets.description')}
+              placeholder={t('tickets.describePlaceholder')}
+              error={errors.description?.message ? t(errors.description.message) : undefined}
               {...register('description')}
             />
 
@@ -124,10 +124,10 @@ export function TicketCreatePage() {
               render={({ field }) => (
                 <PillRadioGroup
                   name="ticket-priority"
-                  legend="Priority"
+                  legend={t('tickets.priority')}
                   value={field.value}
                   onChange={field.onChange}
-                  error={errors.priority?.message}
+                  error={errors.priority?.message ? t(errors.priority.message) : undefined}
                   options={PRIORITIES.map((item) => ({
                     value: item,
                     label: item.charAt(0).toUpperCase() + item.slice(1),
@@ -150,14 +150,14 @@ export function TicketCreatePage() {
 
             <div className={styles.actions}>
               <Button type="submit" disabled={mutating}>
-                {mutating ? 'Submitting…' : 'Submit Ticket'}
+                {mutating ? t('tickets.submitting') : t('tickets.submit')}
               </Button>
               <Button
                 type="button"
                 variant="secondary"
                 onClick={() => void navigate(ROUTES.tickets)}
               >
-                Cancel
+                {t('common.cancel')}
               </Button>
             </div>
           </form>
@@ -167,13 +167,10 @@ export function TicketCreatePage() {
           <div className={styles.aiIcon} aria-hidden="true">
             <IconChat width={22} height={22} />
           </div>
-          <h2>Try our AI Assistant first</h2>
-          <p>
-            Password resets, tuition timelines, and common IT issues can often
-            be resolved instantly.
-          </p>
+          <h2>{t('tickets.aiFirst')}</h2>
+          <p>{t('tickets.aiHelp')}</p>
           <ButtonLink to={ROUTES.assistant} variant="secondary">
-            Ask AI Assistant
+            {t('tickets.askAi')}
           </ButtonLink>
         </aside>
       </div>

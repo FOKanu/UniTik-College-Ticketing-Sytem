@@ -1,4 +1,5 @@
 import { useCallback, useEffect, useRef, useState } from 'react'
+import { useTranslation } from 'react-i18next'
 import {
   chatApi,
   ticketsApi,
@@ -63,6 +64,7 @@ function patchActionInMessages(
  * Streams replies from the backend, which proxies the configured LLM provider.
  */
 export function useAssistantChat({ greeting }: Options) {
+  const { t, i18n } = useTranslation()
   const [messages, setMessages] = useState<AssistantMessage[]>([
     { id: 'welcome', role: 'assistant', body: greeting },
   ])
@@ -172,6 +174,7 @@ export function useAssistantChat({ greeting }: Options) {
           conversationId.current,
           trimmed,
           mode,
+          i18n.resolvedLanguage?.startsWith('de') ? 'de' : 'en',
           {
             onToken: (delta) =>
               patchMessage(botId, (msg) => ({
@@ -214,7 +217,7 @@ export function useAssistantChat({ greeting }: Options) {
         openProposal()
       }
     },
-    [isStreaming, mode, patchMessage, ticket],
+    [i18n.resolvedLanguage, isStreaming, mode, patchMessage, ticket],
   )
 
   /** Open a create-ticket proposal card (user must confirm). */
@@ -393,10 +396,10 @@ export function useAssistantChat({ greeting }: Options) {
         return
       }
 
-      throw new Error('Ticket action is incomplete — edit the details first.')
+      throw new Error(t('actions.incomplete'))
     } catch (err) {
       const message =
-        err instanceof Error ? err.message : 'Could not complete ticket action.'
+        err instanceof Error ? err.message : t('actions.completeError')
       setError(message)
       setMessages((prev) =>
         patchActionInMessages(prev, actionId, (action) => ({
@@ -408,7 +411,7 @@ export function useAssistantChat({ greeting }: Options) {
     } finally {
       setIsEscalating(false)
     }
-  }, [messages])
+  }, [messages, t])
 
   /**
    * Legacy immediate escalate — kept for callers that still need the

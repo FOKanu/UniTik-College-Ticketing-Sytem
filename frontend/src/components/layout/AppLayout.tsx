@@ -1,5 +1,6 @@
 import { useEffect, useState, type ReactNode } from 'react'
 import { Link, NavLink, Outlet, useLocation } from 'react-router-dom'
+import { useTranslation } from 'react-i18next'
 import { RouteTitle } from '@/app/RouteTitle'
 import { ROUTES } from '@/app/routes'
 import { ChatbotFab } from '@/components/layout/ChatbotFab'
@@ -26,7 +27,7 @@ import styles from './AppLayout.module.css'
 
 interface NavItem {
   to: string
-  label: string
+  labelKey: string
   icon: ReactNode
   end?: boolean
   soon?: boolean
@@ -35,28 +36,28 @@ interface NavItem {
 const SIDEBAR_KEY = 'tickethub.sidebar.collapsed'
 
 const studentNav: NavItem[] = [
-  { to: ROUTES.dashboard, label: 'Dashboard', icon: <IconDashboard />, end: true },
-  { to: ROUTES.tickets, label: 'My Tickets', icon: <IconTicket /> },
-  { to: ROUTES.assistant, label: 'AI Assistant', icon: <IconChat /> },
-  { to: ROUTES.faq, label: 'FAQ & Resources', icon: <IconBook /> },
-  { to: ROUTES.profile, label: 'Profile', icon: <IconUser /> },
+  { to: ROUTES.dashboard, labelKey: 'nav.dashboard', icon: <IconDashboard />, end: true },
+  { to: ROUTES.tickets, labelKey: 'nav.myTickets', icon: <IconTicket /> },
+  { to: ROUTES.assistant, labelKey: 'nav.assistant', icon: <IconChat /> },
+  { to: ROUTES.faq, labelKey: 'nav.faq', icon: <IconBook /> },
+  { to: ROUTES.profile, labelKey: 'nav.profile', icon: <IconUser /> },
 ]
 
 const staffNav: NavItem[] = [
-  { to: ROUTES.agent, label: 'Dashboard', icon: <IconDashboard />, end: true },
-  { to: ROUTES.queue, label: 'Ticket Queue', icon: <IconTicket /> },
-  { to: ROUTES.knowledge, label: 'Knowledge Base', icon: <IconBook /> },
-  { to: ROUTES.analytics, label: 'Analytics', icon: <IconChart />, soon: true },
-  { to: ROUTES.profile, label: 'Profile', icon: <IconUser /> },
+  { to: ROUTES.agent, labelKey: 'nav.dashboard', icon: <IconDashboard />, end: true },
+  { to: ROUTES.queue, labelKey: 'nav.queue', icon: <IconTicket /> },
+  { to: ROUTES.knowledge, labelKey: 'nav.knowledge', icon: <IconBook /> },
+  { to: ROUTES.analytics, labelKey: 'nav.analytics', icon: <IconChart />, soon: true },
+  { to: ROUTES.profile, labelKey: 'nav.profile', icon: <IconUser /> },
 ]
 
 const adminNav: NavItem[] = [
-  { to: ROUTES.admin, label: 'Dashboard', icon: <IconDashboard />, end: true },
-  { to: ROUTES.queue, label: 'Ticket Queue', icon: <IconTicket /> },
-  { to: ROUTES.knowledge, label: 'Knowledge Base', icon: <IconBook /> },
-  { to: ROUTES.analytics, label: 'Analytics', icon: <IconChart />, soon: true },
-  { to: ROUTES.profile, label: 'Profile', icon: <IconUser /> },
-  { to: ROUTES.settings, label: 'Settings', icon: <IconSettings /> },
+  { to: ROUTES.admin, labelKey: 'nav.dashboard', icon: <IconDashboard />, end: true },
+  { to: ROUTES.queue, labelKey: 'nav.queue', icon: <IconTicket /> },
+  { to: ROUTES.knowledge, labelKey: 'nav.knowledge', icon: <IconBook /> },
+  { to: ROUTES.analytics, labelKey: 'nav.analytics', icon: <IconChart />, soon: true },
+  { to: ROUTES.profile, labelKey: 'nav.profile', icon: <IconUser /> },
+  { to: ROUTES.settings, labelKey: 'nav.settings', icon: <IconSettings /> },
 ]
 
 function navForRole(role: UserRole | null | undefined): NavItem[] {
@@ -71,45 +72,34 @@ function homeForRole(role: UserRole | null | undefined): string {
   return ROUTES.dashboard
 }
 
-function portalLabel(role: UserRole | null | undefined): string {
-  if (role === 'admin') return 'ADMIN · MEDIADESIGN HOCHSCHULE'
-  if (role === 'agent') return 'STAFF PORTAL · IT SUPPORT'
-  return 'STUDENT PORTAL'
+function portalLabelKey(role: UserRole | null | undefined): string {
+  if (role === 'admin') return 'portal.admin'
+  if (role === 'agent') return 'portal.staff'
+  return 'portal.student'
 }
 
 function pageTitle(pathname: string): string {
   if (pathname.startsWith('/tickets/') && pathname !== ROUTES.ticketNew) {
-    return 'Ticket Detail'
+    return 'nav.ticketDetail'
   }
   if (pathname.startsWith('/agent/tickets/') && pathname !== ROUTES.agentTicketNew) {
-    return 'Ticket Resolution'
+    return 'nav.ticketResolution'
   }
-  if (pathname.startsWith('/admin/settings/people')) return 'People'
-  if (pathname.startsWith('/admin/settings')) return 'Settings'
+  if (pathname.startsWith('/admin/settings/people')) return 'nav.people'
+  if (pathname.startsWith('/admin/settings')) return 'nav.settings'
   const map: Record<string, string> = {
-    [ROUTES.dashboard]: 'Dashboard',
-    [ROUTES.tickets]: 'My Tickets',
-    [ROUTES.ticketNew]: 'Create Ticket',
-    [ROUTES.assistant]: 'AI Assistant',
-    [ROUTES.faq]: 'FAQ & Resources',
-    [ROUTES.notifications]: 'Notifications',
-    [ROUTES.profile]: 'Profile',
-    [ROUTES.agent]: 'Dashboard',
-    [ROUTES.queue]: 'Ticket Queue',
-    [ROUTES.agentTicketNew]: 'Create Ticket',
-    [ROUTES.knowledge]: 'Knowledge Base',
-    [ROUTES.analytics]: 'Analytics',
-    [ROUTES.admin]: 'Dashboard',
-    [ROUTES.departments]: 'Departments',
-    [ROUTES.settings]: 'Settings',
-    [ROUTES.settingsPeople]: 'People',
-    [ROUTES.settingsDepartments]: 'Settings',
-    [ROUTES.settingsKnowledge]: 'Settings',
+    [ROUTES.dashboard]: 'nav.dashboard', [ROUTES.tickets]: 'nav.myTickets', [ROUTES.ticketNew]: 'nav.createTicket',
+    [ROUTES.assistant]: 'nav.assistant', [ROUTES.faq]: 'nav.faq', [ROUTES.notifications]: 'nav.notifications',
+    [ROUTES.profile]: 'nav.profile', [ROUTES.agent]: 'nav.dashboard', [ROUTES.queue]: 'nav.queue',
+    [ROUTES.agentTicketNew]: 'nav.createTicket', [ROUTES.knowledge]: 'nav.knowledge', [ROUTES.analytics]: 'nav.analytics',
+    [ROUTES.admin]: 'nav.dashboard', [ROUTES.departments]: 'nav.departments', [ROUTES.settings]: 'nav.settings',
+    [ROUTES.settingsPeople]: 'nav.people', [ROUTES.settingsDepartments]: 'nav.settings', [ROUTES.settingsKnowledge]: 'nav.settings',
   }
   return map[pathname] ?? 'TicketHub'
 }
 
 export function AppLayout({ children }: { children?: ReactNode }) {
+  const { t } = useTranslation()
   const user = useAuthStore((s) => s.user)
   const institutionId = useInstitutionStore((s) => s.institutionId)
   const institution = findInstitution(institutionId)
@@ -140,7 +130,8 @@ export function AppLayout({ children }: { children?: ReactNode }) {
 
   const navItems = navForRole(user?.role)
   const homePath = homeForRole(user?.role)
-  const title = pageTitle(location.pathname)
+  const titleKey = pageTitle(location.pathname)
+  const title = titleKey === 'TicketHub' ? titleKey : t(titleKey)
   const mobileNav =
     user?.role === 'student'
       ? studentNav.slice(0, 4)
@@ -152,7 +143,7 @@ export function AppLayout({ children }: { children?: ReactNode }) {
         key={item.to}
         to={item.to}
         end={item.end}
-        title={compact ? item.label : undefined}
+        title={compact ? t(item.labelKey) : undefined}
         className={({ isActive }) =>
           [
             isActive ? styles.navActive : styles.navLink,
@@ -170,8 +161,8 @@ export function AppLayout({ children }: { children?: ReactNode }) {
         <span className={styles.navIcon}>{item.icon}</span>
         {!compact ? (
           <>
-            <span className={styles.navLabel}>{item.label}</span>
-            {item.soon ? <span className={styles.soon}>Soon</span> : null}
+            <span className={styles.navLabel}>{t(item.labelKey)}</span>
+            {item.soon ? <span className={styles.soon}>{t('common.soon')}</span> : null}
           </>
         ) : null}
       </NavLink>
@@ -184,21 +175,21 @@ export function AppLayout({ children }: { children?: ReactNode }) {
     >
       <RouteTitle />
       <a href="#main-content" className={styles.skipLink}>
-        Skip to main content
+        {t('nav.skip')}
       </a>
 
       {drawerOpen ? (
         <button
           type="button"
           className={styles.backdrop}
-          aria-label="Close menu"
+          aria-label={t('nav.closeMenu')}
           onClick={() => setDrawerOpen(false)}
         />
       ) : null}
 
       <aside
         className={`${styles.sidebar} ${drawerOpen ? styles.sidebarOpen : ''}`}
-        aria-label="Primary"
+        aria-label={t('nav.primary')}
       >
         <div className={styles.brandRow}>
           <Link to={homePath} className={styles.brand}>
@@ -218,7 +209,7 @@ export function AppLayout({ children }: { children?: ReactNode }) {
           <button
             type="button"
             className={styles.drawerClose}
-            aria-label="Close menu"
+            aria-label={t('nav.closeMenu')}
             onClick={() => setDrawerOpen(false)}
           >
             <IconClose width={18} height={18} />
@@ -233,7 +224,7 @@ export function AppLayout({ children }: { children?: ReactNode }) {
               <LanguageSelector />
             </div>
           ) : null}
-          <p className={styles.portal}>{portalLabel(user?.role)}</p>
+          <p className={styles.portal}>{t(portalLabelKey(user?.role))}</p>
           {!collapsed && user ? (
             <Link to={ROUTES.profile} className={styles.userCard}>
               <Avatar
@@ -251,7 +242,7 @@ export function AppLayout({ children }: { children?: ReactNode }) {
             type="button"
             className={styles.collapseBtn}
             onClick={() => setCollapsed((v) => !v)}
-            aria-label={collapsed ? 'Expand sidebar' : 'Collapse sidebar'}
+            aria-label={collapsed ? t('nav.expandSidebar') : t('nav.collapseSidebar')}
           >
             {collapsed ? '»' : '«'}
           </button>
@@ -264,7 +255,7 @@ export function AppLayout({ children }: { children?: ReactNode }) {
             <button
               type="button"
               className={styles.menuBtn}
-              aria-label="Open menu"
+              aria-label={t('nav.openMenu')}
               onClick={() => setDrawerOpen(true)}
             >
               <IconMenu width={20} height={20} />
@@ -282,8 +273,8 @@ export function AppLayout({ children }: { children?: ReactNode }) {
             <Link
               to={ROUTES.profile}
               className={styles.avatarBtn}
-              title="Open profile"
-              aria-label={`Signed in as ${user?.displayName}. Open profile.`}
+              title={t('nav.openProfile')}
+              aria-label={t('nav.signedInAs', { name: user?.displayName ?? '' })}
             >
               <Avatar
                 name={user?.displayName ?? 'U'}
@@ -301,7 +292,7 @@ export function AppLayout({ children }: { children?: ReactNode }) {
         </main>
       </div>
 
-      <nav className={styles.bottomNav} aria-label="Mobile">
+      <nav className={styles.bottomNav} aria-label={t('nav.mobile')}>
         {mobileNav.map((item) => (
           <NavLink
             key={item.to}
@@ -312,7 +303,7 @@ export function AppLayout({ children }: { children?: ReactNode }) {
             }
           >
             {item.icon}
-            <span>{item.label.split(' ')[0]}</span>
+            <span>{t(item.labelKey).split(' ')[0]}</span>
           </NavLink>
         ))}
       </nav>

@@ -1,18 +1,15 @@
 import { useEffect } from 'react'
 import { Link } from 'react-router-dom'
+import { useTranslation } from 'react-i18next'
 import { ROUTES, agentTicketDetailPath } from '@/app/routes'
 import { PriorityBadge, SlaBadge, StatusBadge } from '@/components/ui'
 import { useAuthStore, useTicketStore } from '@/stores'
 import styles from './AgentDashboardPage.module.css'
 
-function greetingPrefix(): string {
-  const hour = new Date().getHours()
-  if (hour < 12) return 'Good morning'
-  if (hour < 18) return 'Good afternoon'
-  return 'Good evening'
-}
-
 export function AgentDashboardPage() {
+  const { t } = useTranslation()
+  const hour = new Date().getHours()
+  const greeting = t(hour < 12 ? 'agentDashboard.morning' : hour < 18 ? 'agentDashboard.afternoon' : 'agentDashboard.evening')
   const user = useAuthStore((s) => s.user)
   const items = useTicketStore((s) => s.items)
   const loading = useTicketStore((s) => s.loading)
@@ -32,7 +29,7 @@ export function AgentDashboardPage() {
     void fetchList({ page: 1, pageSize: 50 })
   }, [setScope, setFilters, fetchList])
 
-  const firstName = user?.displayName?.split(' ')[0] ?? 'Agent'
+  const firstName = user?.displayName?.split(' ')[0] ?? t('agentDashboard.agent')
   const assigned = items.filter((t) => t.assignedTo === user?.id).length
   const unassigned = items.filter((t) => !t.assignedTo).length
   const resolvedToday = items.filter((t) => t.status === 'resolved').length
@@ -55,28 +52,28 @@ export function AgentDashboardPage() {
     <div className={styles.page}>
       <header className={styles.header}>
         <h1>
-          {greetingPrefix()}, {firstName}
+          {greeting}, {firstName}
         </h1>
         <p>
-          {user?.department ?? 'IT'} Department · here is your queue overview.
+          {t('agentDashboard.overview', { department: user?.department ?? 'IT' })}
         </p>
       </header>
 
-      <section className={styles.stats} aria-label="Queue summary">
+      <section className={styles.stats} aria-label={t('agentDashboard.summary')}>
         <article>
-          <span>Assigned to me</span>
+          <span>{t('agentDashboard.assigned')}</span>
           <strong>{loading ? '…' : assigned}</strong>
         </article>
         <article>
-          <span>Unassigned</span>
+          <span>{t('common.unassigned')}</span>
           <strong>{loading ? '…' : unassigned}</strong>
         </article>
         <article>
-          <span>Resolved today</span>
+          <span>{t('agentDashboard.resolvedToday')}</span>
           <strong>{loading ? '…' : resolvedToday}</strong>
         </article>
         <article>
-          <span>Avg first response</span>
+          <span>{t('agentDashboard.avgResponse')}</span>
           <strong>1.8h</strong>
         </article>
       </section>
@@ -84,17 +81,17 @@ export function AgentDashboardPage() {
       <div className={styles.grid}>
         <section className={styles.panel}>
           <div className={styles.panelHead}>
-            <h2>My queue</h2>
-            <Link to={ROUTES.queue}>Open full queue</Link>
+            <h2>{t('agentDashboard.myQueue')}</h2>
+            <Link to={ROUTES.queue}>{t('agentDashboard.fullQueue')}</Link>
           </div>
           <table className={styles.table}>
-            <caption className="sr-only">Tickets assigned in your queue</caption>
+            <caption className="sr-only">{t('agentDashboard.queueCaption')}</caption>
             <thead>
               <tr>
-                <th scope="col">Title</th>
-                <th scope="col">Priority</th>
-                <th scope="col">SLA</th>
-                <th scope="col">Status</th>
+                <th scope="col">{t('tickets.titleLabel')}</th>
+                <th scope="col">{t('tickets.priority')}</th>
+                <th scope="col">{t('agentDashboard.sla')}</th>
+                <th scope="col">{t('common.status')}</th>
               </tr>
             </thead>
             <tbody>
@@ -122,7 +119,7 @@ export function AgentDashboardPage() {
               {!loading && queue.length === 0 ? (
                 <tr>
                   <td colSpan={4} className={styles.empty}>
-                    No tickets in your queue.
+                    {t('agentDashboard.empty')}
                   </td>
                 </tr>
               ) : null}
@@ -132,12 +129,12 @@ export function AgentDashboardPage() {
 
         <aside className={styles.aside}>
           <section className={styles.panel}>
-            <h2>Tickets by department</h2>
+            <h2>{t('agentDashboard.byDepartment')}</h2>
             <ul className={styles.bars}>
               {byDept.map((item) => (
                 <li key={item.dept}>
                   <div className={styles.barMeta}>
-                    <span>{item.dept}</span>
+                    <span>{t(`departments.${item.dept === 'IT' ? 'it' : item.dept.toLowerCase()}`)}</span>
                     <strong>{item.count}</strong>
                   </div>
                   <div className={styles.track}>
@@ -152,15 +149,15 @@ export function AgentDashboardPage() {
           </section>
 
           <section className={styles.slaBox} role="status">
-            <h2>SLA warning</h2>
+            <h2>{t('agentDashboard.warning')}</h2>
             <p>
               {slaBreached > 0
-                ? `${slaBreached} breached · ${slaAtRisk} within 8 hours.`
+                ? t('agentDashboard.breached', { breached: slaBreached, risk: slaAtRisk })
                 : slaAtRisk > 0
-                  ? `${slaAtRisk} ticket${slaAtRisk === 1 ? '' : 's'} within 8 hours of SLA.`
-                  : 'No tickets currently at SLA risk.'}
+                  ? t('agentDashboard.atRisk', { count: slaAtRisk })
+                  : t('agentDashboard.noRisk')}
             </p>
-            <Link to={ROUTES.queue}>Review at-risk tickets</Link>
+            <Link to={ROUTES.queue}>{t('agentDashboard.review')}</Link>
           </section>
         </aside>
       </div>

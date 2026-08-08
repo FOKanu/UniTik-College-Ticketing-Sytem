@@ -1,5 +1,6 @@
 import { useState } from 'react'
 import type { FormEvent } from 'react'
+import { useTranslation } from 'react-i18next'
 import { ButtonLink, Button, Input } from '@/components/ui'
 import { IconAlert, IconSend } from '@/components/ui/icons'
 import { CitationBlock } from '@/components/chat/CitationBlock'
@@ -7,15 +8,13 @@ import { TicketActionCard } from '@/components/chat/TicketActionCard'
 import { ROUTES, ticketDetailPath } from '@/app/routes'
 import { useAssistantChat } from '@/hooks'
 import { usesLiveChat } from '@/lib/api'
-import { suggestedTopics } from '@/mocks/data'
 import styles from './AssistantPage.module.css'
 
-const MODES = [
-  { id: 'quick', label: 'Quick Answer' },
-  { id: 'detailed', label: 'Detailed' },
-] as const
+const MODES = [{ id: 'quick', key: 'chatbot.quick' }, { id: 'detailed', key: 'chatbot.detailed' }] as const
 
 export function AssistantPage() {
+  const { t } = useTranslation()
+  const suggestedTopics = [t('chatbot.topics.password'), t('chatbot.topics.wifi'), t('chatbot.topics.tuition')]
   const [draft, setDraft] = useState('')
   const {
     messages,
@@ -38,7 +37,7 @@ export function AssistantPage() {
     ticket,
     canProposeCreate,
   } = useAssistantChat({
-    greeting: 'Hi! Ask anything about academics, IT, finance, or maintenance.',
+    greeting: t('chatbot.greeting'),
   })
 
   function handleSubmit(event: FormEvent) {
@@ -55,16 +54,15 @@ export function AssistantPage() {
   return (
     <div className={styles.page}>
       <header>
-        <h1>AI Assistant</h1>
-        <p>Ask anything about academics, IT, finance, or maintenance.</p>
+        <h1>{t('nav.assistant')}</h1>
+        <p>{t('chatbot.subtitle')}</p>
       </header>
 
       {llmOffline ? (
         <div className={`${styles.banner} ${styles.bannerError}`} role="alert">
           <IconAlert width={18} height={18} />
           <p>
-            LLM server offline — the assistant can&apos;t answer right now.
-            Start Ollama on the GPU server and make sure the tunnel is open.
+            {t('chatbot.offlineDetail')}
             {health ? (
               <>
                 {' '}
@@ -80,8 +78,8 @@ export function AssistantPage() {
           <IconAlert width={18} height={18} />
           <p>
             {usesLiveChat()
-              ? 'Answers are AI-generated. Verify anything important, and escalate to a ticket for decisions a person must make.'
-              : 'Running on mock data. Set VITE_DATA_SOURCE=hybrid to talk to the real assistant.'}
+              ? t('chatbot.disclaimer')
+              : t('chatbot.mockNotice')}
           </p>
         </div>
       )}
@@ -94,12 +92,12 @@ export function AssistantPage() {
       ) : null}
 
       <div className={styles.layout}>
-        <section className={styles.chat} aria-label="AI chat">
+        <section className={styles.chat} aria-label={t('chatbot.chat')}>
           <div>
             <div
               className={styles.modes}
               role="group"
-              aria-label="Answer style"
+              aria-label={t('chatbot.answerStyle')}
             >
               {MODES.map((option) => (
                 <button
@@ -109,7 +107,7 @@ export function AssistantPage() {
                   aria-pressed={mode === option.id}
                   onClick={() => setMode(option.id)}
                 >
-                  {option.label}
+                  {t(option.key)}
                 </button>
               ))}
             </div>
@@ -119,13 +117,13 @@ export function AssistantPage() {
               role="log"
               aria-live="polite"
               aria-relevant="additions"
-              aria-label="Chat messages"
+              aria-label={t('chatbot.messages')}
             >
               {messages.map((msg) => (
                 <article
                   key={msg.id}
                   className={msg.role === 'user' ? styles.mine : styles.theirs}
-                  aria-label={`${msg.role === 'user' ? 'You' : 'Assistant'} said`}
+                  aria-label={t('chatbot.said', { speaker: t(msg.role === 'user' ? 'chatbot.you' : 'chatbot.assistant') })}
                 >
                   <p>
                     {msg.body}
@@ -161,27 +159,27 @@ export function AssistantPage() {
           <form className={styles.composer} onSubmit={handleSubmit}>
             <Input
               id="ask"
-              label="Your question"
-              placeholder="Ask a question..."
+              label={t('chatbot.question')}
+              placeholder={t('chatbot.askPlaceholder')}
               value={draft}
               onChange={(e) => setDraft(e.target.value)}
             />
             <Button type="submit" disabled={isStreaming}>
               <IconSend width={16} height={16} />
-              {isStreaming ? 'Thinking…' : 'Send'}
+              {isStreaming ? t('chatbot.thinking') : t('chatbot.send')}
             </Button>
           </form>
         </section>
 
         <aside className={styles.aside}>
           <section className={styles.panel}>
-            <h2>Suggested topics</h2>
+            <h2>{t('chatbot.suggested')}</h2>
             <ul>
               {suggestedTopics.map((topic) => (
                 <li key={topic}>
                   <button
                     type="button"
-                    aria-label={`Ask about ${topic}`}
+                    aria-label={t('chatbot.askAbout', { topic })}
                     disabled={isStreaming}
                     onClick={() => handleTopic(topic)}
                   >
@@ -194,18 +192,17 @@ export function AssistantPage() {
           <section className={styles.escalate}>
             {ticket ? (
               <>
-                <h2>Ticket created</h2>
+                <h2>{t('chatbot.ticketCreated')}</h2>
                 <p className={styles.ticketSubject}>{ticket.subject}</p>
                 <p>
-                  A support agent will follow up there. You can still add a
-                  comment from chat.
+                  {t('chatbot.followUp')}
                 </p>
                 <div className={styles.escalateActions}>
                   <ButtonLink
                     to={ticketDetailPath(ticket.id)}
                     variant="secondary"
                   >
-                    View ticket
+                    {t('chatbot.viewTicket')}
                   </ButtonLink>
                   <Button
                     variant="secondary"
@@ -217,17 +214,17 @@ export function AssistantPage() {
                       })
                     }
                   >
-                    Add comment
+                    {t('chatbot.addComment')}
                   </Button>
                 </div>
               </>
             ) : (
               <>
-                <h2>Still stuck?</h2>
+                <h2>{t('chatbot.stillStuck')}</h2>
                 <p>
                   {canProposeCreate
-                    ? 'Propose a support ticket from this conversation. You will review it before it is filed.'
-                    : 'Ask a question first, then you can propose a ticket from the chat.'}
+                    ? t('chatbot.proposeHelp')
+                    : t('chatbot.askFirst')}
                 </p>
                 <div className={styles.escalateActions}>
                   {canProposeCreate ? (
@@ -236,11 +233,11 @@ export function AssistantPage() {
                       disabled={isEscalating}
                       onClick={() => proposeCreate()}
                     >
-                      Propose ticket
+                      {t('chatbot.proposeTicket')}
                     </Button>
                   ) : (
                     <ButtonLink to={ROUTES.ticketNew} variant="secondary">
-                      Create Ticket
+                      {t('tickets.create')}
                     </ButtonLink>
                   )}
                   <Button
@@ -248,14 +245,14 @@ export function AssistantPage() {
                     disabled={isEscalating}
                     onClick={() => proposeUpdate()}
                   >
-                    Update ticket
+                    {t('chatbot.updateTicket')}
                   </Button>
                   <Button
                     variant="secondary"
                     disabled={isEscalating}
                     onClick={() => proposeComment()}
                   >
-                    Add comment
+                    {t('chatbot.addComment')}
                   </Button>
                 </div>
               </>

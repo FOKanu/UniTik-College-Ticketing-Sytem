@@ -45,9 +45,11 @@ async def ingest(
         async with session_factory() as db:
             try:
                 for entry, context_blob, vector in prepared:
+                    row_id = entry.id if entry.language == "en" else f"{entry.id}:{entry.language}"
                     await kb_service.upsert_faq_entry(
                         db,
-                        id=entry.id,
+                        id=row_id,
+                        document_id=entry.id,
                         question=entry.question,
                         answer=entry.answer,
                         language=entry.language,
@@ -67,9 +69,11 @@ async def ingest(
         try:
             for entry in entries:
                 context_blob = build_context_blob(entry)
+                row_id = entry.id if entry.language == "en" else f"{entry.id}:{entry.language}"
                 await kb_service.upsert_faq_entry(
                     db,
-                    id=entry.id,
+                    id=row_id,
+                    document_id=entry.id,
                     question=entry.question,
                     answer=entry.answer,
                     language=entry.language,
@@ -78,7 +82,7 @@ async def ingest(
                     embedding=None,
                     update_embedding=False,
                 )
-                await jobs_service.enqueue_embedding(db, entry.id)
+                await jobs_service.enqueue_embedding(db, row_id)
             await db.commit()
         except Exception:
             await db.rollback()

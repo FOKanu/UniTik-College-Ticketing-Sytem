@@ -1,6 +1,7 @@
 import { Button, DepartmentBadge, PriorityBadge } from '@/components/ui'
 import { ticketDetailPath } from '@/app/routes'
 import { Link } from 'react-router-dom'
+import { useTranslation } from 'react-i18next'
 import type { ProposedTicketAction } from './ticketActionTypes'
 import { TicketActionEditForm } from './TicketActionEditForm'
 import styles from './TicketActionCard.module.css'
@@ -15,18 +16,6 @@ interface TicketActionCardProps {
   onCancelEdit: () => void
 }
 
-function kindTitle(kind: ProposedTicketAction['kind']): string {
-  if (kind === 'create') return 'Create ticket'
-  if (kind === 'update') return 'Update ticket'
-  return 'Add comment'
-}
-
-function confirmLabel(kind: ProposedTicketAction['kind']): string {
-  if (kind === 'create') return 'Create ticket'
-  if (kind === 'update') return 'Update ticket'
-  return 'Add comment'
-}
-
 export function TicketActionCard({
   action,
   compact = false,
@@ -36,6 +25,8 @@ export function TicketActionCard({
   onSaveEdit,
   onCancelEdit,
 }: TicketActionCardProps) {
+  const { t } = useTranslation()
+  const kindTitle = t(`actions.${action.kind}`)
   const busy = action.status === 'executing'
   const done = action.status === 'completed'
   const failed = action.status === 'failed'
@@ -46,22 +37,22 @@ export function TicketActionCard({
     <div
       className={compact ? `${styles.card} ${styles.compact}` : styles.card}
       role="group"
-      aria-label={`${kindTitle(action.kind)} proposal`}
+      aria-label={t('actions.proposal', { action: kindTitle })}
     >
       <header className={styles.head}>
-        <h3>{kindTitle(action.kind)}</h3>
+        <h3>{kindTitle}</h3>
         <span className={styles.status}>
           {done
-            ? 'Done'
+            ? t('actions.done')
             : failed
-              ? 'Failed'
+              ? t('actions.failed')
               : cancelled
-                ? 'Cancelled'
+                ? t('actions.cancelled')
                 : busy
-                  ? 'Working…'
+                  ? t('actions.working')
                   : editing
-                    ? 'Editing'
-                    : 'Review'}
+                    ? t('actions.editing')
+                    : t('actions.review')}
         </span>
       </header>
 
@@ -77,17 +68,17 @@ export function TicketActionCard({
           {action.kind === 'create' && action.create ? (
             <dl className={styles.summary}>
               <div>
-                <dt>Subject</dt>
+                <dt>{t('tickets.subject')}</dt>
                 <dd>{action.create.subject}</dd>
               </div>
               <div>
-                <dt>Department</dt>
+                <dt>{t('tickets.department')}</dt>
                 <dd>
                   <DepartmentBadge department={action.create.category} />
                 </dd>
               </div>
               <div>
-                <dt>Priority</dt>
+                <dt>{t('tickets.priority')}</dt>
                 <dd>
                   <PriorityBadge priority={action.create.priority} />
                 </dd>
@@ -98,18 +89,18 @@ export function TicketActionCard({
           {action.kind === 'update' && action.update ? (
             <dl className={styles.summary}>
               <div>
-                <dt>Ticket</dt>
+                <dt>{t('actions.ticket')}</dt>
                 <dd>{action.update.ticketLabel}</dd>
               </div>
               {action.update.status ? (
                 <div>
-                  <dt>Status</dt>
+                  <dt>{t('common.status')}</dt>
                   <dd>{action.update.status.replace('_', ' ')}</dd>
                 </div>
               ) : null}
               {action.update.priority ? (
                 <div>
-                  <dt>Priority</dt>
+                  <dt>{t('tickets.priority')}</dt>
                   <dd>
                     <PriorityBadge priority={action.update.priority} />
                   </dd>
@@ -117,7 +108,7 @@ export function TicketActionCard({
               ) : null}
               {action.update.category ? (
                 <div>
-                  <dt>Department</dt>
+                  <dt>{t('tickets.department')}</dt>
                   <dd>
                     <DepartmentBadge department={action.update.category} />
                   </dd>
@@ -129,11 +120,11 @@ export function TicketActionCard({
           {action.kind === 'comment' && action.comment ? (
             <dl className={styles.summary}>
               <div>
-                <dt>Ticket</dt>
+                <dt>{t('actions.ticket')}</dt>
                 <dd>{action.comment.ticketLabel}</dd>
               </div>
               <div>
-                <dt>Comment</dt>
+                <dt>{t('actions.commentLabel')}</dt>
                 <dd className={styles.commentBody}>{action.comment.body}</dd>
               </div>
             </dl>
@@ -148,7 +139,7 @@ export function TicketActionCard({
           {done && action.resultTicketId ? (
             <p className={styles.done}>
               <Link to={ticketDetailPath(action.resultTicketId)}>
-                Open ticket
+                {t('actions.openTicket')}
                 {action.resultSubject ? `: ${action.resultSubject}` : ''}
               </Link>
             </p>
@@ -163,7 +154,7 @@ export function TicketActionCard({
                 disabled={busy}
                 onClick={onCancel}
               >
-                Cancel
+                {t('common.cancel')}
               </Button>
               <Button
                 type="button"
@@ -172,7 +163,7 @@ export function TicketActionCard({
                 disabled={busy}
                 onClick={onBeginEdit}
               >
-                Edit details
+                {t('actions.editDetails')}
               </Button>
               <Button
                 type="button"
@@ -180,7 +171,7 @@ export function TicketActionCard({
                 disabled={busy}
                 onClick={onConfirm}
               >
-                {busy ? 'Working…' : confirmLabel(action.kind)}
+                {busy ? t('actions.working') : kindTitle}
               </Button>
             </div>
           ) : null}

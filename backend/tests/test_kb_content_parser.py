@@ -18,7 +18,7 @@ CORPUS_DIR = Path(__file__).resolve().parents[2] / "docs" / "knowledge-base"
 
 
 def canonical_text():
-    return (CORPUS_DIR / "finance.md").read_text(encoding="utf-8")
+    return (CORPUS_DIR / "finance_EN.md").read_text(encoding="utf-8")
 
 
 def test_all_canonical_files_parse_to_derived_unique_entry_total():
@@ -27,7 +27,8 @@ def test_all_canonical_files_parse_to_derived_unique_entry_total():
     assert [len(document.entries) for document in documents] == [
         spec[2] for spec in CANONICAL_FILES.values()
     ]
-    assert len(entries) == len({entry.id for entry in entries}) == TOTAL_CANONICAL_ENTRIES
+    identities = {(entry.id, entry.language) for entry in entries}
+    assert len(entries) == len(identities) == TOTAL_CANONICAL_ENTRIES
 
 
 def test_verified_question_normalization_is_preserved():
@@ -92,7 +93,7 @@ def test_sequential_gap_and_duplicate_normalized_question_fail():
         validate_corpus(gap)
 
     duplicate = deepcopy(documents)
-    duplicate[1].entries[0].question = duplicate[0].entries[0].question + "?!"
+    duplicate[2].entries[0].question = duplicate[0].entries[0].question + "?!"
     with pytest.raises(ValueError, match="duplicate normalized question"):
         validate_corpus(duplicate)
 

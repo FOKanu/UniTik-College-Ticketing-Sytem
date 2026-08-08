@@ -1,4 +1,5 @@
 import { useEffect, useId, useRef, useState } from 'react'
+import { useTranslation } from 'react-i18next'
 import { IconCheck, IconChevronDown, IconGlobe } from '@/components/ui/icons'
 import styles from './LanguageSelector.module.css'
 
@@ -14,8 +15,10 @@ export function LanguageSelector({
   compact?: boolean
   menuNote?: string
 }) {
+  const { t, i18n } = useTranslation()
   const [open, setOpen] = useState(false)
-  const [lang, setLang] = useState<(typeof LANGUAGES)[number]>(LANGUAGES[0])
+  const currentCode = i18n.resolvedLanguage?.startsWith('de') ? 'de' : 'en'
+  const lang = LANGUAGES.find((item) => item.code === currentCode) ?? LANGUAGES[0]
   const rootRef = useRef<HTMLDivElement>(null)
   const menuId = useId()
 
@@ -50,8 +53,8 @@ export function LanguageSelector({
         <IconChevronDown width={16} height={16} />
       </button>
       {open ? (
-        <div id={menuId} className={styles.menu} role="menu" aria-label="Language">
-          <p className={styles.menuLabel}>Language</p>
+        <div id={menuId} className={styles.menu} role="menu" aria-label={t('language.label')}>
+          <p className={styles.menuLabel}>{t('language.label')}</p>
           {LANGUAGES.map((item) => (
             <button
               key={item.code}
@@ -62,12 +65,12 @@ export function LanguageSelector({
                 lang.code === item.code ? styles.menuItemActive : styles.menuItem
               }
               onClick={() => {
-                setLang(item)
+                void i18n.changeLanguage(item.code)
                 setOpen(false)
               }}
             >
               <span>
-                {item.label} <em>({item.short})</em>
+                {t(item.code === 'de' ? 'language.german' : 'language.english')} <em>({item.short})</em>
               </span>
               {lang.code === item.code ? (
                 <IconCheck width={16} height={16} />

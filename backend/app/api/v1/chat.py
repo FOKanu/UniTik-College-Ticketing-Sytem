@@ -100,7 +100,7 @@ async def stream_message(
             offline = True
             yield _sse("error", {"message": str(exc)})
 
-        reply = chat_service.LLM_OFFLINE_REPLY if offline else "".join(parts).strip()
+        reply = chat_service.offline_reply(body.language) if offline else "".join(parts).strip()
 
         # The request-scoped session is already closed by the time the body
         # streams, so the reply is persisted on a session this generator owns.

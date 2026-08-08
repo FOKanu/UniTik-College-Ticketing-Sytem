@@ -1,8 +1,7 @@
 # Knowledge-base corpus
 
-This document describes the current knowledge-base and RAG implementation on the `ai-rag` integration
-branch. The former `feature/ai-rag-faq-content` branch was temporary; its committed work has been merged into
-`ai-rag`, which is the authoritative branch for the information below.
+This document describes the multilingual knowledge-base and RAG implementation. English and German are
+first-class corpus languages; the selected UI language is authoritative for chatbot retrieval.
 
 This directory is the canonical, human-editable FAQ corpus used by the chatbot. Public reference material
 was transformed into de-identified synthetic university policies and procedures. Every document is marked
@@ -10,22 +9,20 @@ was transformed into de-identified synthetic university policies and procedures.
 
 | File | Department | ID prefix | Entries | Size | Words |
 | --- | --- | --- | ---: | ---: | ---: |
-| `academics.md` | Academics | `faq-academics-` | 30 | 16,835 bytes | 2,477 |
-| `finance.md` | Finance | `faq-finance-` | 15 | 7,700 bytes | 1,192 |
-| `it-support.md` | IT Support | `faq-it-support-` | 15 | 8,434 bytes | 1,275 |
-| `maintenance.md` | Maintenance | `faq-maintenance-` | 15 | 7,597 bytes | 1,226 |
-| `registrar.md` | Registrar | `faq-registrar-` | 55 | 39,592 bytes | 5,340 |
-| `housing.md` | Housing | `faq-housing-` | 53 | 38,138 bytes | 5,125 |
-| **Total** | **6 departments** | | **183** | **118,296 bytes** | **16,635** |
+| `academics_EN.md` / `academics_DE.md` | Academics | `faq-academics-` | 30 × 2 | 37,573 bytes | 5,180 |
+| `finance_EN.md` / `finance_DE.md` | Finance | `faq-finance-` | 15 × 2 | 17,155 bytes | 2,426 |
+| `it-support_EN.md` / `it-support_DE.md` | IT Support | `faq-it-support-` | 15 × 2 | 18,725 bytes | 2,618 |
+| `maintenance_EN.md` / `maintenance_DE.md` | Maintenance | `faq-maintenance-` | 15 × 2 | 16,879 bytes | 2,508 |
+| `registrar_EN.md` / `registrar_DE.md` | Registrar | `faq-registrar-` | 55 × 2 | 90,117 bytes | 11,456 |
+| `housing_EN.md` / `housing_DE.md` | Housing | `faq-housing-` | 53 × 2 | 85,831 bytes | 10,848 |
+| **Total** | **6 departments / 2 languages** | | **366** | **266,280 bytes** | **35,036** |
 
-The canonical corpus contains 183 entries across six departments. Parser code derives this total from
+The canonical corpus contains 366 localized entries (183 logical FAQs in each language). Parser code derives this total from
 `CANONICAL_FILES`, so the table, front-matter counts, and parser specification must be updated together.
 The measurements above are UTF-8 file sizes and whitespace-delimited word counts as of this revision. The
-literal corpus size is **0.118296 MB** using decimal megabytes (1 MB = 1,000,000 bytes), or approximately
-**0.112816 MiB** using binary mebibytes (1 MiB = 1,048,576 bytes).
-Structured content includes 183 questions, 183 answers (6,470 words), 183 escalation instructions
-(2,467 words), 549 related phrasings, and 595 keyword tags. Each entry currently has exactly three related
-phrasings; keywords vary by entry.
+literal bilingual corpus size is **0.266280 MB** using decimal megabytes, or approximately **0.253944 MiB**.
+English accounts for 118,296 bytes and German for 147,984 bytes. Each logical FAQ has the same stable ID in
+both files.
 
 ## What information the corpus contains
 
@@ -71,8 +68,8 @@ entryCount: 30
 
 Each FAQ has a stable level-two ID followed by exactly `Question`, `Answer`, `Escalation`,
 `Related phrasings`, and `Keywords` level-three sections. Related phrasings and keywords use Markdown
-bullets. IDs must remain sequential within a department and both IDs and normalized questions must be
-globally unique. Existing IDs in established documents must not be renumbered.
+bullets. IDs must remain sequential within a department. IDs and normalized questions are unique within a
+language; matching English and German entries intentionally share a logical ID.
 
 ## Runtime architecture and validation
 
@@ -107,20 +104,20 @@ The pgvector column width is **768** (aligned with Ollama `nomic-embed-text`).
 
 | Capability | Current status |
 | --- | --- |
-| Canonical Markdown corpus | Implemented and strictly validated: 6 files / 183 entries |
+| Canonical Markdown corpus | Implemented and strictly validated: 12 files / 366 localized entries |
 | Synthetic-content safeguards | Implemented in tests for de-identification, domains, IDs, counts, links, and duplicate questions |
 | Embedding adapter | Implemented via ``app.ai.create_embedding`` (OpenAI-compatible ``/v1/embeddings``); enforces **768** dims |
 | Database ingestion | Implemented as explicit, atomic insert-or-update ingestion into PostgreSQL/pgvector |
 | Vector similarity query | Implemented in the service layer using cosine distance (`<=>`) |
 | Public `POST /api/v1/kb/search` | **Text search only**; it currently searches question/answer text with `ILIKE` |
-| Chatbot RAG orchestration | **Not wired yet**; chat responses do not retrieve KB entries or ground an LLM prompt |
+| Chatbot RAG orchestration | Implemented with citations, score threshold, text fallback, and UI-language filtering |
 | Student and staff KB screens | May still use fixtures in `hybrid`/`mock` modes; live `/kb` exists for API mode |
 | Re-ranking, citations, score threshold, evaluation set | Not implemented |
 
-The presence of embeddings and a vector-query function does not by itself make the running chatbot a RAG
-system. The retrieval endpoint must embed the user's query and call `search_faq_vector`, and the chat flow
-must pass approved results into the LLM prompt with traceable source IDs before responses are grounded in
-this corpus.
+`FaqEntry.documentId` stores the shared logical FAQ ID. Localized rows have distinct primary keys
+(`documentId` for English and `documentId:de` for German), while a unique tenant/document/language index
+prevents duplicate variants. Ingestion carries front-matter language into every row and embedding context.
+Chat requests carry the selected UI language, and vector and text-fallback retrieval both filter on it.
 
 ## Administrative ingestion
 
@@ -183,15 +180,11 @@ they do not certify the synthetic answers as real policy or measure retrieval/an
    until it is approved or replaced.
 2. Add a supported embedding-service deployment and document `EMBEDDING_SERVICE_URL` in the environment and
    Docker configuration.
-3. Ingest into a non-production database, verify 183 populated embeddings, and record the embedding model and
+3. Ingest into a non-production database, verify 366 populated embeddings, and record the embedding model and
    corpus revision used.
-4. Wire query embedding and `search_faq_vector` into the KB search endpoint, with a configurable result limit
-   and minimum relevance threshold.
-5. Add chatbot retrieval and grounded prompting with FAQ IDs/categories returned as citations; fall back to
-   clarification or ticket escalation when evidence is insufficient.
-6. Replace frontend mock articles with the live KB API and align its category choices with all six canonical
+4. Replace frontend mock articles with the live KB API and align its category choices with all six canonical
    departments.
-7. Build a versioned RAG evaluation set covering paraphrases, cross-department routing, no-answer cases,
+5. Build a versioned RAG evaluation set covering paraphrases, cross-department routing, no-answer cases,
    prompt injection, privacy boundaries, citation correctness, latency, and regression thresholds.
-8. Define reviewed retirement/deletion and re-ingestion procedures so stale database rows cannot outlive an
+6. Define reviewed retirement/deletion and re-ingestion procedures so stale database rows cannot outlive an
    intentionally removed article.

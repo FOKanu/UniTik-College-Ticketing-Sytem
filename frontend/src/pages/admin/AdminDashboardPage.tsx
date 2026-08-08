@@ -1,10 +1,12 @@
 import { ROUTES } from '@/app/routes'
+import { useTranslation } from 'react-i18next'
 import { ButtonLink } from '@/components/ui'
 import { findInstitution } from '@/lib/institutions'
 import { useAuthStore, useInstitutionStore } from '@/stores'
 import styles from './AdminDashboardPage.module.css'
 
 export function AdminDashboardPage() {
+  const { t } = useTranslation()
   const user = useAuthStore((s) => s.user)
   const institutionId = useInstitutionStore((s) => s.institutionId)
   const institution = findInstitution(institutionId)
@@ -13,23 +15,21 @@ export function AdminDashboardPage() {
   return (
     <div className={styles.page}>
       <header className={styles.header}>
-        <h1>Admin Dashboard</h1>
-        <p>
-          Welcome back, {firstName}. Manage TicketHub for {institution.name}.
-        </p>
+        <h1>{t('titles.adminDashboard')}</h1>
+        <p>{t('adminDashboard.welcome', { name: firstName, institution: institution.name })}</p>
       </header>
 
-      <section className={styles.stats} aria-label="Overview">
+      <section className={styles.stats} aria-label={t('adminDashboard.overview')}>
         <article>
-          <span>Open tickets</span>
+          <span>{t('adminDashboard.openTickets')}</span>
           <strong>34</strong>
         </article>
         <article>
-          <span>SLA breaches</span>
+          <span>{t('adminDashboard.breaches')}</span>
           <strong>2</strong>
         </article>
         <article>
-          <span>Departments</span>
+          <span>{t('nav.departments')}</span>
           <strong>4</strong>
         </article>
         <article>
@@ -38,27 +38,23 @@ export function AdminDashboardPage() {
         </article>
       </section>
 
-      <section className={styles.cards} aria-label="Admin shortcuts">
+      <section className={styles.cards} aria-label={t('adminDashboard.shortcuts')}>
         <article className={styles.card}>
-          <h2>Reports & Analytics</h2>
-          <p>Ticket volume, resolution time, and department performance.</p>
-          <ButtonLink to={ROUTES.analytics}>Open analytics</ButtonLink>
+          <h2>{t('adminDashboard.reports')}</h2><p>{t('adminDashboard.reportsBody')}</p>
+          <ButtonLink to={ROUTES.analytics}>{t('adminDashboard.openAnalytics')}</ButtonLink>
         </article>
         <article className={styles.card}>
-          <h2>People</h2>
-          <p>Change staff roles and move employees between departments.</p>
-          <ButtonLink to={ROUTES.settingsPeople}>Manage people</ButtonLink>
+          <h2>{t('adminDashboard.people')}</h2><p>{t('adminDashboard.peopleBody')}</p>
+          <ButtonLink to={ROUTES.settingsPeople}>{t('adminDashboard.managePeople')}</ButtonLink>
         </article>
         <article className={styles.card}>
-          <h2>Settings</h2>
-          <p>Institution profile, departments, people, and knowledge base.</p>
-          <ButtonLink to={ROUTES.settings}>Open settings</ButtonLink>
+          <h2>{t('admin.settings')}</h2><p>{t('adminDashboard.settingsBody')}</p>
+          <ButtonLink to={ROUTES.settings}>{t('adminDashboard.openSettings')}</ButtonLink>
         </article>
         <article className={styles.card}>
-          <h2>Staff queue</h2>
-          <p>Assign, reassign, or escalate tickets from the live queue.</p>
+          <h2>{t('adminDashboard.staffQueue')}</h2><p>{t('adminDashboard.queueBody')}</p>
           <ButtonLink to={ROUTES.queue} variant="secondary">
-            Open queue
+            {t('adminDashboard.openQueue')}
           </ButtonLink>
         </article>
       </section>
