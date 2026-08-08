@@ -18,6 +18,14 @@ docker compose up --build
 - Backend API: http://localhost:4000 (OpenAPI docs at `/docs`)
 - Frontend: http://localhost:5173
 - Postgres: localhost:5432
+- Redis (optional cache): localhost:6379 — see [REDIS_AND_STATIC_CACHE.md](./REDIS_AND_STATIC_CACHE.md)
+
+Production-style nginx frontend (hashed asset caching):
+
+```bash
+docker compose --profile prod-frontend up --build frontend-prod
+# → http://localhost:8080
+```
 
 ## Option B — Run locally without Docker
 

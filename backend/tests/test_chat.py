@@ -7,6 +7,7 @@ from sqlalchemy import delete
 from app.ai import client as ai_client
 from app.ai.llm_config import LLMSettings
 from app.ai.triage import TicketSuggestion
+from app.core.cache import reset_cache_state_for_tests
 from app.core.exceptions import BadRequestError
 from app.db.base import Role
 from app.db.session import async_session_factory
@@ -24,9 +25,9 @@ UNREACHABLE_BASE_URL = "http://127.0.0.1:9/v1"
 def offline_llm(monkeypatch):
     config = LLMSettings(ollama_openai_base_url=UNREACHABLE_BASE_URL).resolve()
     monkeypatch.setattr(ai_client, "get_llm_config", lambda: config)
-    monkeypatch.setattr(ai_client, "_health_cache", None)
+    reset_cache_state_for_tests()
     yield config
-    ai_client._health_cache = None
+    reset_cache_state_for_tests()
 
 
 @pytest.mark.asyncio
