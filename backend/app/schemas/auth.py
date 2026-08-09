@@ -1,6 +1,7 @@
 from datetime import datetime
 
 from pydantic import BaseModel, EmailStr, Field
+from pydantic import field_validator
 
 from app.db.base import Role
 
@@ -27,6 +28,13 @@ class UserResponse(BaseModel):
     createdAt: datetime
 
     model_config = {"from_attributes": True}
+
+    @field_validator("department", mode="before")
+    @classmethod
+    def _resolve_department(cls, value):
+        if value is None or isinstance(value, str):
+            return value
+        return getattr(value, "name", None)
 
 
 class AuthTokenResponse(BaseModel):
