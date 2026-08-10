@@ -27,6 +27,7 @@ class Settings(BaseSettings):
     smtp_use_tls: bool = True
     # Optional Redis (empty → in-process memory cache). Example: redis://localhost:6379/0
     redis_url: str = ""
+    rate_limit_enabled: bool = True
     # LLM settings live in app.ai.llm_config
 
     @property
