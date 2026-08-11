@@ -6,10 +6,15 @@ import { ROUTES } from '@/app/routes'
 import { Button, Input } from '@/components/ui'
 import { authApi, isApiError, usesLiveAuth } from '@/lib/api'
 import { homePathForRole } from '@/lib/auth'
+import { useT } from '@/lib/i18n'
 import { findInstitution, institutionEmailHint } from '@/lib/institutions'
 import { loginSchema, type LoginFormValues } from '@/lib/validation'
 import { mockAccounts } from '@/mocks/data'
 import { useAuthStore, useInstitutionStore } from '@/stores'
+import {
+  getStayLoggedInPreference,
+  setStayLoggedInPreference,
+} from '@/stores/authStore'
 import type { User } from '@/types'
 import styles from './AuthPages.module.css'
 
@@ -39,6 +44,7 @@ const SEED_PASSWORD = 'demo1234'
 const MOCK_PASSWORD = 'password'
 
 export function LoginPage() {
+  const t = useT()
   const usingMocks = !usesLiveAuth()
   const demoAccounts = usingMocks ? mockAccounts : SEEDED_ACCOUNTS
   const demoPassword = usingMocks ? MOCK_PASSWORD : SEED_PASSWORD
@@ -49,6 +55,7 @@ export function LoginPage() {
   const institution = findInstitution(institutionId)
   const emailHint = institutionEmailHint(institution)
   const [apiError, setApiError] = useState<string | null>(null)
+  const [stayLoggedIn, setStayLoggedIn] = useState(getStayLoggedInPreference)
 
   const {
     register,
@@ -66,6 +73,7 @@ export function LoginPage() {
   async function onSubmit(values: LoginFormValues) {
     setApiError(null)
     try {
+      setStayLoggedInPreference(stayLoggedIn)
       const session = await authApi.login(values)
       setSession(session)
 
@@ -120,6 +128,17 @@ export function LoginPage() {
             Forgot password?
           </button>
         </div>
+        <label className={styles.remember}>
+          <input
+            type="checkbox"
+            checked={stayLoggedIn}
+            onChange={(e) => setStayLoggedIn(e.target.checked)}
+          />
+          <span>
+            <strong>{t('auth.stayLoggedIn')}</strong>
+            <em>{t('auth.stayLoggedInHint')}</em>
+          </span>
+        </label>
         {apiError ? (
           <p className={styles.error} role="alert">
             {apiError}
@@ -139,7 +158,10 @@ export function LoginPage() {
       </Button>
 
       <div className={styles.demos}>
-        <p>Demo accounts (work for any selected campus)</p>
+        <p>
+          {t('auth.demoTitle')} —{' '}
+          {usingMocks ? t('auth.demoFixture') : t('auth.demoLive')}
+        </p>
         <ul>
           {demoAccounts.map((account) => (
             <li key={account.id}>

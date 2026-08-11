@@ -1,11 +1,13 @@
 import { useEffect, useId, useRef, useState } from 'react'
 import { IconCheck, IconChevronDown, IconGlobe } from '@/components/ui/icons'
+import { useT } from '@/lib/i18n'
+import { useLocaleStore, type AppLocale } from '@/stores/localeStore'
 import styles from './LanguageSelector.module.css'
 
 const LANGUAGES = [
-  { code: 'en', label: 'English', short: 'EN' },
-  { code: 'de', label: 'Deutsch', short: 'DE' },
-] as const
+  { code: 'en' as const, label: 'English', short: 'EN' },
+  { code: 'de' as const, label: 'Deutsch', short: 'DE' },
+]
 
 export function LanguageSelector({
   compact = false,
@@ -14,10 +16,14 @@ export function LanguageSelector({
   compact?: boolean
   menuNote?: string
 }) {
+  const t = useT()
+  const locale = useLocaleStore((s) => s.locale)
+  const setLocale = useLocaleStore((s) => s.setLocale)
   const [open, setOpen] = useState(false)
-  const [lang, setLang] = useState<(typeof LANGUAGES)[number]>(LANGUAGES[0])
   const rootRef = useRef<HTMLDivElement>(null)
   const menuId = useId()
+  const lang =
+    LANGUAGES.find((item) => item.code === locale) ?? LANGUAGES[0]
 
   useEffect(() => {
     if (!open) return
@@ -35,6 +41,11 @@ export function LanguageSelector({
     }
   }, [open])
 
+  function choose(code: AppLocale) {
+    setLocale(code)
+    setOpen(false)
+  }
+
   return (
     <div className={styles.wrap} ref={rootRef}>
       <button
@@ -43,6 +54,7 @@ export function LanguageSelector({
         aria-haspopup="menu"
         aria-expanded={open}
         aria-controls={menuId}
+        aria-label={t('chrome.language')}
         onClick={() => setOpen((v) => !v)}
       >
         <IconGlobe width={18} height={18} />
@@ -50,8 +62,13 @@ export function LanguageSelector({
         <IconChevronDown width={16} height={16} />
       </button>
       {open ? (
-        <div id={menuId} className={styles.menu} role="menu" aria-label="Language">
-          <p className={styles.menuLabel}>Language</p>
+        <div
+          id={menuId}
+          className={styles.menu}
+          role="menu"
+          aria-label={t('chrome.language')}
+        >
+          <p className={styles.menuLabel}>{t('chrome.language')}</p>
           {LANGUAGES.map((item) => (
             <button
               key={item.code}
@@ -61,10 +78,7 @@ export function LanguageSelector({
               className={
                 lang.code === item.code ? styles.menuItemActive : styles.menuItem
               }
-              onClick={() => {
-                setLang(item)
-                setOpen(false)
-              }}
+              onClick={() => choose(item.code)}
             >
               <span>
                 {item.label} <em>({item.short})</em>

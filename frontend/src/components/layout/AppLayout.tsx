@@ -22,11 +22,12 @@ import { useAuthStore } from '@/stores/authStore'
 import { useInstitutionStore } from '@/stores/institutionStore'
 import type { UserRole } from '@/types'
 import { findInstitution } from '@/lib/institutions'
+import { useT, type MessageKey } from '@/lib/i18n'
 import styles from './AppLayout.module.css'
 
 interface NavItem {
   to: string
-  label: string
+  labelKey: MessageKey
   icon: ReactNode
   end?: boolean
   soon?: boolean
@@ -35,28 +36,28 @@ interface NavItem {
 const SIDEBAR_KEY = 'tickethub.sidebar.collapsed'
 
 const studentNav: NavItem[] = [
-  { to: ROUTES.dashboard, label: 'Dashboard', icon: <IconDashboard />, end: true },
-  { to: ROUTES.tickets, label: 'My Tickets', icon: <IconTicket /> },
-  { to: ROUTES.assistant, label: 'AI Assistant', icon: <IconChat /> },
-  { to: ROUTES.faq, label: 'FAQ & Resources', icon: <IconBook /> },
-  { to: ROUTES.profile, label: 'Profile', icon: <IconUser /> },
+  { to: ROUTES.dashboard, labelKey: 'nav.dashboard', icon: <IconDashboard />, end: true },
+  { to: ROUTES.tickets, labelKey: 'nav.myTickets', icon: <IconTicket /> },
+  { to: ROUTES.assistant, labelKey: 'nav.assistant', icon: <IconChat /> },
+  { to: ROUTES.faq, labelKey: 'nav.faq', icon: <IconBook /> },
+  { to: ROUTES.profile, labelKey: 'nav.profile', icon: <IconUser /> },
 ]
 
 const staffNav: NavItem[] = [
-  { to: ROUTES.agent, label: 'Dashboard', icon: <IconDashboard />, end: true },
-  { to: ROUTES.queue, label: 'Ticket Queue', icon: <IconTicket /> },
-  { to: ROUTES.knowledge, label: 'Knowledge Base', icon: <IconBook /> },
-  { to: ROUTES.analytics, label: 'Analytics', icon: <IconChart />, soon: true },
-  { to: ROUTES.profile, label: 'Profile', icon: <IconUser /> },
+  { to: ROUTES.agent, labelKey: 'nav.dashboard', icon: <IconDashboard />, end: true },
+  { to: ROUTES.queue, labelKey: 'nav.queue', icon: <IconTicket /> },
+  { to: ROUTES.knowledge, labelKey: 'nav.knowledge', icon: <IconBook /> },
+  { to: ROUTES.analytics, labelKey: 'nav.analytics', icon: <IconChart />, soon: true },
+  { to: ROUTES.profile, labelKey: 'nav.profile', icon: <IconUser /> },
 ]
 
 const adminNav: NavItem[] = [
-  { to: ROUTES.admin, label: 'Dashboard', icon: <IconDashboard />, end: true },
-  { to: ROUTES.queue, label: 'Ticket Queue', icon: <IconTicket /> },
-  { to: ROUTES.knowledge, label: 'Knowledge Base', icon: <IconBook /> },
-  { to: ROUTES.analytics, label: 'Analytics', icon: <IconChart />, soon: true },
-  { to: ROUTES.profile, label: 'Profile', icon: <IconUser /> },
-  { to: ROUTES.settings, label: 'Settings', icon: <IconSettings /> },
+  { to: ROUTES.admin, labelKey: 'nav.dashboard', icon: <IconDashboard />, end: true },
+  { to: ROUTES.queue, labelKey: 'nav.queue', icon: <IconTicket /> },
+  { to: ROUTES.knowledge, labelKey: 'nav.knowledge', icon: <IconBook /> },
+  { to: ROUTES.analytics, labelKey: 'nav.analytics', icon: <IconChart />, soon: true },
+  { to: ROUTES.profile, labelKey: 'nav.profile', icon: <IconUser /> },
+  { to: ROUTES.settings, labelKey: 'nav.settings', icon: <IconSettings /> },
 ]
 
 function navForRole(role: UserRole | null | undefined): NavItem[] {
@@ -110,6 +111,7 @@ function pageTitle(pathname: string): string {
 }
 
 export function AppLayout({ children }: { children?: ReactNode }) {
+  const t = useT()
   const user = useAuthStore((s) => s.user)
   const institutionId = useInstitutionStore((s) => s.institutionId)
   const institution = findInstitution(institutionId)
@@ -147,12 +149,14 @@ export function AppLayout({ children }: { children?: ReactNode }) {
       : navItems.slice(0, 4)
 
   function renderNav(compact: boolean) {
-    return navItems.map((item) => (
+    return navItems.map((item) => {
+      const label = t(item.labelKey)
+      return (
       <NavLink
         key={item.to}
         to={item.to}
         end={item.end}
-        title={compact ? item.label : undefined}
+        title={compact ? label : undefined}
         className={({ isActive }) =>
           [
             isActive ? styles.navActive : styles.navLink,
@@ -170,12 +174,13 @@ export function AppLayout({ children }: { children?: ReactNode }) {
         <span className={styles.navIcon}>{item.icon}</span>
         {!compact ? (
           <>
-            <span className={styles.navLabel}>{item.label}</span>
+            <span className={styles.navLabel}>{label}</span>
             {item.soon ? <span className={styles.soon}>Soon</span> : null}
           </>
         ) : null}
       </NavLink>
-    ))
+      )
+    })
   }
 
   return (
@@ -312,7 +317,7 @@ export function AppLayout({ children }: { children?: ReactNode }) {
             }
           >
             {item.icon}
-            <span>{item.label.split(' ')[0]}</span>
+            <span>{t(item.labelKey).split(' ')[0]}</span>
           </NavLink>
         ))}
       </nav>

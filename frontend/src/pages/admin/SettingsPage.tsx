@@ -1,4 +1,4 @@
-import { useMemo, useState } from 'react'
+import { useEffect, useMemo, useState } from 'react'
 import { Link, NavLink, useLocation } from 'react-router-dom'
 import { ROUTES } from '@/app/routes'
 import {
@@ -9,10 +9,11 @@ import {
   Input,
   Toggle,
 } from '@/components/ui'
-import { mockArticles, mockStaffMembers } from '@/mocks/data'
+import { knowledgeApi, usersApi, type StaffMember } from '@/lib/api'
 import { findInstitution } from '@/lib/institutions'
-import { useInstitutionStore, useUiStore } from '@/stores'
-import type { Department } from '@/types'
+import { mockArticles, mockStaffMembers } from '@/mocks/data'
+import { useInstitutionStore, useLocaleStore, useUiStore } from '@/stores'
+import type { Department, KnowledgeArticle } from '@/types'
 import styles from './SettingsPage.module.css'
 
 type SettingsTab = 'institution' | 'departments' | 'people' | 'knowledge'
@@ -70,11 +71,46 @@ const DEPARTMENT_OPTIONS: Department[] = [
   'Maintenance',
 ]
 
+type PeopleRow = {
+  id: string
+  name: string
+  email: string
+  role: 'Agent' | 'Admin'
+  department: string
+  status: 'Active' | 'Invited'
+}
+
 function tabFromPath(pathname: string): SettingsTab {
   if (pathname.includes('/departments')) return 'departments'
   if (pathname.includes('/people')) return 'people'
   if (pathname.includes('/knowledge')) return 'knowledge'
   return 'institution'
+}
+
+function toPeopleRow(member: StaffMember): PeopleRow {
+  const role: 'Agent' | 'Admin' =
+    String(member.role).toUpperCase() === 'ADMIN' || member.role === 'admin'
+      ? 'Admin'
+      : 'Agent'
+  return {
+    id: member.id,
+    name: member.displayName,
+    email: member.email,
+    role,
+    department: member.department?.trim() || 'Unassigned',
+    status: 'Active',
+  }
+}
+
+function mockPeopleRows(): PeopleRow[] {
+  return mockStaffMembers.map((member) => ({
+    id: member.id,
+    name: member.name,
+    email: member.email,
+    role: member.role,
+    department: member.department,
+    status: member.status,
+  }))
 }
 
 export function SettingsPage() {
@@ -83,6 +119,8 @@ export function SettingsPage() {
   const pushToast = useUiStore((s) => s.pushToast)
   const institutionId = useInstitutionStore((s) => s.institutionId)
   const institution = findInstitution(institutionId)
+  const locale = useLocaleStore((s) => s.locale)
+  const setLocale = useLocaleStore((s) => s.setLocale)
 
   const [displayName, setDisplayName] = useState(institution.name)
   const [shortCode, setShortCode] = useState(institution.short)
@@ -92,23 +130,82 @@ export function SettingsPage() {
   const [logoName, setLogoName] = useState<string | null>(null)
   const [langDe, setLangDe] = useState(true)
   const [langEn, setLangEn] = useState(true)
-  const [staff, setStaff] = useState(() =>
-    mockStaffMembers.map((member) => ({ ...member })),
-  )
+  const [staff, setStaff] = useState<PeopleRow[]>(mockPeopleRows)
+  const [peopleLoading, setPeopleLoading] = useState(false)
+  const [peopleError, setPeopleError] = useState<string | null>(null)
+  const [articles, setArticles] = useState<KnowledgeArticle[]>(() => [
+    ...mockArticles,
+  ])
 
-  const articles = useMemo(() => mockArticles, [])
+  useEffect(() => {
+    let cancelled = false
+    void (async () => {
+      setPeopleLoading(true)
+      setPeopleError(null)
+      try {
+        const members = await usersApi.listStaff()
+        if (cancelled) return
+        setStaff(members.map(toPeopleRow))
+      } catch (err) {
+        if (cancelled) return
+        setPeopleError(
+          err instanceof Error
+            ? err.message
+            : 'Could not load staff directory.',
+        )
+        setStaff(mockPeopleRows())
+      } finally {
+        if (!cancelled) setPeopleLoading(false)
+      }
+    })()
+    return () => {
+      cancelled = true
+    }
+  }, [])
 
-  function updateStaffMember(
-    id: string,
-    patch: Partial<(typeof staff)[number]>,
-  ) {
+  useEffect(() => {
+    let cancelled = false
+    void (async () => {
+      try {
+        const data = await knowledgeApi.list()
+        if (!cancelled && data.length > 0) setArticles(data)
+      } catch {
+        // Keep mock articles as a readable fallback in fixture mode.
+      }
+    })()
+    return () => {
+      cancelled = true
+    }
+  }, [])
+
+  const departmentOptions = useMemo(() => {
+    const extras = staff
+      .map((person) => person.department)
+      .filter(
+        (label) =>
+          Boolean(label) &&
+          !DEPARTMENT_OPTIONS.some(
+            (dept) => dept.toLowerCase() === label.toLowerCase(),
+          ),
+      )
+    return [...DEPARTMENT_OPTIONS, ...Array.from(new Set(extras))]
+  }, [staff])
+
+  function updateStaffMember(id: string, patch: Partial<PeopleRow>) {
     setStaff((prev) =>
       prev.map((member) =>
         member.id === id ? { ...member, ...patch } : member,
       ),
     )
     const target = mockStaffMembers.find((member) => member.id === id)
-    if (target) Object.assign(target, patch)
+    if (target && patch.role) target.role = patch.role
+    if (
+      target &&
+      patch.department &&
+      DEPARTMENT_OPTIONS.includes(patch.department as Department)
+    ) {
+      target.department = patch.department as Department
+    }
   }
 
   function saveStaffMember(id: string) {
@@ -178,15 +275,25 @@ export function SettingsPage() {
                 id="lang-de"
                 label="German (DE)"
                 checked={langDe}
-                onChange={setLangDe}
+                onChange={(checked) => {
+                  setLangDe(checked)
+                  if (checked) setLocale('de')
+                }}
               />
               <Toggle
                 id="lang-en"
                 label="English (EN)"
                 checked={langEn}
-                onChange={setLangEn}
+                onChange={(checked) => {
+                  setLangEn(checked)
+                  if (checked) setLocale('en')
+                }}
               />
             </div>
+            <p className={styles.mutedNote}>
+              Active UI language: {locale === 'de' ? 'Deutsch' : 'English'}.
+              Use the header language control anytime.
+            </p>
             <div className={styles.formActions}>
               <Button
                 onClick={() =>
@@ -247,11 +354,16 @@ export function SettingsPage() {
             <Button size="sm">+ Invite staff</Button>
           </div>
           <div className={styles.banner} role="note">
-            Change an employee&apos;s department or role here. Updates apply to
-            ticket assignment lists in this demo session.
+            Staff directory loads from the users API when connected. Department
+            and role edits apply to assignment lists in this session.
           </div>
+          {peopleError ? (
+            <p className={styles.mutedNote} role="alert">
+              {peopleError} Showing local fixtures as a fallback.
+            </p>
+          ) : null}
           <div className={styles.tableWrap}>
-            <table className={styles.table}>
+            <table className={styles.table} aria-busy={peopleLoading}>
               <caption className="sr-only">Staff members</caption>
               <thead>
                 <tr>
@@ -264,7 +376,15 @@ export function SettingsPage() {
                 </tr>
               </thead>
               <tbody>
-                {staff.map((person) => (
+                {peopleLoading ? (
+                  <tr>
+                    <td colSpan={6} className={styles.muted}>
+                      Loading staff…
+                    </td>
+                  </tr>
+                ) : null}
+                {!peopleLoading &&
+                  staff.map((person) => (
                   <tr key={person.id}>
                     <td>{person.name}</td>
                     <td>{person.email}</td>
@@ -290,11 +410,11 @@ export function SettingsPage() {
                         value={person.department}
                         onChange={(e) =>
                           updateStaffMember(person.id, {
-                            department: e.target.value as Department,
+                            department: e.target.value,
                           })
                         }
                       >
-                        {DEPARTMENT_OPTIONS.map((dept) => (
+                        {departmentOptions.map((dept) => (
                           <option key={dept} value={dept}>
                             {dept}
                           </option>
@@ -318,7 +438,14 @@ export function SettingsPage() {
                       </Button>
                     </td>
                   </tr>
-                ))}
+                  ))}
+                {!peopleLoading && staff.length === 0 ? (
+                  <tr>
+                    <td colSpan={6} className={styles.muted}>
+                      No staff members found.
+                    </td>
+                  </tr>
+                ) : null}
               </tbody>
             </table>
           </div>
