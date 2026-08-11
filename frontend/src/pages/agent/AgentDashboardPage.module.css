@@ -31,6 +31,22 @@
   box-shadow: var(--shadow-card);
 }
 
+.stats article:nth-child(1) {
+  background: var(--color-primary);
+}
+
+.stats article:nth-child(2) {
+  background: var(--color-warning);
+}
+
+.stats article:nth-child(3) {
+  background: var(--color-success);
+}
+
+.stats article:nth-child(4) {
+  background: #6d28d9;
+}
+
 .stats span {
   font-size: 0.85rem;
   font-weight: 600;
