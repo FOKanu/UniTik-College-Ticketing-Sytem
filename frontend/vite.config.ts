@@ -1,9 +1,23 @@
 import path from 'node:path'
+import { existsSync } from 'node:fs'
 import { defineConfig } from 'vitest/config'
 import react from '@vitejs/plugin-react'
 
-const apiProxy = process.env.VITE_PROXY_TARGET || 'http://localhost:4000'
-const wsProxy = process.env.VITE_WS_PROXY_TARGET || 'ws://localhost:4000'
+function defaultProxyTarget(kind: 'http' | 'ws'): string {
+  const fromEnv =
+    kind === 'http'
+      ? process.env.VITE_PROXY_TARGET
+      : process.env.VITE_WS_PROXY_TARGET
+  if (fromEnv) return fromEnv
+  // Inside Compose, localhost is the frontend container — use the backend service.
+  if (existsSync('/.dockerenv')) {
+    return kind === 'http' ? 'http://backend:4000' : 'ws://backend:4000'
+  }
+  return kind === 'http' ? 'http://localhost:4000' : 'ws://localhost:4000'
+}
+
+const apiProxy = defaultProxyTarget('http')
+const wsProxy = defaultProxyTarget('ws')
 
 export default defineConfig({
   plugins: [react()],

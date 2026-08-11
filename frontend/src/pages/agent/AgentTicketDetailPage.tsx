@@ -206,7 +206,7 @@ export function AgentTicketDetailPage() {
           setStaffError(
             err instanceof Error
               ? err.message
-              : t('ticket.staffLoadFailed'),
+              : 'Could not load staff directory.',
           )
         }
       }

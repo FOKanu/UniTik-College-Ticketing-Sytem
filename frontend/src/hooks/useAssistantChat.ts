@@ -1,4 +1,4 @@
-import { useCallback, useEffect, useRef, useState } from 'react'
+import { useCallback, useEffect, useMemo, useRef, useState } from 'react'
 import {
   chatApi,
   ticketsApi,
@@ -78,14 +78,13 @@ export function useAssistantChat({ greeting }: Options) {
   const conversationId = useRef<string | null>(null)
   const abortRef = useRef<AbortController | null>(null)
 
-  useEffect(() => {
-    setMessages((prev) => {
-      if (prev.length === 1 && prev[0]?.id === 'welcome') {
-        return [{ id: 'welcome', role: 'assistant', body: greeting }]
-      }
-      return prev
-    })
-  }, [greeting])
+  // Keep the welcome bubble in sync with locale without writing in an effect.
+  const visibleMessages = useMemo(() => {
+    if (messages.length === 1 && messages[0]?.id === 'welcome') {
+      return [{ id: 'welcome', role: 'assistant' as const, body: greeting }]
+    }
+    return messages
+  }, [messages, greeting])
 
   useEffect(() => {
     if (!usesLiveChat()) return
@@ -429,7 +428,7 @@ export function useAssistantChat({ greeting }: Options) {
   }, [proposeCreate])
 
   return {
-    messages,
+    messages: visibleMessages,
     send,
     isStreaming,
     mode,
@@ -460,6 +459,6 @@ export function useAssistantChat({ greeting }: Options) {
       ticket === null &&
       !isStreaming &&
       !hasOpenAction &&
-      messages.some((m) => m.role === 'user'),
+      visibleMessages.some((m) => m.role === 'user'),
   }
 }
