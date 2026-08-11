@@ -52,6 +52,13 @@ services:
     restart: unless-stopped
     env_file:
       - ./frontend/.env
+    environment:
+      # Inside the frontend container, localhost is NOT the API — use the
+      # compose service name so Vite's /api proxy reaches uts-backend.
+      VITE_PROXY_TARGET: http://backend:4000
+      VITE_WS_PROXY_TARGET: ws://backend:4000
+      VITE_DATA_SOURCE: hybrid
+      VITE_API_BASE_URL: /api/v1
     ports:
       - "127.0.0.1:5173:5173"
     depends_on:

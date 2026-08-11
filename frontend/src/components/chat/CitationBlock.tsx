@@ -2,6 +2,7 @@ import type { Citation } from '@/lib/api'
 import { toDepartment } from '@/lib/api/adapters'
 import { DepartmentBadge } from '@/components/ui'
 import { IconAlert } from '@/components/ui/icons'
+import { useT } from '@/lib/i18n'
 import styles from './CitationBlock.module.css'
 
 const MAX_SOURCES = 3
@@ -30,10 +31,12 @@ export function CitationBlock({
   canEscalate = false,
   isEscalating = false,
   onEscalate,
-  escalateLabel = 'Escalate to Ticket',
+  escalateLabel,
 }: CitationBlockProps) {
+  const t = useT()
   const sources = citations.slice(0, MAX_SOURCES)
   if (!retrievalWeak && sources.length === 0) return null
+  const escalateText = escalateLabel ?? t('assistant.escalate')
 
   return (
     <div
@@ -42,18 +45,17 @@ export function CitationBlock({
       {retrievalWeak ? (
         <p className={styles.weak} role="note">
           <IconAlert width={14} height={14} aria-hidden="true" />
-          <span>
-            No strong match in the knowledge base — this answer may be
-            incomplete. Double-check anything important.
-          </span>
+          <span>{t('assistant.retrievalWeak')}</span>
         </p>
       ) : null}
 
       {sources.length > 0 ? (
         <>
           <p className={styles.label}>
-            {retrievalWeak ? 'Closest articles' : 'Sources'}
-            <span className={styles.origin}>· knowledge base</span>
+            {retrievalWeak
+              ? t('assistant.closestArticles')
+              : t('assistant.sources')}
+            <span className={styles.origin}>{t('assistant.kbOrigin')}</span>
           </p>
           <ul className={styles.list}>
             {sources.map((citation) => (
@@ -77,7 +79,7 @@ export function CitationBlock({
           disabled={isEscalating}
           onClick={onEscalate}
         >
-          {isEscalating ? 'Creating ticket…' : escalateLabel}
+          {isEscalating ? t('assistant.creatingTicket') : escalateText}
         </button>
       ) : null}
     </div>

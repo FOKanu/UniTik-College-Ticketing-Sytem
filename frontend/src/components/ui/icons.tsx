@@ -245,3 +245,29 @@ export function IconFilter(props: IconProps) {
     </IconBase>
   )
 }
+
+export function IconSun(props: IconProps) {
+  return (
+    <IconBase {...props}>
+      <circle cx="12" cy="12" r="4" />
+      <path d="M12 3v2M12 19v2M4.9 4.9l1.4 1.4M17.7 17.7l1.4 1.4M3 12h2M19 12h2M4.9 19.1l1.4-1.4M17.7 6.3l1.4-1.4" />
+    </IconBase>
+  )
+}
+
+export function IconMoon(props: IconProps) {
+  return (
+    <IconBase {...props}>
+      <path d="M18.5 14.5A7 7 0 0 1 9.5 5.5 7.5 7.5 0 1 0 18.5 14.5Z" />
+    </IconBase>
+  )
+}
+
+export function IconMonitor(props: IconProps) {
+  return (
+    <IconBase {...props}>
+      <rect x="3.5" y="4.5" width="17" height="12" rx="1.5" />
+      <path d="M8 20h8M12 16.5V20" />
+    </IconBase>
+  )
+}

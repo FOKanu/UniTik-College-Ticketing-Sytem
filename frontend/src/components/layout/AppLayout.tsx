@@ -4,6 +4,7 @@ import { RouteTitle } from '@/app/RouteTitle'
 import { ROUTES } from '@/app/routes'
 import { ChatbotFab } from '@/components/layout/ChatbotFab'
 import { LanguageSelector } from '@/components/layout/LanguageSelector'
+import { ThemeSelector } from '@/components/layout/ThemeSelector'
 import { RouteErrorBoundary } from '@/components/errors'
 import { NotificationCenter, ToastHost } from '@/components/notifications'
 import { Avatar } from '@/components/ui'
@@ -72,10 +73,12 @@ function homeForRole(role: UserRole | null | undefined): string {
   return ROUTES.dashboard
 }
 
-function portalLabel(role: UserRole | null | undefined): string {
-  if (role === 'admin') return 'ADMIN · MEDIADESIGN HOCHSCHULE'
-  if (role === 'agent') return 'STAFF PORTAL · IT SUPPORT'
-  return 'STUDENT PORTAL'
+function portalLabelKey(
+  role: UserRole | null | undefined,
+): 'chrome.portal.admin' | 'chrome.portal.staff' | 'chrome.portal.student' {
+  if (role === 'admin') return 'chrome.portal.admin'
+  if (role === 'agent') return 'chrome.portal.staff'
+  return 'chrome.portal.student'
 }
 
 function pageTitle(pathname: string): string {
@@ -175,7 +178,7 @@ export function AppLayout({ children }: { children?: ReactNode }) {
         {!compact ? (
           <>
             <span className={styles.navLabel}>{label}</span>
-            {item.soon ? <span className={styles.soon}>Soon</span> : null}
+            {item.soon ? <span className={styles.soon}>{t('chrome.soon')}</span> : null}
           </>
         ) : null}
       </NavLink>
@@ -189,14 +192,14 @@ export function AppLayout({ children }: { children?: ReactNode }) {
     >
       <RouteTitle />
       <a href="#main-content" className={styles.skipLink}>
-        Skip to main content
+        {t('chrome.skipMain')}
       </a>
 
       {drawerOpen ? (
         <button
           type="button"
           className={styles.backdrop}
-          aria-label="Close menu"
+          aria-label={t('chrome.closeMenu')}
           onClick={() => setDrawerOpen(false)}
         />
       ) : null}
@@ -223,7 +226,7 @@ export function AppLayout({ children }: { children?: ReactNode }) {
           <button
             type="button"
             className={styles.drawerClose}
-            aria-label="Close menu"
+            aria-label={t('chrome.closeMenu')}
             onClick={() => setDrawerOpen(false)}
           >
             <IconClose width={18} height={18} />
@@ -235,10 +238,11 @@ export function AppLayout({ children }: { children?: ReactNode }) {
         <div className={styles.sideFooter}>
           {!collapsed ? (
             <div className={styles.langInDrawer}>
+              <ThemeSelector />
               <LanguageSelector />
             </div>
           ) : null}
-          <p className={styles.portal}>{portalLabel(user?.role)}</p>
+          <p className={styles.portal}>{t(portalLabelKey(user?.role))}</p>
           {!collapsed && user ? (
             <Link to={ROUTES.profile} className={styles.userCard}>
               <Avatar
@@ -281,14 +285,17 @@ export function AppLayout({ children }: { children?: ReactNode }) {
           </div>
           <div className={styles.topRight}>
             <div className={styles.langDesktop}>
+              <ThemeSelector />
               <LanguageSelector />
             </div>
             <NotificationCenter />
             <Link
               to={ROUTES.profile}
               className={styles.avatarBtn}
-              title="Open profile"
-              aria-label={`Signed in as ${user?.displayName}. Open profile.`}
+              title={t('chrome.openProfile')}
+              aria-label={t('chrome.signedInAs', {
+                name: user?.displayName ?? 'U',
+              })}
             >
               <Avatar
                 name={user?.displayName ?? 'U'}

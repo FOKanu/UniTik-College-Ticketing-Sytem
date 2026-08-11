@@ -7,15 +7,11 @@ import { TicketActionCard } from '@/components/chat/TicketActionCard'
 import { ROUTES, ticketDetailPath } from '@/app/routes'
 import { useAssistantChat } from '@/hooks'
 import { usesLiveChat } from '@/lib/api'
-import { suggestedTopics } from '@/mocks/data'
+import { useT } from '@/lib/i18n'
 import styles from './AssistantPage.module.css'
 
-const MODES = [
-  { id: 'quick', label: 'Quick Answer' },
-  { id: 'detailed', label: 'Detailed' },
-] as const
-
 export function AssistantPage() {
+  const t = useT()
   const [draft, setDraft] = useState('')
   const {
     messages,
@@ -38,8 +34,19 @@ export function AssistantPage() {
     ticket,
     canProposeCreate,
   } = useAssistantChat({
-    greeting: 'Hi! Ask anything about academics, IT, finance, or maintenance.',
+    greeting: t('assistant.greeting'),
   })
+
+  const modes = [
+    { id: 'quick' as const, label: t('assistant.mode.quick') },
+    { id: 'detailed' as const, label: t('assistant.mode.detailed') },
+  ]
+
+  const topics = [
+    t('assistant.topic.password'),
+    t('assistant.topic.wifi'),
+    t('assistant.topic.tuition'),
+  ]
 
   function handleSubmit(event: FormEvent) {
     event.preventDefault()
@@ -55,16 +62,15 @@ export function AssistantPage() {
   return (
     <div className={styles.page}>
       <header>
-        <h1>AI Assistant</h1>
-        <p>Ask anything about academics, IT, finance, or maintenance.</p>
+        <h1>{t('assistant.title')}</h1>
+        <p>{t('assistant.subtitle')}</p>
       </header>
 
       {llmOffline ? (
         <div className={`${styles.banner} ${styles.bannerError}`} role="alert">
           <IconAlert width={18} height={18} />
           <p>
-            LLM server offline — the assistant can&apos;t answer right now.
-            Start Ollama on the GPU server and make sure the tunnel is open.
+            {t('assistant.llmOffline')}
             {health ? (
               <>
                 {' '}
@@ -80,8 +86,8 @@ export function AssistantPage() {
           <IconAlert width={18} height={18} />
           <p>
             {usesLiveChat()
-              ? 'Answers are AI-generated. Verify anything important, and escalate to a ticket for decisions a person must make.'
-              : 'Running on mock data. Set VITE_DATA_SOURCE=hybrid to talk to the real assistant.'}
+              ? t('assistant.bannerLive')
+              : t('assistant.bannerMock')}
           </p>
         </div>
       )}
@@ -94,14 +100,14 @@ export function AssistantPage() {
       ) : null}
 
       <div className={styles.layout}>
-        <section className={styles.chat} aria-label="AI chat">
+        <section className={styles.chat} aria-label={t('assistant.chatAria')}>
           <div>
             <div
               className={styles.modes}
               role="group"
-              aria-label="Answer style"
+              aria-label={t('assistant.answerStyle')}
             >
-              {MODES.map((option) => (
+              {modes.map((option) => (
                 <button
                   key={option.id}
                   type="button"
@@ -119,13 +125,17 @@ export function AssistantPage() {
               role="log"
               aria-live="polite"
               aria-relevant="additions"
-              aria-label="Chat messages"
+              aria-label={t('assistant.messagesAria')}
             >
               {messages.map((msg) => (
                 <article
                   key={msg.id}
                   className={msg.role === 'user' ? styles.mine : styles.theirs}
-                  aria-label={`${msg.role === 'user' ? 'You' : 'Assistant'} said`}
+                  aria-label={
+                    msg.role === 'user'
+                      ? t('assistant.youSaid')
+                      : t('assistant.assistantSaid')
+                  }
                 >
                   <p>
                     {msg.body}
@@ -161,27 +171,27 @@ export function AssistantPage() {
           <form className={styles.composer} onSubmit={handleSubmit}>
             <Input
               id="ask"
-              label="Your question"
-              placeholder="Ask a question..."
+              label={t('assistant.questionLabel')}
+              placeholder={t('assistant.placeholder')}
               value={draft}
               onChange={(e) => setDraft(e.target.value)}
             />
             <Button type="submit" disabled={isStreaming}>
               <IconSend width={16} height={16} />
-              {isStreaming ? 'Thinking…' : 'Send'}
+              {isStreaming ? t('assistant.thinking') : t('assistant.send')}
             </Button>
           </form>
         </section>
 
         <aside className={styles.aside}>
           <section className={styles.panel}>
-            <h2>Suggested topics</h2>
+            <h2>{t('assistant.topics')}</h2>
             <ul>
-              {suggestedTopics.map((topic) => (
+              {topics.map((topic) => (
                 <li key={topic}>
                   <button
                     type="button"
-                    aria-label={`Ask about ${topic}`}
+                    aria-label={t('assistant.askAbout', { topic })}
                     disabled={isStreaming}
                     onClick={() => handleTopic(topic)}
                   >
@@ -194,18 +204,15 @@ export function AssistantPage() {
           <section className={styles.escalate}>
             {ticket ? (
               <>
-                <h2>Ticket created</h2>
+                <h2>{t('assistant.ticketCreated')}</h2>
                 <p className={styles.ticketSubject}>{ticket.subject}</p>
-                <p>
-                  A support agent will follow up there. You can still add a
-                  comment from chat.
-                </p>
+                <p>{t('assistant.ticketFollowUp')}</p>
                 <div className={styles.escalateActions}>
                   <ButtonLink
                     to={ticketDetailPath(ticket.id)}
                     variant="secondary"
                   >
-                    View ticket
+                    {t('assistant.viewTicket')}
                   </ButtonLink>
                   <Button
                     variant="secondary"
@@ -217,17 +224,17 @@ export function AssistantPage() {
                       })
                     }
                   >
-                    Add comment
+                    {t('assistant.addComment')}
                   </Button>
                 </div>
               </>
             ) : (
               <>
-                <h2>Still stuck?</h2>
+                <h2>{t('assistant.stillStuck')}</h2>
                 <p>
                   {canProposeCreate
-                    ? 'Propose a support ticket from this conversation. You will review it before it is filed.'
-                    : 'Ask a question first, then you can propose a ticket from the chat.'}
+                    ? t('assistant.proposeHint')
+                    : t('assistant.askFirst')}
                 </p>
                 <div className={styles.escalateActions}>
                   {canProposeCreate ? (
@@ -236,11 +243,11 @@ export function AssistantPage() {
                       disabled={isEscalating}
                       onClick={() => proposeCreate()}
                     >
-                      Propose ticket
+                      {t('assistant.proposeTicket')}
                     </Button>
                   ) : (
                     <ButtonLink to={ROUTES.ticketNew} variant="secondary">
-                      Create Ticket
+                      {t('assistant.createTicket')}
                     </ButtonLink>
                   )}
                   <Button
@@ -248,14 +255,14 @@ export function AssistantPage() {
                     disabled={isEscalating}
                     onClick={() => proposeUpdate()}
                   >
-                    Update ticket
+                    {t('assistant.updateTicket')}
                   </Button>
                   <Button
                     variant="secondary"
                     disabled={isEscalating}
                     onClick={() => proposeComment()}
                   >
-                    Add comment
+                    {t('assistant.addComment')}
                   </Button>
                 </div>
               </>

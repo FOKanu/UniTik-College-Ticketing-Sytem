@@ -2,6 +2,7 @@ import { useEffect, useState } from 'react'
 import { ROUTES } from '@/app/routes'
 import { Button, ButtonLink, SearchField } from '@/components/ui'
 import { knowledgeApi } from '@/lib/api'
+import { useT } from '@/lib/i18n'
 import { renderKnowledgeBody } from '@/lib/knowledge/renderBody'
 import type { KnowledgeArticle } from '@/types'
 import styles from './FaqPage.module.css'
@@ -16,6 +17,7 @@ function formatUpdated(iso: string): string {
 }
 
 export function FaqPage() {
+  const t = useT()
   const [query, setQuery] = useState('')
   const [category, setCategory] = useState<(typeof CATEGORIES)[number]>('All')
   const [articles, setArticles] = useState<KnowledgeArticle[]>([])
@@ -83,13 +85,13 @@ export function FaqPage() {
   return (
     <div className={styles.page}>
       <header>
-        <h1>FAQ / Help Center</h1>
-        <p>Browse popular articles or search for answers.</p>
+        <h1>{t('faq.title')}</h1>
+        <p>{t('faq.subtitle')}</p>
       </header>
 
       <SearchField
         id="faq-search"
-        placeholder="Search articles..."
+        placeholder={t('faq.search')}
         value={query}
         onChange={(e) => setQuery(e.target.value)}
         className={styles.search}
@@ -98,7 +100,7 @@ export function FaqPage() {
       <div
         className={styles.categories}
         role="group"
-        aria-label="Article categories"
+        aria-label={t('faq.categories')}
       >
         {CATEGORIES.map((item) => (
           <button
@@ -108,37 +110,39 @@ export function FaqPage() {
             aria-pressed={category === item}
             onClick={() => setCategory(item)}
           >
-            {item}
+            {item === 'All'
+              ? t('common.all')
+              : item === 'Academics'
+                ? t('dept.Academics')
+                : item === 'IT'
+                  ? t('dept.IT')
+                  : item === 'Finance'
+                    ? t('dept.Finance')
+                    : t('dept.Maintenance')}
           </button>
         ))}
       </div>
 
       <div className={styles.grid}>
         <section className={styles.panel} aria-busy={loading}>
-          <h2>Articles</h2>
+          <h2>{t('faq.articles')}</h2>
           {loading ? (
             <p className={styles.empty} aria-live="polite">
-              Loading articles…
+              {t('faq.loading')}
             </p>
           ) : error ? (
             <div className={styles.stateBox} role="alert">
               <p>{error}</p>
               <Button variant="secondary" size="sm" onClick={retry}>
-                Try again
+                {t('common.tryAgain')}
               </Button>
             </div>
           ) : !hasCorpus ? (
             <div className={styles.stateBox}>
-              <p>
-                No articles have been published yet. Ask the AI Assistant or
-                open a ticket — staff answers often become new articles.
-              </p>
+              <p>{t('faq.emptyCorpus')}</p>
             </div>
           ) : filtered.length === 0 && isFiltering ? (
-            <p className={styles.empty}>
-              No articles match your search. Try different keywords or clear the
-              category filter.
-            </p>
+            <p className={styles.empty}>{t('faq.noMatch')}</p>
           ) : (
             <ul>
               {filtered.map((article) => {
@@ -155,8 +159,10 @@ export function FaqPage() {
                     >
                       <strong>{article.title}</strong>
                       <span>
-                        {article.category} · Updated{' '}
-                        {formatUpdated(article.updatedAt)}
+                        {article.category} ·{' '}
+                        {t('faq.updated', {
+                          date: formatUpdated(article.updatedAt),
+                        })}
                       </span>
                     </button>
                     {open ? (
@@ -176,10 +182,10 @@ export function FaqPage() {
 
         <aside className={styles.rail}>
           <section className={styles.panel}>
-            <h2>Recently updated</h2>
+            <h2>{t('faq.recent')}</h2>
             {loading || error || recentlyUpdated.length === 0 ? (
               <p className={styles.empty}>
-                {loading ? 'Loading…' : 'Nothing here yet.'}
+                {loading ? t('common.loading') : t('faq.nothingYet')}
               </p>
             ) : (
               <ol className={styles.mostAsked}>
@@ -201,11 +207,11 @@ export function FaqPage() {
           </section>
 
           <section className={styles.help}>
-            <h2>Still need help?</h2>
-            <p>Ask the AI Assistant or open a ticket with campus support.</p>
-            <ButtonLink to={ROUTES.assistant}>Ask assistant</ButtonLink>
+            <h2>{t('faq.stillNeedHelp')}</h2>
+            <p>{t('faq.helpHint')}</p>
+            <ButtonLink to={ROUTES.assistant}>{t('faq.askAssistant')}</ButtonLink>
             <ButtonLink to={ROUTES.ticketNew} variant="secondary">
-              Contact support
+              {t('faq.contactSupport')}
             </ButtonLink>
           </section>
         </aside>

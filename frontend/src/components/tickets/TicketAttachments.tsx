@@ -2,6 +2,7 @@ import { useState } from 'react'
 import { FileDropzone } from '@/components/ui'
 import { IconPaperclip } from '@/components/ui/icons'
 import { ticketsApi } from '@/lib/api'
+import { useT } from '@/lib/i18n'
 import { useTicketStore } from '@/stores'
 import type { TicketAttachment } from '@/types'
 import styles from './TicketAttachments.module.css'
@@ -20,6 +21,7 @@ export function TicketAttachments({
   canUpload = true,
   dropzoneId = 'ticket-attachment-upload',
 }: TicketAttachmentsProps) {
+  const t = useT()
   const mutating = useTicketStore((s) => s.mutating)
   const error = useTicketStore((s) => s.error)
   const uploadAttachment = useTicketStore((s) => s.uploadAttachment)
@@ -35,7 +37,7 @@ export function TicketAttachments({
     setUploadingName(null)
     if (!uploaded) {
       setLocalError(
-        useTicketStore.getState().error ?? 'Failed to upload attachment.',
+        useTicketStore.getState().error ?? t('attach.uploadFailed'),
       )
     }
   }
@@ -46,7 +48,7 @@ export function TicketAttachments({
       await ticketsApi.downloadAttachment(ticketId, attachment)
     } catch (err) {
       setLocalError(
-        err instanceof Error ? err.message : 'Failed to download attachment.',
+        err instanceof Error ? err.message : t('attach.downloadFailed'),
       )
     }
   }
@@ -56,14 +58,14 @@ export function TicketAttachments({
     const ok = await deleteAttachment(ticketId, attachmentId)
     if (!ok) {
       setLocalError(
-        useTicketStore.getState().error ?? 'Failed to remove attachment.',
+        useTicketStore.getState().error ?? t('attach.deleteFailed'),
       )
     }
   }
 
   return (
     <div className={styles.panel}>
-      <h2>Attachments</h2>
+      <h2>{t('attach.title')}</h2>
 
       {attachments.length > 0 ? (
         <ul className={styles.list}>
@@ -86,16 +88,16 @@ export function TicketAttachments({
                   className={styles.remove}
                   disabled={mutating}
                   onClick={() => void handleDelete(file.id)}
-                  aria-label={`Remove ${file.name}`}
+                  aria-label={t('attach.removeAria', { name: file.name })}
                 >
-                  Remove
+                  {t('attach.remove')}
                 </button>
               ) : null}
             </li>
           ))}
         </ul>
       ) : (
-        <p className={styles.empty}>No files attached yet.</p>
+        <p className={styles.empty}>{t('attach.empty')}</p>
       )}
 
       {canUpload ? (
@@ -103,7 +105,11 @@ export function TicketAttachments({
           id={dropzoneId}
           fileName={uploadingName}
           busy={!!uploadingName}
-          busyLabel={`Uploading ${uploadingName}…`}
+          busyLabel={
+            uploadingName
+              ? t('attach.uploading', { name: uploadingName })
+              : undefined
+          }
           disabled={mutating && !uploadingName}
           onChange={(file) => void handleUpload(file)}
         />

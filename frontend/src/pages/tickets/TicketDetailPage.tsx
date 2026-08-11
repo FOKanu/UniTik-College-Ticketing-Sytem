@@ -13,10 +13,9 @@ import {
 import { TicketAttachments } from '@/components/tickets/TicketAttachments'
 import { IconChevronLeft, IconSend } from '@/components/ui/icons'
 import { usePageTitle } from '@/hooks/usePageTitle'
+import { useT, type MessageKey } from '@/lib/i18n'
 import { useTicketStore } from '@/stores'
 import styles from './TicketDetailPage.module.css'
-
-const STEPS = ['Submitted', 'In Progress', 'Resolved'] as const
 
 function stepIndex(status: string): number {
   if (status === 'resolved' || status === 'closed') return 2
@@ -25,6 +24,7 @@ function stepIndex(status: string): number {
 }
 
 export function TicketDetailPage() {
+  const t = useT()
   const { ticketId } = useParams()
   const ticket = useTicketStore((s) => s.selected)
   const loading = useTicketStore((s) => s.detailLoading)
@@ -34,7 +34,15 @@ export function TicketDetailPage() {
   const addComment = useTicketStore((s) => s.addComment)
   const [comment, setComment] = useState('')
 
-  usePageTitle(ticket ? `${ticket.id}: ${ticket.subject}` : 'Ticket Detail')
+  const steps: MessageKey[] = [
+    'ticket.step.submitted',
+    'ticket.step.inProgress',
+    'ticket.step.resolved',
+  ]
+
+  usePageTitle(
+    ticket ? `${ticket.id}: ${ticket.subject}` : t('ticket.detailTitle'),
+  )
 
   useEffect(() => {
     if (ticketId) void fetchById(ticketId)
@@ -43,7 +51,7 @@ export function TicketDetailPage() {
   if (loading && !ticket) {
     return (
       <p className={styles.missing} aria-live="polite">
-        Loading ticket…
+        {t('ticket.loading')}
       </p>
     )
   }
@@ -51,9 +59,9 @@ export function TicketDetailPage() {
   if (!ticket) {
     return (
       <div className={styles.missing}>
-        <h1>Ticket not found</h1>
+        <h1>{t('ticket.notFound')}</h1>
         {error ? <p role="alert">{error}</p> : null}
-        <ButtonLink to={ROUTES.tickets}>Back to My Tickets</ButtonLink>
+        <ButtonLink to={ROUTES.tickets}>{t('ticket.backMyTickets')}</ButtonLink>
       </div>
     )
   }
@@ -72,7 +80,7 @@ export function TicketDetailPage() {
       <header className={styles.header}>
         <Link to={ROUTES.tickets} className={styles.back}>
           <IconChevronLeft width={16} height={16} />
-          Back to My Tickets
+          {t('ticket.backMyTickets')}
         </Link>
         <p className={styles.ticketId}>{ticket.id}</p>
         <h1>{ticket.subject}</h1>
@@ -84,36 +92,40 @@ export function TicketDetailPage() {
       </header>
 
       <div className={styles.grid}>
-        <section className={styles.info} aria-label="Ticket details">
-          <ol className={styles.timeline} aria-label="Ticket progress">
-            {STEPS.map((label, index) => (
+        <section className={styles.info} aria-label={t('ticket.detailsAria')}>
+          <ol className={styles.timeline} aria-label={t('ticket.progressAria')}>
+            {steps.map((key, index) => (
               <li
-                key={label}
+                key={key}
                 className={index <= activeStep ? styles.done : undefined}
                 aria-current={index === activeStep ? 'step' : undefined}
               >
                 <span />
-                {label}
+                {t(key)}
               </li>
             ))}
           </ol>
 
           <dl className={styles.meta}>
             <div>
-              <dt>Department</dt>
-              <dd>{ticket.category}</dd>
+              <dt>{t('table.department')}</dt>
+              <dd>
+                <DepartmentBadge department={ticket.category} />
+              </dd>
             </div>
             <div>
-              <dt>Priority</dt>
-              <dd>{ticket.priority}</dd>
+              <dt>{t('table.priority')}</dt>
+              <dd>
+                <PriorityBadge priority={ticket.priority} />
+              </dd>
             </div>
             <div>
-              <dt>Created</dt>
+              <dt>{t('ticket.created')}</dt>
               <dd>{new Date(ticket.createdAt).toLocaleDateString()}</dd>
             </div>
             <div>
-              <dt>Assigned to</dt>
-              <dd>{ticket.assignedName ?? 'Unassigned'}</dd>
+              <dt>{t('ticket.assignedTo')}</dt>
+              <dd>{ticket.assignedName ?? t('ticket.unassigned')}</dd>
             </div>
           </dl>
 
@@ -124,13 +136,13 @@ export function TicketDetailPage() {
           />
         </section>
 
-        <section className={styles.chat} aria-label="Conversation">
+        <section className={styles.chat} aria-label={t('ticket.conversation')}>
           <div
             className={styles.messages}
             role="log"
             aria-live="polite"
             aria-relevant="additions"
-            aria-label="Ticket messages"
+            aria-label={t('ticket.messagesAria')}
           >
             {ticket.comments.map((item) => {
               const mine = item.authorName === 'You'
@@ -138,10 +150,16 @@ export function TicketDetailPage() {
                 <article
                   key={item.id}
                   className={mine ? styles.mine : styles.theirs}
-                  aria-label={`${mine ? 'You' : item.authorName} said`}
+                  aria-label={
+                    mine
+                      ? t('ticket.youSaid')
+                      : t('ticket.said', { name: item.authorName })
+                  }
                 >
                   <p>{item.body}</p>
-                  <footer>{item.authorName}</footer>
+                  <footer>
+                    {mine ? t('assistant.you') : item.authorName}
+                  </footer>
                 </article>
               )
             })}
@@ -152,15 +170,15 @@ export function TicketDetailPage() {
           >
             <Textarea
               id="reply"
-              label="Reply"
+              label={t('ticket.reply')}
               rows={2}
-              placeholder="Write a reply..."
+              placeholder={t('ticket.replyPlaceholder')}
               value={comment}
               onChange={(e) => setComment(e.target.value)}
             />
             <Button type="submit" disabled={mutating}>
               <IconSend width={16} height={16} />
-              Send
+              {t('ticket.send')}
             </Button>
           </form>
           {error ? <p className={styles.error} role="alert">{error}</p> : null}

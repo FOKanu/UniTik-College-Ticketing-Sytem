@@ -2,14 +2,14 @@
   min-height: 100vh;
   display: grid;
   grid-template-columns: minmax(280px, 42%) 1fr;
-  background: #fff;
+  background: var(--color-surface);
 }
 
 .skipLink {
   position: absolute;
   left: -9999px;
   top: 0;
-  background: #fff;
+  background: var(--color-surface);
   color: var(--neutral-900);
   padding: 0.5rem 1rem;
   z-index: 100;
@@ -110,12 +110,14 @@
   flex-direction: column;
   min-height: 100vh;
   min-width: 0;
-  background: #fff;
+  background: var(--color-surface);
 }
 
 .langRow {
   display: flex;
   justify-content: flex-end;
+  align-items: center;
+  gap: 0.5rem;
   padding: 1.25rem 1.75rem 0;
 }
 
@@ -149,7 +151,7 @@
   border: 1px solid var(--neutral-200);
   border-radius: 12px;
   padding: 0.75rem 0.9rem;
-  background: #fff;
+  background: var(--color-surface);
   color: var(--neutral-400);
 }
 
@@ -202,7 +204,7 @@
   align-items: center;
   gap: 0.85rem;
   border: 1.5px solid var(--neutral-200);
-  background: #fff;
+  background: var(--color-surface);
   border-radius: 12px;
   padding: 0.85rem 0.95rem;
   cursor: pointer;
@@ -222,7 +224,7 @@
 
 .cardActive {
   border-color: var(--brand-600);
-  background: #fff;
+  background: var(--color-surface);
   box-shadow: 0 0 0 1px var(--brand-600);
 }
 

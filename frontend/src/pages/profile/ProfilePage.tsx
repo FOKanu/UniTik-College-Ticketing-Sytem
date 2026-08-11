@@ -2,6 +2,7 @@ import { useState } from 'react'
 import { Button, Avatar, Input } from '@/components/ui'
 import { IconCheck, IconLogout, IconUser } from '@/components/ui/icons'
 import { signOut } from '@/lib/api'
+import { useT } from '@/lib/i18n'
 import { useAuthStore, useUiStore } from '@/stores'
 import styles from './ProfilePage.module.css'
 
@@ -18,13 +19,8 @@ const AVATAR_COLORS = [
 
 const DEFAULT_COLOR = AVATAR_COLORS[0].value
 
-function roleLabel(role: string | undefined): string {
-  if (role === 'agent') return 'Support agent'
-  if (role === 'admin') return 'Administrator'
-  return 'Student'
-}
-
 export function ProfilePage() {
+  const t = useT()
   const user = useAuthStore((s) => s.user)
   const updateProfile = useAuthStore((s) => s.updateProfile)
   const pushToast = useUiStore((s) => s.pushToast)
@@ -34,10 +30,16 @@ export function ProfilePage() {
     user?.avatarColor ?? DEFAULT_COLOR,
   )
 
+  function roleLabel(role: string | undefined): string {
+    if (role === 'agent') return t('profile.role.agent')
+    if (role === 'admin') return t('profile.role.admin')
+    return t('profile.role.student')
+  }
+
   if (!user) {
     return (
       <div className={styles.page}>
-        <p>You need to sign in to view your profile.</p>
+        <p>{t('profile.needSignIn')}</p>
       </div>
     )
   }
@@ -68,8 +70,8 @@ export function ProfilePage() {
     <div className={styles.page}>
       <header className={styles.header}>
         <div>
-          <h1>Profile</h1>
-          <p>Manage how you appear across TicketHub.</p>
+          <h1>{t('profile.title')}</h1>
+          <p>{t('profile.subtitle')}</p>
         </div>
       </header>
 
@@ -92,27 +94,27 @@ export function ProfilePage() {
         <section className={styles.card}>
           <header className={styles.cardHeader}>
             <IconUser width={18} height={18} />
-            <h3>Account</h3>
+            <h3>{t('profile.account')}</h3>
           </header>
 
           <div className={styles.fields}>
             <Input
               id="profile-name"
-              label="Display name"
+              label={t('profile.displayName')}
               value={displayName}
               onChange={(e) => setDisplayName(e.target.value)}
               autoComplete="name"
             />
             <Input
               id="profile-email"
-              label="Email"
+              label={t('profile.email')}
               value={user.email}
               readOnly
-              hint="Email is managed by your institution."
+              hint={t('profile.emailHint')}
             />
             <div className={styles.metaRow}>
               <div>
-                <span className={styles.metaLabel}>Role</span>
+                <span className={styles.metaLabel}>{t('profile.role')}</span>
                 <strong>{roleLabel(user.role)}</strong>
               </div>
               {user.department ? (
@@ -127,16 +129,13 @@ export function ProfilePage() {
 
         <section className={styles.card}>
           <header className={styles.cardHeader}>
-            <h3>Avatar color</h3>
+            <h3>{t('profile.avatarColor')}</h3>
           </header>
-          <p className={styles.hint}>
-            Pick a color for your initials badge. Used in the header and
-            conversations.
-          </p>
+          <p className={styles.hint}>{t('profile.avatarHint')}</p>
           <div
             className={styles.swatches}
             role="radiogroup"
-            aria-label="Avatar color"
+            aria-label={t('profile.avatarColor')}
           >
             {AVATAR_COLORS.map((swatch) => {
               const selected = avatarColor === swatch.value
@@ -166,14 +165,14 @@ export function ProfilePage() {
               size="lg"
               color={avatarColor}
             />
-            <span>Preview</span>
+            <span>{t('profile.preview')}</span>
           </div>
         </section>
       </div>
 
       <footer className={styles.actions}>
         <Button onClick={handleSave} disabled={!dirty}>
-          Save changes
+          {t('common.saveChanges')}
         </Button>
         <Button
           variant="secondary"
@@ -183,7 +182,7 @@ export function ProfilePage() {
           }}
           disabled={!dirty}
         >
-          Reset
+          {t('common.reset')}
         </Button>
         <Button
           variant="ghost"
@@ -191,7 +190,7 @@ export function ProfilePage() {
           onClick={() => void signOut()}
         >
           <IconLogout width={16} height={16} />
-          Sign out
+          {t('nav.signOut')}
         </Button>
       </footer>
     </div>

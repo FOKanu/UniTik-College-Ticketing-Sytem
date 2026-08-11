@@ -5,12 +5,14 @@ import { Link, useNavigate } from 'react-router-dom'
 import { ROUTES } from '@/app/routes'
 import { Button, Input } from '@/components/ui'
 import { authApi, isApiError } from '@/lib/api'
+import { useT } from '@/lib/i18n'
 import { findInstitution, institutionEmailHint } from '@/lib/institutions'
 import { registerSchema, type RegisterFormValues } from '@/lib/validation'
 import { useAuthStore, useInstitutionStore } from '@/stores'
 import styles from './AuthPages.module.css'
 
 export function RegisterPage() {
+  const t = useT()
   const navigate = useNavigate()
   const setSession = useAuthStore((s) => s.setSession)
   const institutionId = useInstitutionStore((s) => s.institutionId)
@@ -53,10 +55,12 @@ export function RegisterPage() {
 
   return (
     <div>
-      <h1 className={styles.title}>Join {institution.short}</h1>
+      <h1 className={styles.title}>
+        {t('auth.joinTitle', { short: institution.short })}
+      </h1>
       <p className={styles.hint}>
-        Creating an account for <strong>{institution.name}</strong>.{' '}
-        <Link to={ROUTES.institution}>Choose a different institution</Link>
+        {t('auth.creatingFor', { name: institution.name })}{' '}
+        <Link to={ROUTES.institution}>{t('auth.chooseDifferent')}</Link>
       </p>
       <form
         className={styles.form}
@@ -65,14 +69,14 @@ export function RegisterPage() {
       >
         <Input
           id="register-name"
-          label="Full Name"
+          label={t('auth.fullName')}
           placeholder="Amara Kanu"
           error={errors.displayName?.message}
           {...register('displayName')}
         />
         <Input
           id="register-email"
-          label="University Email"
+          label={t('auth.email')}
           type="email"
           placeholder={emailHint}
           autoComplete="email"
@@ -81,7 +85,7 @@ export function RegisterPage() {
         />
         <Input
           id="register-password"
-          label="Password"
+          label={t('auth.password')}
           type="password"
           autoComplete="new-password"
           error={errors.password?.message}
@@ -89,32 +93,35 @@ export function RegisterPage() {
         />
         <Input
           id="register-confirm"
-          label="Confirm Password"
+          label={t('auth.confirmPassword')}
           type="password"
           autoComplete="new-password"
           error={errors.confirmPassword?.message}
           {...register('confirmPassword')}
         />
         <p className={styles.hint}>
-          Use an @{institution.domains} email for this campus. Student and
-          staff accounts are verified via your university email domain.
+          {t('auth.domainHint', { domains: institution.domains })}
         </p>
-        {apiError ? <p className={styles.error} role="alert">{apiError}</p> : null}
+        {apiError ? (
+          <p className={styles.error} role="alert">
+            {apiError}
+          </p>
+        ) : null}
         <Button type="submit" fullWidth size="lg" disabled={isSubmitting}>
-          {isSubmitting ? 'Creating…' : 'Create Account'}
+          {isSubmitting ? t('auth.creating') : t('auth.createAccount')}
         </Button>
       </form>
 
       <div className={styles.divider}>
-        <span>or</span>
+        <span>{t('common.or')}</span>
       </div>
 
       <Button type="button" variant="secondary" fullWidth disabled>
-        Continue with University SSO
+        {t('auth.sso')}
       </Button>
 
       <p className={styles.footer}>
-        Already have an account? <Link to={ROUTES.login}>Sign In</Link>
+        {t('auth.hasAccount')} <Link to={ROUTES.login}>{t('auth.signIn')}</Link>
       </p>
     </div>
   )

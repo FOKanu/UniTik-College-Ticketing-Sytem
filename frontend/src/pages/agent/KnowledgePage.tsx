@@ -9,11 +9,13 @@ import {
   Textarea,
 } from '@/components/ui'
 import { knowledgeApi } from '@/lib/api'
+import { useT } from '@/lib/i18n'
 import { renderKnowledgeBody } from '@/lib/knowledge/renderBody'
 import type { Department, KnowledgeArticle } from '@/types'
 import styles from './KnowledgePage.module.css'
 
 export function KnowledgePage() {
+  const t = useT()
   const [query, setQuery] = useState('')
   const [category, setCategory] = useState<Department | 'all'>('all')
   const [visibility, setVisibility] = useState<'all' | 'published' | 'draft'>(
@@ -114,24 +116,20 @@ export function KnowledgePage() {
     <div className={styles.page}>
       <header className={styles.header}>
         <div>
-          <h1>Knowledge Base</h1>
-          <p>
-            Canonical FAQ answers for student self-service and staff replies.
-          </p>
+          <h1>{t('kb.title')}</h1>
+          <p>{t('kb.subtitle')}</p>
         </div>
         <Button
           size="sm"
           aria-expanded={formOpen}
           onClick={() => setFormOpen((v) => !v)}
         >
-          {formOpen ? 'Close' : '+ New article'}
+          {formOpen ? t('common.close') : t('kb.newArticle')}
         </Button>
       </header>
 
       <div className={styles.banner} role="note">
-        <strong>Publishing tip:</strong> Use the exact FAQ wording below when
-        helping students. Published articles appear in the student FAQ and AI
-        assistant suggestions.
+        <strong>{t('kb.publishTipLabel')}</strong> {t('kb.publishTip')}
       </div>
 
       {formOpen ? (
@@ -294,7 +292,7 @@ export function KnowledgePage() {
                             id={`kb-answer-${article.id}`}
                             className={styles.answer}
                           >
-                            <h3>Canonical answer</h3>
+                            <h3>{t('kb.canonicalAnswer')}</h3>
                             <p>{renderKnowledgeBody(article.body)}</p>
                           </div>
                         </td>

@@ -13,9 +13,11 @@ import { useAssistantChat } from '@/hooks/useAssistantChat'
 import { useDialogFocus } from '@/hooks/useDialogFocus'
 import { CitationBlock } from '@/components/chat/CitationBlock'
 import { TicketActionCard } from '@/components/chat/TicketActionCard'
+import { useT } from '@/lib/i18n'
 import styles from './ChatbotFab.module.css'
 
 export function ChatbotFab() {
+  const t = useT()
   const [open, setOpen] = useState(false)
   const [draft, setDraft] = useState('')
   const {
@@ -33,7 +35,7 @@ export function ChatbotFab() {
     isEscalating,
     ticket,
     canProposeCreate,
-  } = useAssistantChat({ greeting: 'Hi — how can I help?' })
+  } = useAssistantChat({ greeting: t('assistant.fabGreeting') })
   const panelId = useId()
   const panelRef = useRef<HTMLDivElement>(null)
   const buttonRef = useRef<HTMLButtonElement>(null)
@@ -82,17 +84,17 @@ export function ChatbotFab() {
           className={styles.panel}
           role="dialog"
           aria-modal="true"
-          aria-label="AI Assistant"
+          aria-label={t('assistant.title')}
         >
           <header className={styles.header}>
             <div className={styles.headerLeft}>
               <IconChat width={18} height={18} />
               <div>
-                <strong>AI Assistant</strong>
+                <strong>{t('assistant.title')}</strong>
                 <span>
                   {llmOffline
-                    ? 'LLM server offline'
-                    : (health?.model ?? 'Ready')}
+                    ? t('assistant.llmOfflineShort')
+                    : (health?.model ?? t('assistant.ready'))}
                 </span>
               </div>
             </div>
@@ -100,7 +102,7 @@ export function ChatbotFab() {
               <button
                 type="button"
                 className={styles.iconBtn}
-                aria-label="Open full assistant"
+                aria-label={t('assistant.openFull')}
                 onClick={() => {
                   closePanel()
                   void navigate(ROUTES.assistant)
@@ -111,7 +113,7 @@ export function ChatbotFab() {
               <button
                 type="button"
                 className={styles.iconBtn}
-                aria-label="Close AI assistant"
+                aria-label={t('assistant.close')}
                 onClick={closePanel}
               >
                 <IconClose width={16} height={16} />
@@ -141,7 +143,7 @@ export function ChatbotFab() {
                       canEscalate={canProposeCreate}
                       isEscalating={isEscalating}
                       onEscalate={() => proposeCreate()}
-                      escalateLabel="Create ticket"
+                      escalateLabel={t('action.create')}
                     />
                   </div>
                 ) : null}
@@ -158,11 +160,18 @@ export function ChatbotFab() {
                     />
                   </div>
                 ) : null}
-                <small>{msg.role === 'user' ? 'You' : 'Assistant'}</small>
+                <small>
+                  {msg.role === 'user'
+                    ? t('assistant.you')
+                    : t('assistant.role')}
+                </small>
               </div>
             ))}
             {isStreaming ? (
-              <div className={styles.typing} aria-label="Assistant is typing">
+              <div
+                className={styles.typing}
+                aria-label={t('assistant.typing')}
+              >
                 <span />
                 <span />
                 <span />
@@ -178,16 +187,16 @@ export function ChatbotFab() {
             }}
           >
             <label className={styles.inputWrap}>
-              <span className="sr-only">Ask a question</span>
+              <span className="sr-only">{t('assistant.placeholder')}</span>
               <input
                 value={draft}
                 onChange={(e) => setDraft(e.target.value)}
-                placeholder="Ask a question..."
+                placeholder={t('assistant.placeholder')}
               />
               <button
                 type="button"
                 className={styles.attach}
-                aria-label="Attach file"
+                aria-label={t('assistant.attach')}
                 disabled
               >
                 <IconPaperclip width={16} height={16} />
@@ -196,7 +205,7 @@ export function ChatbotFab() {
             <Button
               type="submit"
               size="sm"
-              aria-label="Send"
+              aria-label={t('assistant.send')}
               disabled={isStreaming}
             >
               <IconSend width={16} height={16} />
@@ -208,7 +217,7 @@ export function ChatbotFab() {
                 to={ticketDetailPath(ticket.id)}
                 onClick={() => setOpen(false)}
               >
-                View ticket: {ticket.subject}
+                {t('assistant.viewTicketNamed', { subject: ticket.subject })}
               </Link>
             ) : (
               <>
@@ -219,14 +228,14 @@ export function ChatbotFab() {
                     disabled={isEscalating}
                     onClick={() => proposeCreate()}
                   >
-                    Propose ticket
+                    {t('assistant.proposeTicket')}
                   </button>
                 ) : (
-                  'Escape closes'
+                  t('assistant.escapeCloses')
                 )}
                 {' · '}
                 <Link to={ROUTES.assistant} onClick={() => setOpen(false)}>
-                  Open full chat
+                  {t('assistant.openFullChat')}
                 </Link>
               </>
             )}
@@ -238,7 +247,7 @@ export function ChatbotFab() {
         ref={buttonRef}
         type="button"
         className={styles.fab}
-        aria-label={open ? 'Close AI assistant' : 'Open AI assistant'}
+        aria-label={open ? t('assistant.close') : t('assistant.open')}
         aria-haspopup="dialog"
         aria-expanded={open}
         aria-controls={open ? panelId : undefined}

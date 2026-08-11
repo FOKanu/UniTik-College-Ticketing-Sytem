@@ -10,6 +10,7 @@ import {
   Toggle,
 } from '@/components/ui'
 import { knowledgeApi, usersApi, type StaffMember } from '@/lib/api'
+import { useT } from '@/lib/i18n'
 import { findInstitution } from '@/lib/institutions'
 import { mockArticles, mockStaffMembers } from '@/mocks/data'
 import { useInstitutionStore, useLocaleStore, useUiStore } from '@/stores'
@@ -18,17 +19,25 @@ import styles from './SettingsPage.module.css'
 
 type SettingsTab = 'institution' | 'departments' | 'people' | 'knowledge'
 
-const TABS: { id: SettingsTab; label: string; to: string }[] = [
-  { id: 'institution', label: 'Institution', to: ROUTES.settings },
+const TABS: {
+  id: SettingsTab
+  labelKey:
+    | 'settings.tab.institution'
+    | 'settings.tab.departments'
+    | 'settings.tab.people'
+    | 'settings.tab.knowledge'
+  to: string
+}[] = [
+  { id: 'institution', labelKey: 'settings.tab.institution', to: ROUTES.settings },
   {
     id: 'departments',
-    label: 'Departments',
+    labelKey: 'settings.tab.departments',
     to: ROUTES.settingsDepartments,
   },
-  { id: 'people', label: 'People', to: ROUTES.settingsPeople },
+  { id: 'people', labelKey: 'settings.tab.people', to: ROUTES.settingsPeople },
   {
     id: 'knowledge',
-    label: 'Knowledge Base',
+    labelKey: 'settings.tab.knowledge',
     to: ROUTES.settingsKnowledge,
   },
 ]
@@ -114,6 +123,7 @@ function mockPeopleRows(): PeopleRow[] {
 }
 
 export function SettingsPage() {
+  const t = useT()
   const location = useLocation()
   const tab = tabFromPath(location.pathname)
   const pushToast = useUiStore((s) => s.pushToast)
@@ -221,8 +231,8 @@ export function SettingsPage() {
   return (
     <div className={styles.page}>
       <header className={styles.header}>
-        <h1>Settings</h1>
-        <p>Configure institution, departments, staff, and knowledge base.</p>
+        <h1>{t('settings.title')}</h1>
+        <p>{t('settings.subtitle')}</p>
       </header>
 
       <nav className={styles.tabs} aria-label="Settings sections">
@@ -235,7 +245,7 @@ export function SettingsPage() {
               isActive ? styles.tabActive : styles.tab
             }
           >
-            {item.label}
+            {t(item.labelKey)}
           </NavLink>
         ))}
       </nav>
@@ -291,8 +301,10 @@ export function SettingsPage() {
               />
             </div>
             <p className={styles.mutedNote}>
-              Active UI language: {locale === 'de' ? 'Deutsch' : 'English'}.
-              Use the header language control anytime.
+              {t('settings.activeLanguage', {
+                language: locale === 'de' ? 'Deutsch' : 'English',
+              })}{' '}
+              {t('settings.languageHint')}
             </p>
             <div className={styles.formActions}>
               <Button
@@ -350,12 +362,11 @@ export function SettingsPage() {
       {tab === 'people' ? (
         <section className={styles.panel} aria-labelledby="people-heading">
           <div className={styles.panelHead}>
-            <h2 id="people-heading">People</h2>
-            <Button size="sm">+ Invite staff</Button>
+            <h2 id="people-heading">{t('settings.tab.people')}</h2>
+            <Button size="sm">{t('settings.inviteStaff')}</Button>
           </div>
           <div className={styles.banner} role="note">
-            Staff directory loads from the users API when connected. Department
-            and role edits apply to assignment lists in this session.
+            {t('settings.peopleBanner')}
           </div>
           {peopleError ? (
             <p className={styles.mutedNote} role="alert">

@@ -79,6 +79,15 @@ export function useAssistantChat({ greeting }: Options) {
   const abortRef = useRef<AbortController | null>(null)
 
   useEffect(() => {
+    setMessages((prev) => {
+      if (prev.length === 1 && prev[0]?.id === 'welcome') {
+        return [{ id: 'welcome', role: 'assistant', body: greeting }]
+      }
+      return prev
+    })
+  }, [greeting])
+
+  useEffect(() => {
     if (!usesLiveChat()) return
     let cancelled = false
     const poll = () => {

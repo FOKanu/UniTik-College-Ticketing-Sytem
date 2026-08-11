@@ -7,18 +7,40 @@ import {
   Textarea,
 } from '@/components/ui'
 import { ticketsApi } from '@/lib/api'
+import { useT, type MessageKey } from '@/lib/i18n'
 import type { Department, Ticket, TicketPriority, TicketStatus } from '@/types'
 import type { ProposedTicketAction } from './ticketActionTypes'
 import styles from './TicketActionCard.module.css'
 
 const CATEGORIES: Department[] = ['Academics', 'IT', 'Finance', 'Maintenance']
 const PRIORITIES: TicketPriority[] = ['low', 'medium', 'high', 'urgent']
-const STATUSES: TicketStatus[] = [
+const STATUSES = [
   'open',
   'in_progress',
   'resolved',
   'closed',
-]
+] as const satisfies readonly TicketStatus[]
+
+const deptKey: Record<Department, MessageKey> = {
+  Academics: 'dept.Academics',
+  IT: 'dept.IT',
+  Finance: 'dept.Finance',
+  Maintenance: 'dept.Maintenance',
+}
+
+const priorityKey: Record<TicketPriority, MessageKey> = {
+  low: 'priority.low',
+  medium: 'priority.medium',
+  high: 'priority.high',
+  urgent: 'priority.urgent',
+}
+
+const statusKey: Record<(typeof STATUSES)[number], MessageKey> = {
+  open: 'status.open',
+  in_progress: 'status.in_progress',
+  resolved: 'status.resolved',
+  closed: 'status.closed',
+}
 
 interface TicketActionEditFormProps {
   action: ProposedTicketAction
@@ -33,6 +55,7 @@ export function TicketActionEditForm({
   onSave,
   onCancel,
 }: TicketActionEditFormProps) {
+  const t = useT()
   const needsPicker = action.kind === 'update' || action.kind === 'comment'
   const [tickets, setTickets] = useState<Ticket[]>([])
   const [loadingTickets, setLoadingTickets] = useState(needsPicker)
@@ -81,7 +104,7 @@ export function TicketActionEditForm({
   }, [needsPicker, action.id])
 
   function selectedLabel(id: string): string {
-    const hit = tickets.find((t) => t.id === id)
+    const hit = tickets.find((item) => item.id === id)
     return hit ? `${hit.id} · ${hit.subject}` : id
   }
 
@@ -91,7 +114,7 @@ export function TicketActionEditForm({
         ...action,
         status: 'pending',
         create: {
-          subject: subject.trim() || 'Support request',
+          subject: subject.trim() || t('action.defaultSubject'),
           description: description.trim() || subject.trim(),
           category,
           priority,
@@ -132,19 +155,26 @@ export function TicketActionEditForm({
     <div className={styles.form}>
       {needsPicker ? (
         <label className={styles.fieldLabel}>
-          Ticket
+          {t('action.ticket')}
           <Select
             id={`action-ticket-${action.id}`}
-            aria-label="Select ticket"
+            aria-label={t('action.selectTicket')}
             value={ticketId}
             disabled={loadingTickets || tickets.length === 0}
             onChange={(e) => setTicketId(e.target.value)}
             options={
               tickets.length === 0
-                ? [{ value: '', label: loadingTickets ? 'Loading…' : 'No tickets' }]
-                : tickets.map((t) => ({
-                    value: t.id,
-                    label: `${t.id} · ${t.subject}`,
+                ? [
+                    {
+                      value: '',
+                      label: loadingTickets
+                        ? t('common.loading')
+                        : t('action.noTickets'),
+                    },
+                  ]
+                : tickets.map((item) => ({
+                    value: item.id,
+                    label: `${item.id} · ${item.subject}`,
                   }))
             }
           />
@@ -153,7 +183,7 @@ export function TicketActionEditForm({
               {ticketError}
             </p>
           ) : (
-            <p className={styles.pickerHint}>Your recent tickets</p>
+            <p className={styles.pickerHint}>{t('action.recentTickets')}</p>
           )}
         </label>
       ) : null}
@@ -162,13 +192,13 @@ export function TicketActionEditForm({
         <>
           <Input
             id={`action-subject-${action.id}`}
-            label="Subject"
+            label={t('action.subject')}
             value={subject}
             onChange={(e) => setSubject(e.target.value)}
           />
           <Textarea
             id={`action-desc-${action.id}`}
-            label="Description"
+            label={t('action.description')}
             value={description}
             rows={compact ? 3 : 5}
             onChange={(e) => setDescription(e.target.value)}
@@ -179,7 +209,7 @@ export function TicketActionEditForm({
       {action.kind === 'comment' ? (
         <Textarea
           id={`action-comment-${action.id}`}
-          label="Comment"
+          label={t('action.commentLabel')}
           value={commentBody}
           rows={compact ? 3 : 4}
           onChange={(e) => setCommentBody(e.target.value)}
@@ -191,21 +221,24 @@ export function TicketActionEditForm({
           <div>
             <PillRadioGroup
               name={`action-dept-${action.id}`}
-              legend="Department"
+              legend={t('table.department')}
               value={category}
               onChange={(v) => setCategory(v as Department)}
-              options={CATEGORIES.map((c) => ({ value: c, label: c }))}
+              options={CATEGORIES.map((c) => ({
+                value: c,
+                label: t(deptKey[c]),
+              }))}
             />
           </div>
           <div>
             <PillRadioGroup
               name={`action-pri-${action.id}`}
-              legend="Priority"
+              legend={t('table.priority')}
               value={priority}
               onChange={(v) => setPriority(v as TicketPriority)}
               options={PRIORITIES.map((p) => ({
                 value: p,
-                label: p.charAt(0).toUpperCase() + p.slice(1),
+                label: t(priorityKey[p]),
               }))}
             />
           </div>
@@ -214,15 +247,15 @@ export function TicketActionEditForm({
 
       {action.kind === 'update' ? (
         <label className={styles.fieldLabel}>
-          Status
+          {t('table.status')}
           <Select
             id={`action-status-${action.id}`}
-            aria-label="Status"
+            aria-label={t('table.status')}
             value={status}
             onChange={(e) => setStatus(e.target.value as TicketStatus)}
             options={STATUSES.map((s) => ({
               value: s,
-              label: s.replace('_', ' '),
+              label: t(statusKey[s]),
             }))}
           />
         </label>
@@ -230,10 +263,10 @@ export function TicketActionEditForm({
 
       <div className={styles.formActions}>
         <Button type="button" variant="secondary" size="sm" onClick={onCancel}>
-          Back
+          {t('action.back')}
         </Button>
         <Button type="button" size="sm" onClick={handleSave}>
-          Save details
+          {t('action.saveDetails')}
         </Button>
       </div>
     </div>

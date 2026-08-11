@@ -87,17 +87,23 @@ export function LoginPage() {
       )
     } catch (err) {
       setApiError(
-        isApiError(err) ? err.message : 'Unable to sign in. Please try again.',
+        isApiError(err)
+          ? err.code === 'NETWORK' || err.status === 502 || err.status === 503
+            ? t('auth.apiUnreachable')
+            : err.message
+          : 'Unable to sign in. Please try again.',
       )
     }
   }
 
   return (
     <div>
-      <h1 className={styles.title}>Sign in to {institution.short}</h1>
+      <h1 className={styles.title}>
+        {t('auth.signInTitle', { short: institution.short })}
+      </h1>
       <p className={styles.hint}>
-        Signing in to <strong>{institution.name}</strong>.{' '}
-        <Link to={ROUTES.institution}>Choose a different institution</Link>
+        {t('auth.signingInTo', { name: institution.name })}{' '}
+        <Link to={ROUTES.institution}>{t('auth.chooseDifferent')}</Link>
       </p>
       <form
         className={styles.form}
@@ -106,7 +112,7 @@ export function LoginPage() {
       >
         <Input
           id="login-email"
-          label="University Email"
+          label={t('auth.email')}
           type="email"
           placeholder={emailHint}
           autoComplete="username"
@@ -118,14 +124,14 @@ export function LoginPage() {
         <div className={styles.passwordField}>
           <Input
             id="login-password"
-            label="Password"
+            label={t('auth.password')}
             type="password"
             autoComplete="current-password"
             error={errors.password?.message}
             {...register('password')}
           />
           <button type="button" className={styles.forgot} disabled>
-            Forgot password?
+            {t('auth.forgotPassword')}
           </button>
         </div>
         <label className={styles.remember}>
@@ -145,16 +151,16 @@ export function LoginPage() {
           </p>
         ) : null}
         <Button type="submit" fullWidth size="lg" disabled={isSubmitting}>
-          {isSubmitting ? 'Signing in…' : 'Sign In'}
+          {isSubmitting ? t('auth.signingIn') : t('auth.signIn')}
         </Button>
       </form>
 
       <div className={styles.divider}>
-        <span>or</span>
+        <span>{t('common.or')}</span>
       </div>
 
       <Button type="button" variant="secondary" fullWidth disabled>
-        Continue with University SSO
+        {t('auth.sso')}
       </Button>
 
       <div className={styles.demos}>
@@ -183,7 +189,7 @@ export function LoginPage() {
       </div>
 
       <p className={styles.footer}>
-        Don&apos;t have an account? <Link to={ROUTES.register}>Sign Up</Link>
+        {t('auth.noAccount')} <Link to={ROUTES.register}>{t('auth.signUp')}</Link>
       </p>
     </div>
   )

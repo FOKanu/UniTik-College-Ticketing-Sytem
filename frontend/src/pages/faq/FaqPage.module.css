@@ -114,7 +114,7 @@
   padding: 0.85rem 1rem;
   border-radius: var(--radius-md);
   border: 1px solid var(--neutral-200);
-  background: #fff;
+  background: var(--color-surface);
 }
 
 .answer p {
@@ -243,7 +243,7 @@
 }
 
 .help :global(a:first-of-type) {
-  background: #fff;
+  background: var(--color-surface);
   color: #0f3145;
 }
 

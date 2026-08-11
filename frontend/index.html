@@ -5,6 +5,27 @@
     <link rel="icon" type="image/svg+xml" href="/favicon.svg" />
     <meta name="viewport" content="width=device-width, initial-scale=1.0" />
     <title>TicketHub · MediaDesign Hochschule</title>
+    <script>
+      (function () {
+        try {
+          var pref = 'system'
+          var raw = localStorage.getItem('tss-theme')
+          if (raw) {
+            var parsed = JSON.parse(raw)
+            if (parsed && parsed.state && parsed.state.preference) {
+              pref = parsed.state.preference
+            }
+          }
+          var dark =
+            pref === 'dark' ||
+            (pref !== 'light' &&
+              window.matchMedia('(prefers-color-scheme: dark)').matches)
+          var theme = dark ? 'dark' : 'light'
+          document.documentElement.dataset.theme = theme
+          document.documentElement.style.colorScheme = theme
+        } catch (e) {}
+      })()
+    </script>
   </head>
   <body>
     <div id="root"></div>

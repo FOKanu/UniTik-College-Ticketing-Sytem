@@ -3,18 +3,21 @@ import { useNavigate } from 'react-router-dom'
 import { RouteTitle } from '@/app/RouteTitle'
 import { ROUTES } from '@/app/routes'
 import { LanguageSelector } from '@/components/layout/LanguageSelector'
+import { ThemeSelector } from '@/components/layout/ThemeSelector'
 import { IconCheck, IconChevronRight, IconSearch } from '@/components/ui/icons'
+import { useT, type MessageKey } from '@/lib/i18n'
 import { INSTITUTIONS } from '@/lib/institutions'
 import { useInstitutionStore } from '@/stores'
 import styles from './InstitutionPage.module.css'
 
-const FEATURES = [
-  'Department-based routing',
-  'AI assistant with knowledge base',
-  'SLA tracking and reporting',
-] as const
+const FEATURE_KEYS = [
+  'auth.feature.routing',
+  'auth.feature.ai',
+  'auth.feature.sla',
+] as const satisfies readonly MessageKey[]
 
 export function InstitutionPage() {
+  const t = useT()
   const navigate = useNavigate()
   const institutionId = useInstitutionStore((s) => s.institutionId)
   const setInstitutionId = useInstitutionStore((s) => s.setInstitutionId)
@@ -44,7 +47,7 @@ export function InstitutionPage() {
     <div className={styles.shell}>
       <RouteTitle />
       <a href="#institution-content" className={styles.skipLink}>
-        Skip to institution list
+        {t('auth.findInstitution')}
       </a>
 
       <aside className={styles.brandPanel} aria-label="About TicketHub">
@@ -54,37 +57,31 @@ export function InstitutionPage() {
         </div>
 
         <div className={styles.brandBody}>
-          <h1>Support platform for higher education</h1>
-          <p>
-            TicketHub connects students and staff with campus IT, facilities,
-            and academic support — routed to the right department every time.
-          </p>
+          <h1>{t('auth.heroTitle')}</h1>
+          <p>{t('auth.heroBody')}</p>
           <ul className={styles.features}>
-            {FEATURES.map((feature) => (
-              <li key={feature}>
+            {FEATURE_KEYS.map((key) => (
+              <li key={key}>
                 <IconCheck width={16} height={16} aria-hidden />
-                <span>{feature}</span>
+                <span>{t(key)}</span>
               </li>
             ))}
           </ul>
         </div>
 
-        <p className={styles.brandFooter}>
-          Trusted by institutions across Europe
-        </p>
+        <p className={styles.brandFooter}>TicketHub</p>
       </aside>
 
       <main id="institution-content" className={styles.main}>
         <div className={styles.langRow}>
-          <LanguageSelector
-            menuNote="More languages are enabled per institution."
-          />
+          <ThemeSelector />
+          <LanguageSelector />
         </div>
 
         <div className={styles.content}>
           <header className={styles.header}>
-            <h2>Find your institution</h2>
-            <p>Select the university or college you belong to.</p>
+            <h2>{t('auth.findInstitution')}</h2>
+            <p>{t('auth.findHint')}</p>
           </header>
 
           <label className={styles.search} htmlFor="institution-search">
@@ -92,7 +89,7 @@ export function InstitutionPage() {
             <input
               id="institution-search"
               type="search"
-              placeholder="Search by name or email domain..."
+              placeholder={t('auth.searchInstitutions')}
               value={query}
               onChange={(e) => setQuery(e.target.value)}
               autoComplete="off"
@@ -100,9 +97,11 @@ export function InstitutionPage() {
           </label>
 
           <section className={styles.listSection} aria-label="Institutions">
-            <h3 className={styles.listLabel}>All institutions</h3>
+            <h3 className={styles.listLabel}>{t('auth.allInstitutions')}</h3>
             {filtered.length === 0 ? (
-              <p className={styles.empty}>No institutions match “{query}”.</p>
+              <p className={styles.empty}>
+                {t('auth.noInstitutions', { query })}
+              </p>
             ) : (
               <ul className={styles.list}>
                 {filtered.map((item) => {
@@ -111,9 +110,7 @@ export function InstitutionPage() {
                     <li key={item.id}>
                       <button
                         type="button"
-                        className={
-                          active ? styles.cardActive : styles.card
-                        }
+                        className={active ? styles.cardActive : styles.card}
                         onClick={() => selectInstitution(item.id)}
                         onMouseEnter={() => setActiveId(item.id)}
                         onFocus={() => setActiveId(item.id)}
@@ -145,10 +142,7 @@ export function InstitutionPage() {
             )}
           </section>
 
-          <p className={styles.help}>
-            Can&apos;t find your institution? Ask your IT department whether
-            TicketHub is enabled.
-          </p>
+          <p className={styles.help}>{t('auth.cantFind')}</p>
         </div>
       </main>
     </div>

@@ -4,6 +4,7 @@ import { ROUTES, agentTicketDetailPath } from '@/app/routes'
 import {
   Button,
   ButtonLink,
+  DepartmentBadge,
   PriorityBadge,
   SearchField,
   Select,
@@ -12,6 +13,7 @@ import {
   Badge,
 } from '@/components/ui'
 import { usersApi, type StaffMember } from '@/lib/api'
+import { useT } from '@/lib/i18n'
 import { useAuthStore, useTicketStore } from '@/stores'
 import type { Department, TicketPriority, TicketStatus } from '@/types'
 import styles from './QueuePage.module.css'
@@ -19,6 +21,7 @@ import styles from './QueuePage.module.css'
 type AssigneeTab = 'all' | 'me' | 'unassigned'
 
 export function QueuePage() {
+  const t = useT()
   const items = useTicketStore((s) => s.items)
   const total = useTicketStore((s) => s.total)
   const page = useTicketStore((s) => s.page)
@@ -114,7 +117,7 @@ export function QueuePage() {
     () => selectedTickets.some((ticket) => !!ticket.assignedTo),
     [selectedTickets],
   )
-  const assignVerb = hasAssigned ? 'Reassign' : 'Assign'
+  const assignVerb = hasAssigned ? t('queue.reassign') : t('queue.assign')
 
   const assignOptions = useMemo(() => {
     if (!sharedDepartment) return staff
@@ -174,16 +177,20 @@ export function QueuePage() {
   return (
     <div className={styles.page}>
       <header className={styles.header}>
-        <h1>Ticket Queue</h1>
-        <ButtonLink to={ROUTES.agentTicketNew}>+ Create ticket</ButtonLink>
+        <h1>{t('queue.title')}</h1>
+        <ButtonLink to={ROUTES.agentTicketNew}>{t('queue.create')}</ButtonLink>
       </header>
 
-      <div className={styles.tabs} role="tablist" aria-label="Assignee filter">
+      <div
+        className={styles.tabs}
+        role="tablist"
+        aria-label={t('queue.assigneeFilter')}
+      >
         {(
           [
-            { id: 'all', label: 'All' },
-            { id: 'me', label: 'Assigned to me' },
-            { id: 'unassigned', label: 'Unassigned' },
+            { id: 'all', label: t('queue.tabAll') },
+            { id: 'me', label: t('queue.tabMe') },
+            { id: 'unassigned', label: t('queue.tabUnassigned') },
           ] as const
         ).map((tab) => (
           <button
@@ -202,22 +209,22 @@ export function QueuePage() {
       <div className={styles.toolbar}>
         <Select
           id="q-status"
-          aria-label="Status"
+          aria-label={t('filter.status')}
           value={filters.status ?? 'all'}
           onChange={(e) =>
             setFilters({ status: e.target.value as TicketStatus | 'all' })
           }
           options={[
-            { value: 'all', label: 'Status: All' },
-            { value: 'open', label: 'Open' },
-            { value: 'in_progress', label: 'In Progress' },
-            { value: 'resolved', label: 'Resolved' },
-            { value: 'closed', label: 'Closed' },
+            { value: 'all', label: t('filter.statusAll') },
+            { value: 'open', label: t('status.open') },
+            { value: 'in_progress', label: t('status.in_progress') },
+            { value: 'resolved', label: t('status.resolved') },
+            { value: 'closed', label: t('status.closed') },
           ]}
         />
         <Select
           id="q-dept"
-          aria-label="Department"
+          aria-label={t('filter.department')}
           value={filters.department ?? 'all'}
           onChange={(e) =>
             setFilters({
@@ -225,16 +232,16 @@ export function QueuePage() {
             })
           }
           options={[
-            { value: 'all', label: 'Department: All' },
-            { value: 'Academics', label: 'Academics' },
-            { value: 'IT', label: 'IT' },
-            { value: 'Finance', label: 'Finance' },
-            { value: 'Maintenance', label: 'Maintenance' },
+            { value: 'all', label: t('filter.departmentAll') },
+            { value: 'Academics', label: t('dept.Academics') },
+            { value: 'IT', label: t('dept.IT') },
+            { value: 'Finance', label: t('dept.Finance') },
+            { value: 'Maintenance', label: t('dept.Maintenance') },
           ]}
         />
         <Select
           id="q-priority"
-          aria-label="Priority"
+          aria-label={t('filter.priority')}
           value={filters.priority ?? 'all'}
           onChange={(e) =>
             setFilters({
@@ -242,16 +249,16 @@ export function QueuePage() {
             })
           }
           options={[
-            { value: 'all', label: 'Priority: All' },
-            { value: 'high', label: 'High' },
-            { value: 'medium', label: 'Medium' },
-            { value: 'low', label: 'Low' },
-            { value: 'urgent', label: 'Urgent' },
+            { value: 'all', label: t('filter.priorityAll') },
+            { value: 'high', label: t('priority.high') },
+            { value: 'medium', label: t('priority.medium') },
+            { value: 'low', label: t('priority.low') },
+            { value: 'urgent', label: t('priority.urgent') },
           ]}
         />
         <SearchField
           id="queue-search"
-          placeholder="Search tickets..."
+          placeholder={t('filter.searchTickets')}
           value={filters.query ?? ''}
           onChange={(e) => setFilters({ query: e.target.value })}
           className={styles.search}
@@ -260,7 +267,7 @@ export function QueuePage() {
 
       {selected.length > 0 ? (
         <div className={styles.bulk}>
-          <span>{selected.length} selected</span>
+          <span>{t('queue.selected', { count: selected.length })}</span>
 
           <div className={styles.assignWrap} ref={assignRef}>
             <Button
@@ -271,15 +278,15 @@ export function QueuePage() {
               disabled={mutating || !!staffError}
               onClick={() => setAssignOpen((v) => !v)}
             >
-              {mutating ? 'Working…' : assignVerb}
+              {mutating ? t('queue.working') : assignVerb}
             </Button>
 
             {assignOpen ? (
               <div className={styles.assignMenu} role="menu">
                 <p className={styles.assignHint}>
                   {sharedDepartment
-                    ? `${sharedDepartment} team`
-                    : 'Mixed departments — showing all staff'}
+                    ? t('queue.team', { dept: sharedDepartment })
+                    : t('queue.mixedDepts')}
                 </p>
                 {currentUserId && staff.some((m) => m.id === currentUserId) ? (
                   <button
@@ -292,7 +299,7 @@ export function QueuePage() {
                       )
                     }
                   >
-                    Assign to me
+                    {t('queue.assignToMe')}
                   </button>
                 ) : null}
                 {assignOptions
@@ -312,9 +319,7 @@ export function QueuePage() {
                     </button>
                   ))}
                 {assignOptions.length === 0 ? (
-                  <p className={styles.assignHint}>
-                    No staff accounts available to assign.
-                  </p>
+                  <p className={styles.assignHint}>{t('queue.noStaff')}</p>
                 ) : null}
                 <button
                   type="button"
@@ -322,7 +327,7 @@ export function QueuePage() {
                   className={styles.assignItem}
                   onClick={() => void assignTo(null)}
                 >
-                  Clear assignee
+                  {t('queue.clearAssignee')}
                 </button>
               </div>
             ) : null}
@@ -333,7 +338,7 @@ export function QueuePage() {
             disabled={mutating}
             onClick={() => setConfirmClose(true)}
           >
-            Close selected
+            {t('queue.closeSelected')}
           </Button>
 
           <button
@@ -341,14 +346,14 @@ export function QueuePage() {
             className={styles.clearSelection}
             onClick={() => setSelected([])}
           >
-            Clear
+            {t('queue.clear')}
           </button>
         </div>
       ) : null}
 
       {staffError && selected.length > 0 ? (
         <p className={styles.bulkNote} role="alert">
-          {staffError} Assigning is unavailable until it loads.
+          {t('queue.staffAssignUnavailable', { error: staffError })}
         </p>
       ) : null}
 
@@ -367,26 +372,25 @@ export function QueuePage() {
         >
           <div className={styles.confirmBox}>
             <h2 id="confirm-close-title">
-              Close {selected.length} ticket{selected.length === 1 ? '' : 's'}?
+              {selected.length === 1
+                ? t('queue.confirmCloseTitleOne')
+                : t('queue.confirmCloseTitle', { count: selected.length })}
             </h2>
-            <p>
-              Requesters can still reopen a closed ticket by replying to it.
-              This cannot be undone in bulk.
-            </p>
+            <p>{t('queue.confirmCloseBody')}</p>
             <div className={styles.confirmActions}>
               <Button
                 variant="secondary"
                 size="sm"
                 onClick={() => setConfirmClose(false)}
               >
-                Cancel
+                {t('common.cancel')}
               </Button>
               <Button
                 size="sm"
                 disabled={mutating}
                 onClick={() => void closeSelected()}
               >
-                {mutating ? 'Closing…' : 'Close tickets'}
+                {mutating ? t('queue.closing') : t('queue.closeTickets')}
               </Button>
             </div>
           </div>
@@ -398,20 +402,20 @@ export function QueuePage() {
       <div
         className={styles.tableWrap}
         aria-busy={loading}
-        aria-label="Queue results"
+        aria-label={t('queue.resultsAria')}
       >
         <table className={styles.table}>
-          <caption className="sr-only">Staff ticket queue</caption>
+          <caption className="sr-only">{t('queue.caption')}</caption>
           <thead>
             <tr>
-              <th scope="col" aria-label="Select" />
-              <th scope="col">ID</th>
-              <th scope="col">Title</th>
-              <th scope="col">Department</th>
-              <th scope="col">Priority</th>
-              <th scope="col">Status</th>
-              <th scope="col">Assignee</th>
-              <th scope="col">SLA</th>
+              <th scope="col" aria-label={t('queue.selectAria')} />
+              <th scope="col">{t('table.id')}</th>
+              <th scope="col">{t('table.title')}</th>
+              <th scope="col">{t('table.department')}</th>
+              <th scope="col">{t('table.priority')}</th>
+              <th scope="col">{t('table.status')}</th>
+              <th scope="col">{t('table.assignee')}</th>
+              <th scope="col">{t('table.sla')}</th>
             </tr>
           </thead>
           <tbody>
@@ -423,7 +427,7 @@ export function QueuePage() {
                       type="checkbox"
                       checked={selected.includes(ticket.id)}
                       onChange={() => toggle(ticket.id)}
-                      aria-label={`Select ${ticket.id}`}
+                      aria-label={`${t('queue.selectAria')} ${ticket.id}`}
                     />
                   </td>
                   <td>
@@ -436,7 +440,9 @@ export function QueuePage() {
                       {ticket.subject}
                     </Link>
                   </td>
-                  <td>{ticket.category}</td>
+                  <td>
+                    <DepartmentBadge department={ticket.category} />
+                  </td>
                   <td>
                     <PriorityBadge priority={ticket.priority} />
                   </td>
@@ -445,9 +451,9 @@ export function QueuePage() {
                   </td>
                   <td>
                     {ticket.assignedTo ? (
-                      (ticket.assignedName ?? 'Assigned')
+                      (ticket.assignedName ?? t('table.assigned'))
                     ) : (
-                      <Badge tone="warn">Unassigned</Badge>
+                      <Badge tone="warn">{t('table.unassigned')}</Badge>
                     )}
                   </td>
                   <td>
@@ -462,17 +468,17 @@ export function QueuePage() {
         </table>
         {loading ? (
           <p className={styles.loading} aria-live="polite">
-            Loading queue…
+            {t('queue.loading')}
           </p>
         ) : null}
         {!loading && items.length === 0 ? (
-          <p className={styles.empty}>No tickets match these filters.</p>
+          <p className={styles.empty}>{t('queue.empty')}</p>
         ) : null}
       </div>
 
       <nav className={styles.pager} aria-label="Pagination">
         <span aria-live="polite">
-          Showing {from}-{to} of {total}
+          {t('pager.showing', { from, to, total })}
         </span>
         <div>
           <Button
@@ -480,17 +486,17 @@ export function QueuePage() {
             size="sm"
             disabled={page <= 1 || loading}
             onClick={() => setPage(page - 1)}
-            aria-label="Previous page"
+            aria-label={t('pager.prevAria')}
           >
-            Prev
+            {t('pager.prev')}
           </Button>
           <Button
             size="sm"
             disabled={to >= total || loading}
             onClick={() => setPage(page + 1)}
-            aria-label="Next page"
+            aria-label={t('pager.nextAria')}
           >
-            Next
+            {t('pager.next')}
           </Button>
         </div>
       </nav>

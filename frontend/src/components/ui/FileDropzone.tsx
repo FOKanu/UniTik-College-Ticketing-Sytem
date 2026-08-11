@@ -1,4 +1,5 @@
 import type { ChangeEvent } from 'react'
+import { useT } from '@/lib/i18n'
 import styles from './FileDropzone.module.css'
 
 interface FileDropzoneProps {
@@ -16,8 +17,9 @@ export function FileDropzone({
   onChange,
   disabled = false,
   busy = false,
-  busyLabel = 'Uploading…',
+  busyLabel,
 }: FileDropzoneProps) {
+  const t = useT()
   function handleChange(event: ChangeEvent<HTMLInputElement>) {
     onChange(event.target.files?.[0] ?? null)
     // Allow selecting the same file again after a failed upload.
@@ -25,6 +27,7 @@ export function FileDropzone({
   }
 
   const locked = disabled || busy
+  const uploading = busyLabel ?? t('attach.uploadingShort')
 
   return (
     <label
@@ -44,10 +47,10 @@ export function FileDropzone({
         {busy ? '…' : '+'}
       </span>
       <span className={styles.title}>
-        {busy ? busyLabel : fileName ? fileName : 'Add screenshot or file'}
+        {busy ? uploading : fileName ? fileName : t('attach.addFile')}
       </span>
       <span id={`${id}-hint`} className={styles.hint}>
-        Max 10 MB. Accepted formats: images and documents.
+        {t('attach.hint')}
       </span>
     </label>
   )

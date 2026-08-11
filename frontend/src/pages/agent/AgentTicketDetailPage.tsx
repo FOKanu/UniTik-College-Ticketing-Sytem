@@ -16,11 +16,19 @@ import {
 import { TicketAttachments } from '@/components/tickets/TicketAttachments'
 import { usePageTitle } from '@/hooks/usePageTitle'
 import { usersApi, type StaffMember } from '@/lib/api'
+import { useT, type MessageKey } from '@/lib/i18n'
 import { useAuthStore, useTicketStore } from '@/stores'
 import type { Department, TicketPriority, TicketStatus } from '@/types'
 import styles from './AgentTicketDetailPage.module.css'
 
 const DEPARTMENTS: Department[] = ['Academics', 'IT', 'Finance', 'Maintenance']
+
+const deptKey: Record<Department, MessageKey> = {
+  Academics: 'dept.Academics',
+  IT: 'dept.IT',
+  Finance: 'dept.Finance',
+  Maintenance: 'dept.Maintenance',
+}
 
 function RoutingPanel({
   ticketId,
@@ -41,18 +49,19 @@ function RoutingPanel({
   currentUserId?: string
   mutating: boolean
 }) {
+  const t = useT()
   const updateTicket = useTicketStore((s) => s.updateTicket)
   const [routeDepartment, setRouteDepartment] = useState<Department>(category)
   const [routeAssignee, setRouteAssignee] = useState(assignedTo ?? '')
   const [routingMessage, setRoutingMessage] = useState<string | null>(null)
 
   const assigneeOptions = [
-    { value: '', label: 'Unassigned' },
+    { value: '', label: t('ticket.unassigned') },
     ...staff.map((member) => ({
       value: member.id,
       label:
         member.id === currentUserId
-          ? `${member.displayName} (me)`
+          ? t('ticket.meSuffix', { name: member.displayName })
           : member.department
             ? `${member.displayName} · ${member.department}`
             : member.displayName,
@@ -72,7 +81,7 @@ function RoutingPanel({
     })
     if (!updated) {
       setRoutingMessage(
-        useTicketStore.getState().error ?? 'Failed to reassign ticket.',
+        useTicketStore.getState().error ?? t('ticket.reassignFailed'),
       )
       return
     }
@@ -87,8 +96,10 @@ function RoutingPanel({
     })
     setRoutingMessage(
       routeAssignee
-        ? `Routed to ${assigneeName ?? 'selected staff'}.`
-        : 'Ticket left unassigned.',
+        ? t('ticket.routedTo', {
+            name: assigneeName ?? t('ticket.selectedStaff'),
+          })
+        : t('ticket.leftUnassigned'),
     )
   }
 
@@ -96,12 +107,12 @@ function RoutingPanel({
     <form
       className={styles.routing}
       onSubmit={(e) => void reassignTicket(e)}
-      aria-label="Reassign ticket"
+      aria-label={t('ticket.routeAria')}
     >
-      <h2>Route / reassign</h2>
+      <h2>{t('ticket.routeTitle')}</h2>
       <Select
         id="route-department"
-        label="Department"
+        label={t('table.department')}
         value={routeDepartment}
         onChange={(e) => {
           setRouteDepartment(e.target.value as Department)
@@ -109,12 +120,12 @@ function RoutingPanel({
         }}
         options={DEPARTMENTS.map((dept) => ({
           value: dept,
-          label: dept,
+          label: t(deptKey[dept]),
         }))}
       />
       <Select
         id="route-assignee"
-        label="Assignee"
+        label={t('table.assignee')}
         value={routeAssignee}
         onChange={(e) => {
           setRouteAssignee(e.target.value)
@@ -128,8 +139,8 @@ function RoutingPanel({
                 {
                   value: routeAssignee,
                   label: assignedName
-                    ? `${assignedName} (current)`
-                    : 'Current assignee',
+                    ? t('ticket.currentNamed', { name: assignedName })
+                    : t('ticket.currentAssignee'),
                 },
               ]
             : assigneeOptions
@@ -146,13 +157,14 @@ function RoutingPanel({
         </p>
       ) : null}
       <Button type="submit" size="sm" disabled={mutating || !!staffError}>
-        Reassign
+        {t('ticket.reassign')}
       </Button>
     </form>
   )
 }
 
 export function AgentTicketDetailPage() {
+  const t = useT()
   const { ticketId } = useParams()
   const currentUser = useAuthStore((s) => s.user)
   const ticket = useTicketStore((s) => s.selected)
@@ -171,7 +183,9 @@ export function AgentTicketDetailPage() {
   const [staff, setStaff] = useState<StaffMember[]>([])
   const [staffError, setStaffError] = useState<string | null>(null)
 
-  usePageTitle(ticket ? `${ticket.id}: ${ticket.subject}` : 'Ticket Detail')
+  usePageTitle(
+    ticket ? `${ticket.id}: ${ticket.subject}` : t('ticket.detailTitle'),
+  )
 
   useEffect(() => {
     if (ticketId) void fetchById(ticketId)
@@ -192,7 +206,7 @@ export function AgentTicketDetailPage() {
           setStaffError(
             err instanceof Error
               ? err.message
-              : 'Could not load staff directory.',
+              : t('ticket.staffLoadFailed'),
           )
         }
       }
@@ -205,7 +219,7 @@ export function AgentTicketDetailPage() {
   if (loading && !ticket) {
     return (
       <p className={styles.missing} aria-live="polite">
-        Loading ticket…
+        {t('ticket.loading')}
       </p>
     )
   }
@@ -213,9 +227,9 @@ export function AgentTicketDetailPage() {
   if (!ticket) {
     return (
       <div className={styles.missing}>
-        <h1>Ticket not found</h1>
+        <h1>{t('ticket.notFound')}</h1>
         {error ? <p role="alert">{error}</p> : null}
-        <ButtonLink to={ROUTES.queue}>Back to queue</ButtonLink>
+        <ButtonLink to={ROUTES.queue}>{t('ticket.backQueue')}</ButtonLink>
       </div>
     )
   }
@@ -225,7 +239,7 @@ export function AgentTicketDetailPage() {
   const assigneeLabel =
     staff.find((m) => m.id === ticket.assignedTo)?.displayName ??
     ticket.assignedName ??
-    (ticket.assignedTo ? 'Assigned' : 'Unassigned')
+    (ticket.assignedTo ? t('table.assigned') : t('ticket.unassigned'))
 
   async function sendReply(event: FormEvent) {
     event.preventDefault()
@@ -245,7 +259,7 @@ export function AgentTicketDetailPage() {
       <header className={styles.header}>
         <div>
           <Link to={ROUTES.queue} className={styles.back}>
-            ← Back to queue
+            ← {t('ticket.backQueue')}
           </Link>
           <h1>{ticket.subject}</h1>
           <p className={styles.ticketId}>{ticket.id}</p>
@@ -258,7 +272,7 @@ export function AgentTicketDetailPage() {
         <div className={styles.controls}>
           <Select
             id="agent-status"
-            label="Status"
+            label={t('table.status')}
             value={status}
             onChange={(e) => {
               void updateTicket(ticket.id, {
@@ -266,16 +280,19 @@ export function AgentTicketDetailPage() {
               })
             }}
             options={[
-              { value: 'open', label: 'Open' },
-              { value: 'in_progress', label: 'In Progress' },
-              { value: 'waiting_on_student', label: 'Waiting' },
-              { value: 'resolved', label: 'Resolved' },
-              { value: 'closed', label: 'Closed' },
+              { value: 'open', label: t('status.open') },
+              { value: 'in_progress', label: t('status.in_progress') },
+              {
+                value: 'waiting_on_student',
+                label: t('status.waiting_on_student'),
+              },
+              { value: 'resolved', label: t('status.resolved') },
+              { value: 'closed', label: t('status.closed') },
             ]}
           />
           <Select
             id="agent-priority"
-            label="Priority"
+            label={t('table.priority')}
             value={priority}
             onChange={(e) => {
               void updateTicket(ticket.id, {
@@ -283,10 +300,10 @@ export function AgentTicketDetailPage() {
               })
             }}
             options={[
-              { value: 'low', label: 'Low' },
-              { value: 'medium', label: 'Medium' },
-              { value: 'high', label: 'High' },
-              { value: 'urgent', label: 'Urgent' },
+              { value: 'low', label: t('priority.low') },
+              { value: 'medium', label: t('priority.medium') },
+              { value: 'high', label: t('priority.high') },
+              { value: 'urgent', label: t('priority.urgent') },
             ]}
           />
           <Button
@@ -298,41 +315,43 @@ export function AgentTicketDetailPage() {
               })
             }}
           >
-            Resolve
+            {t('ticket.resolve')}
           </Button>
         </div>
       </header>
 
       <div className={styles.grid}>
-        <aside className={styles.meta} aria-label="Ticket details">
-          <h2>Requester</h2>
+        <aside className={styles.meta} aria-label={t('ticket.detailsAria')}>
+          <h2>{t('ticket.requester')}</h2>
           <dl>
             <div>
-              <dt>Name</dt>
+              <dt>{t('ticket.name')}</dt>
               <dd>{ticket.requesterName}</dd>
             </div>
             {ticket.requesterEmail ? (
               <div>
-                <dt>Email</dt>
+                <dt>{t('profile.email')}</dt>
                 <dd>
                   <small>{ticket.requesterEmail}</small>
                 </dd>
               </div>
             ) : null}
             <div>
-              <dt>Department</dt>
-              <dd>{ticket.category}</dd>
+              <dt>{t('table.department')}</dt>
+              <dd>
+                <DepartmentBadge department={ticket.category} />
+              </dd>
             </div>
             <div>
-              <dt>Created</dt>
+              <dt>{t('ticket.created')}</dt>
               <dd>{new Date(ticket.createdAt).toLocaleDateString()}</dd>
             </div>
             <div>
-              <dt>Assignee</dt>
+              <dt>{t('table.assignee')}</dt>
               <dd>{assigneeLabel}</dd>
             </div>
             <div>
-              <dt>SLA</dt>
+              <dt>{t('table.sla')}</dt>
               <dd>
                 <SlaBadge
                   hoursRemaining={ticket.slaHoursRemaining}
@@ -356,7 +375,7 @@ export function AgentTicketDetailPage() {
 
           {ticket.description ? (
             <div className={styles.description}>
-              <h2>Details</h2>
+              <h2>{t('ticket.details')}</h2>
               <p>{ticket.description}</p>
             </div>
           ) : null}
@@ -367,13 +386,13 @@ export function AgentTicketDetailPage() {
           />
         </aside>
 
-        <section className={styles.main} aria-label="Conversation">
+        <section className={styles.main} aria-label={t('ticket.conversation')}>
           <div
             className={styles.messages}
             role="log"
             aria-live="polite"
             aria-relevant="additions"
-            aria-label="Ticket messages"
+            aria-label={t('ticket.messagesAria')}
           >
             {ticket.comments.map((item) => (
               <article
@@ -386,12 +405,16 @@ export function AgentTicketDetailPage() {
                       ? styles.staff
                       : styles.student
                 }
-                aria-label={`${item.authorName} said${item.internal ? ', internal note' : ''}`}
+                aria-label={
+                  item.internal
+                    ? t('ticket.internalSaid', { name: item.authorName })
+                    : t('ticket.said', { name: item.authorName })
+                }
               >
                 <p>{item.body}</p>
                 <footer>
                   {item.authorName}
-                  {item.internal ? ' · Internal' : ''}
+                  {item.internal ? ` · ${t('ticket.internal')}` : ''}
                 </footer>
               </article>
             ))}
@@ -399,29 +422,24 @@ export function AgentTicketDetailPage() {
 
           {showAi ? (
             <div className={styles.aiSuggest}>
-              <p>
-                Suggested reply: Your VPN certificate has expired. Please
-                reinstall the VPN client from the IT portal.
-              </p>
+              <p>{t('ticket.aiSuggest')}</p>
               <div>
                 <Button
                   size="sm"
                   variant="secondary"
                   onClick={() => {
-                    setReply(
-                      'Your VPN certificate has expired. Please reinstall the VPN client from the IT portal.',
-                    )
+                    setReply(t('ticket.aiSuggestBody'))
                     setShowAi(false)
                   }}
                 >
-                  Use this reply
+                  {t('ticket.useReply')}
                 </Button>
                 <Button
                   size="sm"
                   variant="ghost"
                   onClick={() => setShowAi(false)}
                 >
-                  Dismiss
+                  {t('ticket.dismiss')}
                 </Button>
               </div>
             </div>
@@ -433,12 +451,16 @@ export function AgentTicketDetailPage() {
           >
             <Textarea
               id="agent-reply"
-              label={internalNote ? 'Internal note' : 'Reply to student'}
+              label={
+                internalNote
+                  ? t('ticket.internalNote')
+                  : t('ticket.replyToStudent')
+              }
               rows={3}
               placeholder={
                 internalNote
-                  ? 'Write a note visible to staff only...'
-                  : 'Write a reply to the student...'
+                  ? t('ticket.notePlaceholder')
+                  : t('ticket.studentReplyPlaceholder')
               }
               value={reply}
               onChange={(e) => setReply(e.target.value)}
@@ -446,12 +468,12 @@ export function AgentTicketDetailPage() {
             <div className={styles.composerActions}>
               <Toggle
                 id="internal-note"
-                label="Internal note"
+                label={t('ticket.internalNote')}
                 checked={internalNote}
                 onChange={setInternalNote}
               />
               <Button type="submit" disabled={mutating || !reply.trim()}>
-                {internalNote ? 'Add note' : 'Send reply'}
+                {internalNote ? t('ticket.addNote') : t('ticket.sendReply')}
               </Button>
             </div>
           </form>
@@ -459,8 +481,8 @@ export function AgentTicketDetailPage() {
           <div className={styles.resolve}>
             <Textarea
               id="resolution"
-              label="Resolution summary"
-              placeholder="Summarize how this was resolved..."
+              label={t('ticket.resolutionSummary')}
+              placeholder={t('ticket.resolutionPlaceholder')}
               value={resolution}
               onChange={(e) => setResolution(e.target.value)}
             />
@@ -473,7 +495,7 @@ export function AgentTicketDetailPage() {
                 })
               }}
             >
-              Resolve & notify student
+              {t('ticket.resolveNotify')}
             </Button>
           </div>
         </section>

@@ -1,3 +1,4 @@
+import { useT, type MessageKey } from '@/lib/i18n'
 import styles from './Badge.module.css'
 import type { TicketPriority, TicketStatus } from '@/types'
 
@@ -17,14 +18,6 @@ type Tone =
   | 'neutral'
   | 'danger'
 
-const statusLabel: Record<TicketStatus, string> = {
-  open: 'Open',
-  in_progress: 'In Progress',
-  waiting_on_student: 'Waiting',
-  resolved: 'Resolved',
-  closed: 'Closed',
-}
-
 const statusTone: Record<TicketStatus, Tone> = {
   open: 'open',
   in_progress: 'inProgress',
@@ -33,11 +26,33 @@ const statusTone: Record<TicketStatus, Tone> = {
   closed: 'closed',
 }
 
+const statusKey: Record<TicketStatus, MessageKey> = {
+  open: 'status.open',
+  in_progress: 'status.in_progress',
+  waiting_on_student: 'status.waiting_on_student',
+  resolved: 'status.resolved',
+  closed: 'status.closed',
+}
+
 const priorityTone: Record<TicketPriority, Tone> = {
   low: 'low',
   medium: 'medium',
   high: 'high',
   urgent: 'urgent',
+}
+
+const priorityKey: Record<TicketPriority, MessageKey> = {
+  low: 'priority.low',
+  medium: 'priority.medium',
+  high: 'priority.high',
+  urgent: 'priority.urgent',
+}
+
+const deptKey: Record<string, MessageKey> = {
+  Academics: 'dept.Academics',
+  IT: 'dept.IT',
+  Finance: 'dept.Finance',
+  Maintenance: 'dept.Maintenance',
 }
 
 interface BadgeProps {
@@ -50,12 +65,13 @@ export function Badge({ children, tone = 'info' }: BadgeProps) {
 }
 
 export function StatusBadge({ status }: { status: TicketStatus }) {
-  return <Badge tone={statusTone[status]}>{statusLabel[status]}</Badge>
+  const t = useT()
+  return <Badge tone={statusTone[status]}>{t(statusKey[status])}</Badge>
 }
 
 export function PriorityBadge({ priority }: { priority: TicketPriority }) {
-  const label = priority.charAt(0).toUpperCase() + priority.slice(1)
-  return <Badge tone={priorityTone[priority]}>{label}</Badge>
+  const t = useT()
+  return <Badge tone={priorityTone[priority]}>{t(priorityKey[priority])}</Badge>
 }
 
 /** First-response SLA cue for queue / dashboard cells. */
@@ -68,8 +84,9 @@ export function SlaBadge({
   breached?: boolean
   atRiskHours?: number
 }) {
+  const t = useT()
   if (breached) {
-    return <Badge tone="danger">Breached</Badge>
+    return <Badge tone="danger">{t('sla.breached')}</Badge>
   }
   if (hoursRemaining == null) {
     return <Badge tone="neutral">—</Badge>
@@ -81,5 +98,7 @@ export function SlaBadge({
 }
 
 export function DepartmentBadge({ department }: { department: string }) {
-  return <Badge tone="department">{department}</Badge>
+  const t = useT()
+  const key = deptKey[department]
+  return <Badge tone="department">{key ? t(key) : department}</Badge>
 }

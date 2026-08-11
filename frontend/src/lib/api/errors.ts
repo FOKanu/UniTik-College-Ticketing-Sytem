@@ -108,12 +108,17 @@ export function toApiError(error: unknown): ApiError {
       })
     }
     if (status >= 500) {
-      return new ApiError(message || 'The server encountered an error.', {
-        code: 'SERVER',
-        status,
-        details,
-        cause: error,
-      })
+      return new ApiError(
+        status === 502 || status === 503
+          ? 'Cannot reach the API server. Check that the backend is running.'
+          : message || 'The server encountered an error.',
+        {
+          code: 'SERVER',
+          status,
+          details,
+          cause: error,
+        },
+      )
     }
 
     return new ApiError(message, {
