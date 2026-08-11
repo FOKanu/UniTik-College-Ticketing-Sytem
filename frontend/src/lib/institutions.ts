@@ -75,6 +75,9 @@ export function findInstitution(id: string | null | undefined): Institution {
   )
 }
 
+/** @deprecated Prefer `findInstitution` — kept for call sites that used main’s name. */
+export const getInstitution = findInstitution
+
 export function institutionEmailHint(institution: Institution): string {
   const primary =
     institution.emailDomains.find((d) => d.startsWith('stud.')) ??

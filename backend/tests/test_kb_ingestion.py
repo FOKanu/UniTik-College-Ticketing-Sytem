@@ -27,6 +27,9 @@ class FakeSession:
     async def rollback(self):
         self.events.append("rollback")
 
+    async def flush(self):
+        self.events.append("flush")
+
 
 def entry(entry_id="faq-test-001"):
     return SimpleNamespace(
@@ -56,24 +59,52 @@ def configure(monkeypatch, events, entries, *, embedding_error=None, commit_erro
         return FakeSession(events, commit_error)
 
     async def upsert(_db, **kwargs):
-        events.append(("upsert", kwargs["id"]))
+        events.append(("upsert", kwargs["id"], kwargs.get("update_embedding", True)))
+
+    async def enqueue(_db, faq_id, **_kwargs):
+        events.append(("enqueue", faq_id))
+        return SimpleNamespace(id="job", faqEntryId=faq_id, status="pending")
 
     monkeypatch.setattr(ingest_kb.kb_service, "upsert_faq_entry", upsert)
+    monkeypatch.setattr(ingest_kb.jobs_service, "enqueue_embedding", enqueue)
     return embedder, session_factory
 
 
 @pytest.mark.asyncio
-async def test_all_embeddings_finish_before_one_db_session_and_commit(monkeypatch):
+async def test_sync_embeddings_finish_before_one_db_session_and_commit(monkeypatch):
     events = []
     entries = [entry("faq-test-001"), entry("faq-test-002")]
     embedder, session_factory = configure(monkeypatch, events, entries)
-    assert await ingest_kb.ingest(embedder=embedder, session_factory=session_factory) == 2
+    assert (
+        await ingest_kb.ingest(
+            embedder=embedder, session_factory=session_factory, sync=True
+        )
+        == 2
+    )
     assert events == [
         "embed",
         "embed",
         "db-open",
-        ("upsert", "faq-test-001"),
-        ("upsert", "faq-test-002"),
+        ("upsert", "faq-test-001", True),
+        ("upsert", "faq-test-002", True),
+        "commit",
+        "db-close",
+    ]
+
+
+@pytest.mark.asyncio
+async def test_async_ingest_enqueues_without_embedding(monkeypatch):
+    events = []
+    entries = [entry("faq-test-001"), entry("faq-test-002")]
+    embedder, session_factory = configure(monkeypatch, events, entries)
+    assert await ingest_kb.ingest(embedder=embedder, session_factory=session_factory) == 2
+    assert "embed" not in events
+    assert events == [
+        "db-open",
+        ("upsert", "faq-test-001", False),
+        ("enqueue", "faq-test-001"),
+        ("upsert", "faq-test-002", False),
+        ("enqueue", "faq-test-002"),
         "commit",
         "db-close",
     ]
@@ -86,7 +117,9 @@ async def test_provider_failure_prevents_database_access(monkeypatch):
         monkeypatch, events, [entry()], embedding_error=RuntimeError("provider secret")
     )
     with pytest.raises(RuntimeError):
-        await ingest_kb.ingest(embedder=embedder, session_factory=session_factory)
+        await ingest_kb.ingest(
+            embedder=embedder, session_factory=session_factory, sync=True
+        )
     assert events == ["embed"]
 
 
@@ -107,8 +140,18 @@ def test_cli_success(monkeypatch, capsys):
         return TOTAL_CANONICAL_ENTRIES
 
     monkeypatch.setattr(ingest_kb.asyncio, "run", succeed)
-    assert ingest_kb.main() == 0
-    assert f"{TOTAL_CANONICAL_ENTRIES} FAQ entries inserted or updated" in capsys.readouterr().out
+    assert ingest_kb.main([]) == 0
+    assert f"{TOTAL_CANONICAL_ENTRIES} FAQ entries upserted" in capsys.readouterr().out
+
+
+def test_cli_sync_success(monkeypatch, capsys):
+    def succeed(coroutine):
+        coroutine.close()
+        return TOTAL_CANONICAL_ENTRIES
+
+    monkeypatch.setattr(ingest_kb.asyncio, "run", succeed)
+    assert ingest_kb.main(["--sync"]) == 0
+    assert "sync embed" in capsys.readouterr().out
 
 
 def test_cli_failure_is_sanitized(monkeypatch, capsys):
@@ -119,7 +162,7 @@ def test_cli_failure_is_sanitized(monkeypatch, capsys):
         raise RuntimeError(secret)
 
     monkeypatch.setattr(ingest_kb.asyncio, "run", fail)
-    assert ingest_kb.main() == 1
+    assert ingest_kb.main([]) == 1
     output = capsys.readouterr()
     assert output.out == ""
     assert output.err == "Knowledge-base ingestion failed.\n"
@@ -182,3 +225,30 @@ async def test_upsert_inserts_then_updates_by_id_without_committing_or_deleting(
     assert updated is created
     assert updated.question == "Updated"
     assert update_session.added == []
+
+
+@pytest.mark.asyncio
+async def test_upsert_can_leave_embedding_untouched():
+    existing = SimpleNamespace(
+        id="faq-academics-001",
+        question="Old",
+        answer="A",
+        language="en",
+        category="Academics",
+        contextBlob="{}",
+        embedding=[0.5] * 768,
+    )
+    session = UpsertSession(existing)
+    updated = await kb_service.upsert_faq_entry(
+        session,
+        id="faq-academics-001",
+        question="New",
+        answer="A",
+        language="en",
+        category="Academics",
+        context_blob="{}",
+        embedding=None,
+        update_embedding=False,
+    )
+    assert updated.question == "New"
+    assert updated.embedding == [0.5] * 768

@@ -6,7 +6,8 @@ from app.core.security import hash_password
 from app.db.base import Role
 from app.db.session import async_session_factory
 from app.models import User
-from tests.conftest import integration
+from app.services.tenants import DEFAULT_TENANT_ID
+from tests.conftest import department_id_for, integration
 
 
 @pytest.mark.asyncio
@@ -38,18 +39,17 @@ async def _register_and_login(client, *, role: str, department: str | None = Non
     else:
         async with async_session_factory() as db:
             user = User(
+                tenantId=DEFAULT_TENANT_ID,
                 email=email,
                 displayName=f"Test {role.title()}",
                 role=Role(role),
-                department=department,
+                departmentId=await department_id_for(db, department),
                 passwordHash=hash_password(password),
             )
             db.add(user)
             await db.commit()
 
-    login_res = await client.post(
-        "/api/v1/auth/login", json={"email": email, "password": password}
-    )
+    login_res = await client.post("/api/v1/auth/login", json={"email": email, "password": password})
     assert login_res.status_code == 200, login_res.text
     body = login_res.json()["data"]
     return body["token"], body["user"]["id"]
@@ -62,14 +62,18 @@ async def test_student_reply_reopens_resolved_ticket(client):
     commenting on their own Resolved ticket flips it back to Open. A staff
     reply to the same ticket must NOT trigger this."""
     student_token, _ = await _register_and_login(client, role="STUDENT")
-    staff_token, _ = await _register_and_login(client, role="STAFF", department="IT")
+    staff_token, _ = await _register_and_login(client, role="STAFF")
 
     student_headers = {"Authorization": f"Bearer {student_token}"}
     staff_headers = {"Authorization": f"Bearer {staff_token}"}
 
     create_res = await client.post(
         "/api/v1/tickets",
-        json={"subject": "VPN issue", "description": "Cannot connect off-campus"},
+        json={
+            "subject": "VPN issue",
+            "description": "Cannot connect off-campus",
+            "department": "IT",
+        },
         headers=student_headers,
     )
     assert create_res.status_code == 201, create_res.text
@@ -230,3 +234,47 @@ async def test_sla_and_status_history_on_create_update_reopen(client):
     assert "created" in reasons
     assert "staff_update" in reasons
     assert "reopen_on_reply" in reasons
+
+
+@pytest.mark.asyncio
+@integration
+async def test_create_ticket_auto_routes_when_department_omitted(client):
+    student_token, _ = await _register_and_login(client, role="STUDENT")
+    headers = {"Authorization": f"Bearer {student_token}"}
+
+    create_res = await client.post(
+        "/api/v1/tickets",
+        json={
+            "subject": "Cannot connect to campus wifi",
+            "description": "Laptop drops the wifi connection and I can't log into the portal.",
+        },
+        headers=headers,
+    )
+    assert create_res.status_code == 201, create_res.text
+    data = create_res.json()["data"]
+    assert data["department"] == "IT"
+    assert data["category"] == "it"
+    assert data["classificationSource"] == "rule-engine"
+
+
+@pytest.mark.asyncio
+@integration
+async def test_create_ticket_manual_department_skips_router(client):
+    student_token, _ = await _register_and_login(client, role="STUDENT")
+    headers = {"Authorization": f"Bearer {student_token}"}
+
+    create_res = await client.post(
+        "/api/v1/tickets",
+        json={
+            "subject": "Cannot connect to campus wifi",
+            "description": "Laptop drops the wifi connection.",
+            "department": "Finance",
+            "category": "billing",
+        },
+        headers=headers,
+    )
+    assert create_res.status_code == 201, create_res.text
+    data = create_res.json()["data"]
+    assert data["department"] == "Finance"
+    assert data["category"] == "billing"
+    assert data["classificationSource"] == "manual"

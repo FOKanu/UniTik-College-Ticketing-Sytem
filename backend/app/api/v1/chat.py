@@ -59,18 +59,12 @@ async def list_conversations(db: DbSession, user: CurrentUser):
 @router.get("/conversations/{conversation_id}/messages")
 async def list_messages(db: DbSession, user: CurrentUser, conversation_id: str):
     messages = await chat_service.list_messages(db, conversation_id, user)
-    return success_response(
-        [MessageResponse.model_validate(m).model_dump() for m in messages]
-    )
+    return success_response([MessageResponse.model_validate(m).model_dump() for m in messages])
 
 
 @router.post("/conversations/{conversation_id}/messages")
-async def send_message(
-    db: DbSession, user: CurrentUser, conversation_id: str, body: MessageCreate
-):
-    user_msg, bot_msg, retrieval = await chat_service.send_message(
-        db, conversation_id, user, body
-    )
+async def send_message(db: DbSession, user: CurrentUser, conversation_id: str, body: MessageCreate):
+    user_msg, bot_msg, retrieval = await chat_service.send_message(db, conversation_id, user, body)
     return success_response(
         {
             "userMessage": MessageResponse.model_validate(user_msg).model_dump(),
@@ -106,18 +100,12 @@ async def stream_message(
             offline = True
             yield _sse("error", {"message": str(exc)})
 
-        reply = (
-            chat_service.LLM_OFFLINE_REPLY
-            if offline
-            else "".join(parts).strip()
-        )
+        reply = chat_service.LLM_OFFLINE_REPLY if offline else "".join(parts).strip()
 
         # The request-scoped session is already closed by the time the body
         # streams, so the reply is persisted on a session this generator owns.
         async with async_session_factory() as session:
-            bot_msg = await chat_service.finish_bot_turn(
-                session, conversation_id, reply
-            )
+            bot_msg = await chat_service.finish_bot_turn(session, conversation_id, reply)
             bot_payload = MessageResponse.model_validate(bot_msg).model_dump()
 
         yield _sse("done", {"botMessage": bot_payload, **retrieval_payload})

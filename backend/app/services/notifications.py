@@ -1,4 +1,8 @@
-"""In-app notification inbox (no email channel yet)."""
+"""In-app notification inbox + enqueue outbound email jobs.
+
+IN_APP rows are written synchronously. Email delivery is async via NotifyJob
+and ``python -m scripts.notify_worker`` (console provider when SMTP_HOST is empty).
+"""
 
 from __future__ import annotations
 
@@ -10,6 +14,7 @@ from sqlalchemy.ext.asyncio import AsyncSession
 from app.core.exceptions import NotFoundError
 from app.models import Notification, User
 from app.schemas.notifications import NotificationResponse
+from app.services import notify_jobs as notify_jobs_service
 
 CHANNEL_IN_APP = "IN_APP"
 
@@ -86,7 +91,33 @@ async def notify_many(
     db: AsyncSession,
     rows: list[Notification | None],
 ) -> None:
-    """Persist non-null notification rows (caller commits with the parent txn)."""
-    for row in rows:
-        if row is not None:
-            db.add(row)
+    """Persist IN_APP rows and enqueue matching outbound email jobs.
+
+    Caller commits with the parent transaction. Skips email when the recipient
+    has no email address.
+    """
+    pending = [row for row in rows if row is not None]
+    if not pending:
+        return
+
+    for row in pending:
+        db.add(row)
+    await db.flush()
+
+    user_ids = {row.userId for row in pending}
+    result = await db.execute(select(User).where(User.id.in_(user_ids)))
+    emails = {u.id: u.email for u in result.scalars().all()}
+
+    for row in pending:
+        to_email = (emails.get(row.userId) or "").strip()
+        if not to_email:
+            continue
+        await notify_jobs_service.enqueue_email(
+            db,
+            user_id=row.userId,
+            to_email=to_email,
+            subject=row.title,
+            body=row.message,
+            ticket_id=row.ticketId,
+            notification_id=row.id,
+        )

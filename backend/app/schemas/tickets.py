@@ -31,6 +31,8 @@ class TicketResponse(BaseModel):
     priority: TicketPriority
     category: str | None
     department: str | None
+    # "manual" | "rule-engine" | null — how department was assigned (NEG-6).
+    classificationSource: str | None = None
     createdById: str
     assignedToId: str | None
     problemId: str | None

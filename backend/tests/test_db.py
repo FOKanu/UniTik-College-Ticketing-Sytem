@@ -1,10 +1,13 @@
+import uuid
+
 import pytest
 from sqlalchemy import select
 
 from app.db.base import Role
 from app.db.session import async_session_factory
 from app.models import Ticket, User
-from tests.conftest import integration
+from app.services.tenants import DEFAULT_TENANT_ID
+from tests.conftest import department_id_for, integration
 
 
 @pytest.mark.asyncio
@@ -12,14 +15,16 @@ from tests.conftest import integration
 async def test_db_user_ticket_roundtrip():
     async with async_session_factory() as db:
         user = User(
-            email="pytest@student.university.edu",
+            tenantId=DEFAULT_TENANT_ID,
+            email=f"pytest-{uuid.uuid4().hex[:8]}@student.university.edu",
             displayName="Pytest User",
             role=Role.STUDENT,
-            department="Testing",
+            departmentId=await department_id_for(db, f"Testing-{uuid.uuid4().hex[:8]}"),
         )
         db.add(user)
         await db.flush()
         ticket = Ticket(
+            tenantId=DEFAULT_TENANT_ID,
             subject="Test ticket",
             description="Created by pytest",
             createdById=user.id,

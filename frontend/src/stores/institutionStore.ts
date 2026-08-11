@@ -9,6 +9,8 @@ import {
 interface InstitutionState {
   institutionId: string
   setInstitutionId: (id: string) => void
+  /** Alias used by earlier main call sites. */
+  setInstitution: (id: string) => void
   getInstitution: () => Institution
   clearInstitution: () => void
 }
@@ -18,6 +20,10 @@ export const useInstitutionStore = create<InstitutionState>()(
     (set, get) => ({
       institutionId: DEFAULT_INSTITUTION_ID,
       setInstitutionId: (id) => {
+        const next = findInstitution(id)
+        set({ institutionId: next.id })
+      },
+      setInstitution: (id) => {
         const next = findInstitution(id)
         set({ institutionId: next.id })
       },

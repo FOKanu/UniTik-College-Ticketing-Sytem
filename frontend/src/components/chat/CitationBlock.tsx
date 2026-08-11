@@ -35,7 +35,10 @@ export function CitationBlock({
 }: CitationBlockProps) {
   const t = useT()
   const sources = citations.slice(0, MAX_SOURCES)
+  // Strong hits show sources. Weak hits may show a caution + escalate with no
+  // "closest articles" list (backend now returns empty citations when weak).
   if (!retrievalWeak && sources.length === 0) return null
+  if (retrievalWeak && sources.length === 0 && !canEscalate) return null
   const escalateText = escalateLabel ?? t('assistant.escalate')
 
   return (

@@ -7,13 +7,15 @@ from sqlalchemy import delete
 from app.ai import client as ai_client
 from app.ai.llm_config import LLMSettings
 from app.ai.triage import TicketSuggestion
+from app.core.cache import reset_cache_state_for_tests
 from app.core.exceptions import BadRequestError
 from app.db.base import Role
 from app.db.session import async_session_factory
 from app.models import ChatConversation, ChatMessage, User
 from app.services import chat as chat_service
 from app.services.chat import TRANSCRIPT_MAX_CHARS, _format_transcript
-from tests.conftest import integration
+from app.services.tenants import DEFAULT_TENANT_ID
+from tests.conftest import department_id_for, integration
 
 # Reserved discard port — nothing is listening, so the client must fail fast.
 UNREACHABLE_BASE_URL = "http://127.0.0.1:9/v1"
@@ -23,9 +25,9 @@ UNREACHABLE_BASE_URL = "http://127.0.0.1:9/v1"
 def offline_llm(monkeypatch):
     config = LLMSettings(ollama_openai_base_url=UNREACHABLE_BASE_URL).resolve()
     monkeypatch.setattr(ai_client, "get_llm_config", lambda: config)
-    monkeypatch.setattr(ai_client, "_health_cache", None)
+    reset_cache_state_for_tests()
     yield config
-    ai_client._health_cache = None
+    reset_cache_state_for_tests()
 
 
 @pytest.mark.asyncio
@@ -97,10 +99,11 @@ async def test_invalid_mode_is_rejected(client):
 
 async def _seed_conversation(db, *, with_messages: bool):
     user = User(
+        tenantId=DEFAULT_TENANT_ID,
         email=f"escalate-{uuid.uuid4()}@student.university.edu",
         displayName="Ada Lovelace",
         role=Role.STUDENT,
-        department="IT",
+        departmentId=await department_id_for(db, "IT"),
     )
     db.add(user)
     await db.flush()
@@ -154,7 +157,9 @@ async def test_escalation_builds_ticket_from_transcript(monkeypatch):
         assert result.already_escalated is False
         assert result.ticket.subject == "WiFi drops in the library"
         assert result.ticket.category == "it"
-        assert result.ticket.department == "IT"
+        await db.refresh(result.ticket, ["department"])
+        assert result.ticket.department is not None
+        assert result.ticket.department.name == "IT"
         assert "Ada Lovelace: My WiFi keeps dropping in the library" in result.ticket.description
         assert "Assistant: Try forgetting the network" in result.ticket.description
         assert result.conversation.escalatedTicketId == result.ticket.id

@@ -7,7 +7,7 @@ from sqlalchemy import Boolean, DateTime, Enum, ForeignKey, Integer, String, Tex
 from sqlalchemy.dialects.postgresql import JSONB
 from sqlalchemy.orm import Mapped, mapped_column, relationship
 
-from app.db.base import Base, Role, TicketPriority, TicketStatus
+from app.db.base import Base, FaqStatus, FaqVisibility, Role, TicketPriority, TicketStatus
 
 if TYPE_CHECKING:
     pass
@@ -17,16 +17,77 @@ def _now() -> datetime:
     return datetime.now()
 
 
+class Tenant(Base):
+    """A client institution using the platform."""
+
+    __tablename__ = "Tenant"
+
+    id: Mapped[str] = mapped_column(String, primary_key=True, default=lambda: str(uuid.uuid4()))
+    name: Mapped[str] = mapped_column(String, nullable=False)
+    shortCode: Mapped[str] = mapped_column(String, unique=True, nullable=False)
+    defaultLanguage: Mapped[str] = mapped_column(String, default="en", nullable=False)
+    enabledLanguages: Mapped[list | None] = mapped_column(JSONB, nullable=True)
+    isActive: Mapped[bool] = mapped_column(Boolean, default=True, nullable=False)
+    createdAt: Mapped[datetime] = mapped_column(
+        DateTime(timezone=False), server_default=func.now(), nullable=False
+    )
+    updatedAt: Mapped[datetime] = mapped_column(
+        DateTime(timezone=False), default=_now, onupdate=_now, nullable=False
+    )
+
+    domains: Mapped[list["TenantDomain"]] = relationship(
+        "TenantDomain", back_populates="tenant", cascade="all, delete-orphan"
+    )
+    departments: Mapped[list["Department"]] = relationship(
+        "Department", back_populates="tenant"
+    )
+    users: Mapped[list["User"]] = relationship("User", back_populates="tenant")
+
+
+class TenantDomain(Base):
+    """Email domain that maps to a tenant at sign-up/sign-in."""
+
+    __tablename__ = "TenantDomain"
+
+    id: Mapped[str] = mapped_column(String, primary_key=True, default=lambda: str(uuid.uuid4()))
+    tenantId: Mapped[str] = mapped_column(String, ForeignKey("Tenant.id"), nullable=False)
+    domain: Mapped[str] = mapped_column(String, unique=True, nullable=False)
+
+    tenant: Mapped["Tenant"] = relationship("Tenant", back_populates="domains")
+
+
+class Department(Base):
+    __tablename__ = "Department"
+
+    id: Mapped[str] = mapped_column(String, primary_key=True, default=lambda: str(uuid.uuid4()))
+    tenantId: Mapped[str] = mapped_column(String, ForeignKey("Tenant.id"), nullable=False)
+    name: Mapped[str] = mapped_column(String, nullable=False)
+    description: Mapped[str | None] = mapped_column(String, nullable=True)
+    createdAt: Mapped[datetime] = mapped_column(
+        DateTime(timezone=False), server_default=func.now(), nullable=False
+    )
+    updatedAt: Mapped[datetime] = mapped_column(
+        DateTime(timezone=False), default=_now, onupdate=_now, nullable=False
+    )
+
+    tenant: Mapped["Tenant"] = relationship("Tenant", back_populates="departments")
+    users: Mapped[list["User"]] = relationship("User", back_populates="department")
+    tickets: Mapped[list["Ticket"]] = relationship("Ticket", back_populates="department")
+
+
 class User(Base):
     __tablename__ = "User"
 
     id: Mapped[str] = mapped_column(String, primary_key=True, default=lambda: str(uuid.uuid4()))
+    tenantId: Mapped[str] = mapped_column(String, ForeignKey("Tenant.id"), nullable=False)
     email: Mapped[str] = mapped_column(String, unique=True, nullable=False)
     displayName: Mapped[str] = mapped_column(String, nullable=False)
     role: Mapped[Role] = mapped_column(
         Enum(Role, name="Role"), default=Role.STUDENT, nullable=False
     )
-    department: Mapped[str | None] = mapped_column(String, nullable=True)
+    departmentId: Mapped[str | None] = mapped_column(
+        String, ForeignKey("Department.id"), nullable=True
+    )
     passwordHash: Mapped[str | None] = mapped_column(String, nullable=True)
     externalId: Mapped[str | None] = mapped_column(String, nullable=True)
     createdAt: Mapped[datetime] = mapped_column(
@@ -36,6 +97,7 @@ class User(Base):
         DateTime(timezone=False), default=_now, onupdate=_now, nullable=False
     )
 
+    tenant: Mapped["Tenant"] = relationship("Tenant", back_populates="users")
     tickets_created: Mapped[list["Ticket"]] = relationship(
         "Ticket", back_populates="created_by", foreign_keys="Ticket.createdById"
     )
@@ -53,12 +115,16 @@ class User(Base):
     ticket_comments: Mapped[list["TicketComment"]] = relationship(
         "TicketComment", back_populates="author"
     )
+    department: Mapped[Optional["Department"]] = relationship(
+        "Department", back_populates="users"
+    )
 
 
 class Ticket(Base):
     __tablename__ = "Ticket"
 
     id: Mapped[str] = mapped_column(String, primary_key=True, default=lambda: str(uuid.uuid4()))
+    tenantId: Mapped[str] = mapped_column(String, ForeignKey("Tenant.id"), nullable=False)
     subject: Mapped[str] = mapped_column(String, nullable=False)
     description: Mapped[str] = mapped_column(Text, nullable=False)
     status: Mapped[TicketStatus] = mapped_column(
@@ -68,7 +134,12 @@ class Ticket(Base):
         Enum(TicketPriority, name="TicketPriority"), default=TicketPriority.MEDIUM, nullable=False
     )
     category: Mapped[str | None] = mapped_column(String, nullable=True)
-    department: Mapped[str | None] = mapped_column(String, nullable=True)
+    departmentId: Mapped[str | None] = mapped_column(
+        String, ForeignKey("Department.id"), nullable=True
+    )
+    # "manual" | "rule-engine" — null means not yet classified. Distinguishes a
+    # human-assigned department from an automated routing-engine guess (NEG-6).
+    classificationSource: Mapped[str | None] = mapped_column(String, nullable=True)
     createdById: Mapped[str] = mapped_column(String, ForeignKey("User.id"), nullable=False)
     assignedToId: Mapped[str | None] = mapped_column(String, ForeignKey("User.id"), nullable=True)
     problemId: Mapped[str | None] = mapped_column(String, ForeignKey("Problem.id"), nullable=True)
@@ -101,6 +172,10 @@ class Ticket(Base):
         back_populates="ticket",
         order_by="TicketStatusHistory.createdAt",
     )
+    department: Mapped[Optional["Department"]] = relationship(
+        "Department", back_populates="tickets"
+    )
+    tenant: Mapped["Tenant"] = relationship("Tenant")
 
 
 class Attachment(Base):
@@ -138,15 +213,79 @@ class Problem(Base):
 
 
 class FaqEntry(Base):
+    """Knowledge-base article. Staff-authored; students never create these."""
+
     __tablename__ = "FaqEntry"
 
     id: Mapped[str] = mapped_column(String, primary_key=True, default=lambda: str(uuid.uuid4()))
+    tenantId: Mapped[str] = mapped_column(String, ForeignKey("Tenant.id"), nullable=False)
     question: Mapped[str] = mapped_column(Text, nullable=False)
     answer: Mapped[str] = mapped_column(Text, nullable=False)
     language: Mapped[str] = mapped_column(String, default="en", nullable=False)
     category: Mapped[str | None] = mapped_column(String, nullable=True)
+    visibility: Mapped[FaqVisibility] = mapped_column(
+        Enum(FaqVisibility, name="FaqVisibility"),
+        default=FaqVisibility.STUDENTS_AND_AI,
+        nullable=False,
+    )
+    status: Mapped[FaqStatus] = mapped_column(
+        Enum(FaqStatus, name="FaqStatus"), default=FaqStatus.PUBLISHED, nullable=False
+    )
     contextBlob: Mapped[str | None] = mapped_column(Text, nullable=True)
     embedding = mapped_column(Vector(768), nullable=True)
+    createdAt: Mapped[datetime] = mapped_column(
+        DateTime(timezone=False), server_default=func.now(), nullable=False
+    )
+    updatedAt: Mapped[datetime] = mapped_column(
+        DateTime(timezone=False), default=_now, onupdate=_now, nullable=False
+    )
+
+
+class EmbeddingJob(Base):
+    """Out-of-band FAQ embedding work item (Postgres queue; no Redis)."""
+
+    __tablename__ = "EmbeddingJob"
+
+    id: Mapped[str] = mapped_column(String, primary_key=True, default=lambda: str(uuid.uuid4()))
+    faqEntryId: Mapped[str] = mapped_column(
+        String, ForeignKey("FaqEntry.id", ondelete="CASCADE"), nullable=False
+    )
+    # pending | processing | done | failed
+    status: Mapped[str] = mapped_column(String, default="pending", nullable=False)
+    attempts: Mapped[int] = mapped_column(Integer, default=0, nullable=False)
+    maxAttempts: Mapped[int] = mapped_column(Integer, default=3, nullable=False)
+    lastError: Mapped[str | None] = mapped_column(Text, nullable=True)
+    lockedAt: Mapped[datetime | None] = mapped_column(DateTime(timezone=False), nullable=True)
+    lockedBy: Mapped[str | None] = mapped_column(String, nullable=True)
+    createdAt: Mapped[datetime] = mapped_column(
+        DateTime(timezone=False), server_default=func.now(), nullable=False
+    )
+    updatedAt: Mapped[datetime] = mapped_column(
+        DateTime(timezone=False), default=_now, onupdate=_now, nullable=False
+    )
+
+
+class NotifyJob(Base):
+    """Outbound email delivery work item (Postgres queue; no Redis)."""
+
+    __tablename__ = "NotifyJob"
+
+    id: Mapped[str] = mapped_column(String, primary_key=True, default=lambda: str(uuid.uuid4()))
+    userId: Mapped[str] = mapped_column(
+        String, ForeignKey("User.id", ondelete="CASCADE"), nullable=False
+    )
+    ticketId: Mapped[str | None] = mapped_column(String, nullable=True)
+    notificationId: Mapped[str | None] = mapped_column(String, nullable=True)
+    toEmail: Mapped[str] = mapped_column(String, nullable=False)
+    subject: Mapped[str] = mapped_column(String, nullable=False)
+    body: Mapped[str] = mapped_column(Text, nullable=False)
+    # pending | processing | done | failed
+    status: Mapped[str] = mapped_column(String, default="pending", nullable=False)
+    attempts: Mapped[int] = mapped_column(Integer, default=0, nullable=False)
+    maxAttempts: Mapped[int] = mapped_column(Integer, default=3, nullable=False)
+    lastError: Mapped[str | None] = mapped_column(Text, nullable=True)
+    lockedAt: Mapped[datetime | None] = mapped_column(DateTime(timezone=False), nullable=True)
+    lockedBy: Mapped[str | None] = mapped_column(String, nullable=True)
     createdAt: Mapped[datetime] = mapped_column(
         DateTime(timezone=False), server_default=func.now(), nullable=False
     )

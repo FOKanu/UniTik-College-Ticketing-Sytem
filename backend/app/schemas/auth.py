@@ -32,3 +32,10 @@ class UserResponse(BaseModel):
 class AuthTokenResponse(BaseModel):
     token: str
     user: UserResponse
+
+class RefreshRequest(BaseModel):
+    token: str
+
+
+class SsoLoginRequest(BaseModel):
+    provider: str = "microsoft"

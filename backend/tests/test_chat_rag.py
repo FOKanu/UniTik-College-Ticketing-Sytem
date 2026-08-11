@@ -75,6 +75,31 @@ async def test_retrieve_falls_back_to_text_search(monkeypatch):
 
 
 @pytest.mark.asyncio
+async def test_retrieve_skips_chitchat_without_embedding(monkeypatch):
+    embed = AsyncMock()
+    monkeypatch.setattr(chat_service, "embed_text", embed)
+    bundle = await chat_service.retrieve_for_query(SimpleNamespace(), "Hello there")
+    assert bundle.retrieval_weak is False
+    assert bundle.citations == []
+    assert bundle.kb_context == chat_service.CHITCHAT_KB_CONTEXT
+    embed.assert_not_called()
+
+
+@pytest.mark.parametrize(
+    ("text", "expected"),
+    [
+        ("hi", True),
+        ("Hello there!", True),
+        ("thanks", True),
+        ("How do I reset my password?", False),
+        ("VPN will not connect", False),
+    ],
+)
+def test_is_chitchat_query(text, expected):
+    assert chat_service.is_chitchat_query(text) is expected
+
+
+@pytest.mark.asyncio
 async def test_retrieve_weak_when_scores_low(monkeypatch):
     hits = [
         FaqSearchResult(
@@ -91,9 +116,38 @@ async def test_retrieve_weak_when_scores_low(monkeypatch):
         "search_faq_vector",
         AsyncMock(return_value=hits),
     )
-    bundle = await chat_service.retrieve_for_query(SimpleNamespace(), "something else")
+    bundle = await chat_service.retrieve_for_query(
+        SimpleNamespace(), "How do I fix something obscure?"
+    )
     assert bundle.retrieval_weak is True
+    assert bundle.citations == []
     assert bundle.kb_context == chat_service.NO_KB_CONTEXT
+
+
+@pytest.mark.asyncio
+async def test_retrieve_weak_non_support_stays_quiet(monkeypatch):
+    """Long-ish non-support chatter: no escalate chrome, soft chitchat context."""
+    hits = [
+        FaqSearchResult(
+            id="faq-misc-001",
+            question="Unrelated",
+            answer="Nope",
+            category="Academics",
+            score=0.1,
+        )
+    ]
+    monkeypatch.setattr(chat_service, "embed_text", AsyncMock(return_value=[0.1] * 8))
+    monkeypatch.setattr(
+        chat_service.kb_service,
+        "search_faq_vector",
+        AsyncMock(return_value=hits),
+    )
+    bundle = await chat_service.retrieve_for_query(
+        SimpleNamespace(), "Just wondering about the weather today overall"
+    )
+    assert bundle.retrieval_weak is False
+    assert bundle.citations == []
+    assert bundle.kb_context == chat_service.CHITCHAT_KB_CONTEXT
 
 
 def test_build_messages_injects_kb_context():
