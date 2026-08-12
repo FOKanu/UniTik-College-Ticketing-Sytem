@@ -102,4 +102,38 @@ git add backend/src/auth/conflict.txt
 git commit -qm "backend auth conflict marker"
 assert_fail "backend auth merge conflict markers are rejected" bash "$SCRIPT" feature/backend-auth-and-sso main
 
+frontend_repo="$(mktemp -d)"
+cd "$frontend_repo"
+git init -q
+git config user.name "Test User"
+git config user.email "test@example.com"
+git checkout -qb main
+mkdir -p frontend/src shared docs
+printf '%s\n' '# frontend repo' > README.md
+git add README.md
+git commit -qm "init frontend repo"
+git checkout -qb feature/frontend-multi-university-support
+mkdir -p frontend/src/features/university
+printf '%s\n' 'export const university = true;' > frontend/src/features/university/index.ts
+git add frontend/src/features/university/index.ts
+git commit -qm "allowed frontend multiversity change"
+assert_ok "frontend multiversity allowed files pass" bash "$SCRIPT" feature/frontend-multi-university-support main
+
+cd "$frontend_repo"
+mkdir -p backend/src
+printf '%s\n' 'export const api = true;' > backend/src/api.ts
+git add backend/src/api.ts
+git commit -qm "disallowed backend change"
+assert_fail "frontend multiversity disallowed backend files fail" bash "$SCRIPT" feature/frontend-multi-university-support main
+
+cd "$frontend_repo"
+printf '%s\n' '<<<<<<< HEAD' > frontend/src/features/university/conflict.txt
+printf '%s\n' 'keep me' >> frontend/src/features/university/conflict.txt
+printf '%s\n' '=======' >> frontend/src/features/university/conflict.txt
+printf '%s\n' 'other side' >> frontend/src/features/university/conflict.txt
+printf '%s\n' '>>>>>>> feature/frontend-multi-university-support' >> frontend/src/features/university/conflict.txt
+git add frontend/src/features/university/conflict.txt
+git commit -qm "frontend conflict marker"
+assert_fail "frontend multiversity merge conflict markers are rejected" bash "$SCRIPT" feature/frontend-multi-university-support main
+
 echo "All workstream path guard tests passed."
