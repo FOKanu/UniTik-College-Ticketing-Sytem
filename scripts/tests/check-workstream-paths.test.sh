@@ -136,4 +136,38 @@ git add frontend/src/features/university/conflict.txt
 git commit -qm "frontend conflict marker"
 assert_fail "frontend multiversity merge conflict markers are rejected" bash "$SCRIPT" feature/frontend-multi-university-support main
 
+database_repo="$(mktemp -d)"
+cd "$database_repo"
+git init -q
+git config user.name "Test User"
+git config user.email "test@example.com"
+git checkout -qb main
+mkdir -p backend/prisma database docs
+printf '%s\n' '# database repo' > README.md
+git add README.md
+git commit -qm "init database repo"
+git checkout -qb feature/database-department-and-classification-source
+mkdir -p database/migrations
+printf '%s\n' 'CREATE TABLE departments (id SERIAL PRIMARY KEY);' > database/migrations/001_departments.sql
+git add database/migrations/001_departments.sql
+git commit -qm "allowed database classification change"
+assert_ok "database classification allowed files pass" bash "$SCRIPT" feature/database-department-and-classification-source main
+
+cd "$database_repo"
+mkdir -p frontend/src
+printf '%s\n' 'export const ui = true;' > frontend/src/app.ts
+git add frontend/src/app.ts
+git commit -qm "disallowed frontend change"
+assert_fail "database classification disallowed frontend files fail" bash "$SCRIPT" feature/database-department-and-classification-source main
+
+cd "$database_repo"
+printf '%s\n' '<<<<<<< HEAD' > database/migrations/conflict.sql
+printf '%s\n' '-- keep me' >> database/migrations/conflict.sql
+printf '%s\n' '=======' >> database/migrations/conflict.sql
+printf '%s\n' '-- other side' >> database/migrations/conflict.sql
+printf '%s\n' '>>>>>>> feature/database-department-and-classification-source' >> database/migrations/conflict.sql
+git add database/migrations/conflict.sql
+git commit -qm "database conflict marker"
+assert_fail "database classification merge conflict markers are rejected" bash "$SCRIPT" feature/database-department-and-classification-source main
+
 echo "All workstream path guard tests passed."
