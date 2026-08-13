@@ -4,12 +4,16 @@ from sqlalchemy import select
 from sqlalchemy.ext.asyncio import AsyncSession
 
 from app.models import Department, User
+from app.services.tenants import DEFAULT_TENANT_ID
 
 
 async def get_or_create_department(
-    db: AsyncSession, name: str | None
+    db: AsyncSession,
+    name: str | None,
+    *,
+    tenant_id: str = DEFAULT_TENANT_ID,
 ) -> Department | None:
-    """Return an existing Department by exact name, or create one.
+    """Return an existing Department by exact name within a tenant, or create one.
 
     Empty / whitespace-only names resolve to None (no department).
     """
@@ -19,12 +23,17 @@ async def get_or_create_department(
     if not cleaned:
         return None
 
-    result = await db.execute(select(Department).where(Department.name == cleaned))
+    result = await db.execute(
+        select(Department).where(
+            Department.tenantId == tenant_id,
+            Department.name == cleaned,
+        )
+    )
     existing = result.scalar_one_or_none()
     if existing:
         return existing
 
-    department = Department(name=cleaned)
+    department = Department(tenantId=tenant_id, name=cleaned)
     db.add(department)
     await db.flush()
     return department

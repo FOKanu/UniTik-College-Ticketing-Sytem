@@ -1,4 +1,4 @@
-import { useEffect, useMemo, useState } from 'react'
+import { Fragment, useEffect, useMemo, useState } from 'react'
 import type { FormEvent } from 'react'
 import {
   Badge,
@@ -9,6 +9,7 @@ import {
   Textarea,
 } from '@/components/ui'
 import { knowledgeApi } from '@/lib/api'
+import { renderKnowledgeBody } from '@/lib/knowledge/renderBody'
 import type { Department, KnowledgeArticle } from '@/types'
 import styles from './KnowledgePage.module.css'
 
@@ -21,6 +22,7 @@ export function KnowledgePage() {
   const [articles, setArticles] = useState<KnowledgeArticle[]>([])
   const [loading, setLoading] = useState(true)
   const [error, setError] = useState<string | null>(null)
+  const [openId, setOpenId] = useState<string | null>(null)
 
   // Minimal staff-only "Add FAQ" form (POST /kb/faq).
   const [formOpen, setFormOpen] = useState(false)
@@ -62,13 +64,19 @@ export function KnowledgePage() {
     setReloadKey((key) => key + 1)
   }
 
+  function toggle(id: string) {
+    setOpenId((current) => (current === id ? null : id))
+  }
+
   const filtered = useMemo(() => {
     return articles.filter((article) => {
       if (category !== 'all' && article.category !== category) return false
       if (visibility !== 'all' && article.status !== visibility) return false
       if (
         query.trim() &&
-        !article.title.toLowerCase().includes(query.toLowerCase())
+        !article.title.toLowerCase().includes(query.toLowerCase()) &&
+        !article.body.toLowerCase().includes(query.toLowerCase()) &&
+        !article.id.toLowerCase().includes(query.toLowerCase())
       ) {
         return false
       }
@@ -107,7 +115,9 @@ export function KnowledgePage() {
       <header className={styles.header}>
         <div>
           <h1>Knowledge Base</h1>
-          <p>Articles students and staff can use for self-service help.</p>
+          <p>
+            Canonical FAQ answers for student self-service and staff replies.
+          </p>
         </div>
         <Button
           size="sm"
@@ -119,8 +129,8 @@ export function KnowledgePage() {
       </header>
 
       <div className={styles.banner} role="note">
-        <strong>Publishing tip:</strong> Draft articles stay internal until you
-        publish them. Published articles appear in the student FAQ and AI
+        <strong>Publishing tip:</strong> Use the exact FAQ wording below when
+        helping students. Published articles appear in the student FAQ and AI
         assistant suggestions.
       </div>
 
@@ -197,7 +207,7 @@ export function KnowledgePage() {
         />
         <SearchField
           id="kb-search"
-          placeholder="Search articles by title or keyword..."
+          placeholder="Search by title, FAQ ID, or answer text..."
           value={query}
           onChange={(e) => setQuery(e.target.value)}
           className={styles.search}
@@ -219,6 +229,7 @@ export function KnowledgePage() {
           <thead>
             <tr>
               <th scope="col">Title</th>
+              <th scope="col">FAQ ID</th>
               <th scope="col">Category</th>
               <th scope="col">Status</th>
               <th scope="col">Views</th>
@@ -228,41 +239,80 @@ export function KnowledgePage() {
           <tbody>
             {!loading &&
               !error &&
-              filtered.map((article) => (
-                <tr key={article.id}>
-                  <td>{article.title}</td>
-                  <td>{article.category}</td>
-                  <td>
-                    <Badge
-                      tone={
-                        article.status === 'published' ? 'success' : 'neutral'
-                      }
-                    >
-                      {article.status === 'published' ? 'Published' : 'Draft'}
-                    </Badge>
-                  </td>
-                  <td>
-                    {/* View tracking is not implemented on the live API. */}
-                    {article.views > 0 ? article.views.toLocaleString() : '—'}
-                  </td>
-                  <td>
-                    {new Date(article.updatedAt).toLocaleDateString(undefined, {
-                      month: 'short',
-                      day: 'numeric',
-                    })}
-                  </td>
-                </tr>
-              ))}
+              filtered.map((article) => {
+                const open = openId === article.id
+                return (
+                  <Fragment key={article.id}>
+                    <tr className={open ? styles.rowOpen : styles.row}>
+                      <td>
+                        <button
+                          type="button"
+                          className={styles.titleBtn}
+                          aria-expanded={open}
+                          aria-controls={`kb-answer-${article.id}`}
+                          onClick={() => toggle(article.id)}
+                        >
+                          {article.title}
+                        </button>
+                      </td>
+                      <td>
+                        <code className={styles.faqId}>{article.id}</code>
+                      </td>
+                      <td>{article.category}</td>
+                      <td>
+                        <Badge
+                          tone={
+                            article.status === 'published'
+                              ? 'success'
+                              : 'neutral'
+                          }
+                        >
+                          {article.status === 'published'
+                            ? 'Published'
+                            : 'Draft'}
+                        </Badge>
+                      </td>
+                      <td>
+                        {article.views > 0
+                          ? article.views.toLocaleString()
+                          : '—'}
+                      </td>
+                      <td>
+                        {new Date(article.updatedAt).toLocaleDateString(
+                          undefined,
+                          {
+                            month: 'short',
+                            day: 'numeric',
+                          },
+                        )}
+                      </td>
+                    </tr>
+                    {open ? (
+                      <tr className={styles.answerRow}>
+                        <td colSpan={6}>
+                          <div
+                            id={`kb-answer-${article.id}`}
+                            className={styles.answer}
+                          >
+                            <h3>Canonical answer</h3>
+                            <p>{renderKnowledgeBody(article.body)}</p>
+                          </div>
+                        </td>
+                      </tr>
+                    ) : null}
+                  </Fragment>
+                )
+              })}
             {loading ? (
               <tr>
-                <td colSpan={5} className={styles.empty} aria-live="polite">
+                <td colSpan={6} className={styles.empty} aria-live="polite">
                   Loading articles…
                 </td>
               </tr>
             ) : null}
             {!loading && !error && !hasCorpus ? (
               <tr>
-                <td colSpan={5} className={styles.empty}>
+                <td colSpan={6} className={styles.empty}>
                   The knowledge base is empty. Use “+ New article” to publish
                   the first FAQ.
                 </td>
@@ -270,7 +320,7 @@ export function KnowledgePage() {
             ) : null}
             {!loading && !error && hasCorpus && filtered.length === 0 ? (
               <tr>
-                <td colSpan={5} className={styles.empty}>
+                <td colSpan={6} className={styles.empty}>
                   No articles match these filters.
                 </td>
               </tr>

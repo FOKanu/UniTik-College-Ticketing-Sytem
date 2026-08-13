@@ -6,6 +6,7 @@ from sqlalchemy.ext.asyncio import AsyncSession
 
 from app.main import app
 from app.services import departments as departments_service
+from app.services.tenants import DEFAULT_TENANT_ID
 
 INTEGRATION = os.getenv("INTEGRATION_TESTS") == "1"
 
@@ -15,9 +16,16 @@ integration = pytest.mark.skipif(
 )
 
 
-async def department_id_for(db: AsyncSession, name: str | None) -> str | None:
+async def department_id_for(
+    db: AsyncSession,
+    name: str | None,
+    *,
+    tenant_id: str = DEFAULT_TENANT_ID,
+) -> str | None:
     """Resolve a free-text label to Department.id (get-or-create)."""
-    dept = await departments_service.get_or_create_department(db, name)
+    dept = await departments_service.get_or_create_department(
+        db, name, tenant_id=tenant_id
+    )
     return dept.id if dept else None
 
 

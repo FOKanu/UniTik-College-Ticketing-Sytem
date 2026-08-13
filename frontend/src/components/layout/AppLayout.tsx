@@ -21,6 +21,7 @@ import {
 import { useAuthStore } from '@/stores/authStore'
 import { useInstitutionStore } from '@/stores/institutionStore'
 import type { UserRole } from '@/types'
+import { findInstitution } from '@/lib/institutions'
 import styles from './AppLayout.module.css'
 
 interface NavItem {
@@ -70,11 +71,8 @@ function homeForRole(role: UserRole | null | undefined): string {
   return ROUTES.dashboard
 }
 
-function portalLabel(
-  role: UserRole | null | undefined,
-  institutionName: string,
-): string {
-  if (role === 'admin') return `ADMIN · ${institutionName.toUpperCase()}`
+function portalLabel(role: UserRole | null | undefined): string {
+  if (role === 'admin') return 'ADMIN · MEDIADESIGN HOCHSCHULE'
   if (role === 'agent') return 'STAFF PORTAL · IT SUPPORT'
   return 'STUDENT PORTAL'
 }
@@ -86,6 +84,7 @@ function pageTitle(pathname: string): string {
   if (pathname.startsWith('/agent/tickets/') && pathname !== ROUTES.agentTicketNew) {
     return 'Ticket Resolution'
   }
+  if (pathname.startsWith('/admin/settings/people')) return 'People'
   if (pathname.startsWith('/admin/settings')) return 'Settings'
   const map: Record<string, string> = {
     [ROUTES.dashboard]: 'Dashboard',
@@ -103,13 +102,17 @@ function pageTitle(pathname: string): string {
     [ROUTES.admin]: 'Dashboard',
     [ROUTES.departments]: 'Departments',
     [ROUTES.settings]: 'Settings',
+    [ROUTES.settingsPeople]: 'People',
+    [ROUTES.settingsDepartments]: 'Settings',
+    [ROUTES.settingsKnowledge]: 'Settings',
   }
   return map[pathname] ?? 'TicketHub'
 }
 
 export function AppLayout({ children }: { children?: ReactNode }) {
   const user = useAuthStore((s) => s.user)
-  const institution = useInstitutionStore((s) => s.institution)
+  const institutionId = useInstitutionStore((s) => s.institutionId)
+  const institution = findInstitution(institutionId)
   const location = useLocation()
   const [collapsed, setCollapsed] = useState(() => {
     try {
@@ -199,10 +202,15 @@ export function AppLayout({ children }: { children?: ReactNode }) {
       >
         <div className={styles.brandRow}>
           <Link to={homePath} className={styles.brand}>
-            <span className={styles.logo}>{institution.short}</span>
+            <span
+              className={styles.logo}
+              style={{ background: institution.color }}
+            >
+              {institution.short}
+            </span>
             {!collapsed ? (
               <span className={styles.brandText}>
-                <strong>{institution.name}</strong>
+                <strong>{institution.short}</strong>
                 <small>TicketHub</small>
               </span>
             ) : null}
@@ -225,9 +233,7 @@ export function AppLayout({ children }: { children?: ReactNode }) {
               <LanguageSelector />
             </div>
           ) : null}
-          <p className={styles.portal}>
-            {portalLabel(user?.role, institution.name)}
-          </p>
+          <p className={styles.portal}>{portalLabel(user?.role)}</p>
           {!collapsed && user ? (
             <Link to={ROUTES.profile} className={styles.userCard}>
               <Avatar

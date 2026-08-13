@@ -25,6 +25,8 @@ class Settings(BaseSettings):
     smtp_password: str = ""
     smtp_from: str = "noreply@university.example"
     smtp_use_tls: bool = True
+    # Optional Redis (empty → in-process memory cache). Example: redis://localhost:6379/0
+    redis_url: str = ""
     # LLM settings live in app.ai.llm_config
 
     @property

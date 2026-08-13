@@ -1,4 +1,4 @@
-import { mockTickets } from '@/mocks/data'
+import { findStaffMember, mockTickets } from '@/mocks/data'
 import { useAuthStore } from '@/stores/authStore'
 import type { Ticket, TicketAttachment, TicketComment } from '@/types'
 import {
@@ -286,7 +286,27 @@ export const ticketsApi = {
           status: 404,
         })
       }
-      Object.assign(ticket, payload, { updatedAt: new Date().toISOString() })
+
+      const next: UpdateTicketPayload = { ...payload }
+      if (payload.assignedTo !== undefined) {
+        if (payload.assignedTo === null) {
+          next.assignedTo = null
+          next.assignedName = null
+        } else {
+          const staff = findStaffMember(payload.assignedTo)
+          next.assignedTo = payload.assignedTo
+          next.assignedName =
+            payload.assignedName ?? staff?.name ?? payload.assignedTo
+        }
+      }
+
+      Object.assign(ticket, next, { updatedAt: new Date().toISOString() })
+
+      if (next.assignedTo === null) {
+        delete ticket.assignedTo
+        delete ticket.assignedName
+      }
+
       return structuredClone(ticket)
     }
 
@@ -417,7 +437,7 @@ export const ticketsApi = {
     attachment: TicketAttachment,
   ): Promise<void> {
     if (!usesLiveTickets()) {
-      // Mock mode has no bytes on disk — surface a clear failure instead of a
+      // Mock mode has no bytes on disk ? surface a clear failure instead of a
       // silent no-op that looks like a broken download button.
       throw new ApiError('Downloads are only available against the live API.', {
         code: 'NOT_FOUND',

@@ -44,4 +44,4 @@ See [`docs/SETUP_INSTRUCTIONS.md`](docs/SETUP_INSTRUCTIONS.md) for local setup,
 
 ## Status
 
-Foundation refactor in progress. Vertical feature slices are built incrementally — see `docs/REFACTOR.md`.
+Foundation refactor complete. Scarfolding and legacy codebase archived. New Vertical feature slice approach adobted for incremental build — see `docs/REFACTOR.md`.

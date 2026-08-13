@@ -18,6 +18,7 @@ function toArticle(raw: BackendFaq): KnowledgeArticle {
   return {
     id: raw.id,
     title: raw.question,
+    body: raw.answer,
     category: toDepartment(raw.category),
     // The FAQ table has no draft state or view counter; everything it serves
     // is live, and view tracking is not implemented.
@@ -45,11 +46,10 @@ function matchesFilters(
   ) {
     return false
   }
-  if (
-    params?.query?.trim() &&
-    !article.title.toLowerCase().includes(params.query.toLowerCase())
-  ) {
-    return false
+  if (params?.query?.trim()) {
+    const q = params.query.toLowerCase()
+    const haystack = `${article.title} ${article.body} ${article.id}`.toLowerCase()
+    if (!haystack.includes(q)) return false
   }
   return true
 }

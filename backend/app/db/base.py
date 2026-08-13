@@ -31,3 +31,18 @@ class TicketPriority(StrEnum):
     LOW = "LOW"
     MEDIUM = "MEDIUM"
     HIGH = "HIGH"
+
+
+class FaqVisibility(StrEnum):
+    """Who may see a knowledge-base article."""
+
+    STUDENTS_AND_AI = "STUDENTS_AND_AI"
+    AI_ONLY = "AI_ONLY"
+    ANNOUNCEMENT = "ANNOUNCEMENT"
+
+
+class FaqStatus(StrEnum):
+    """Draft articles are invisible to students regardless of visibility."""
+
+    DRAFT = "DRAFT"
+    PUBLISHED = "PUBLISHED"

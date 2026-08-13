@@ -2,13 +2,17 @@ from sqlalchemy import select, text
 from sqlalchemy.ext.asyncio import AsyncSession
 
 from app.core.exceptions import NotFoundError
-from app.models import FaqEntry
+from app.models import FaqEntry, User
 from app.schemas.kb import FaqCreate, FaqResponse, FaqSearchResult
 from app.services import embedding_jobs as jobs_service
+from app.services.tenants import DEFAULT_TENANT_ID
 
 
-async def list_faq(db: AsyncSession) -> list[FaqEntry]:
-    result = await db.execute(select(FaqEntry).order_by(FaqEntry.createdAt))
+async def list_faq(db: AsyncSession, *, tenant_id: str | None = None) -> list[FaqEntry]:
+    stmt = select(FaqEntry).order_by(FaqEntry.createdAt)
+    if tenant_id is not None:
+        stmt = stmt.where(FaqEntry.tenantId == tenant_id)
+    result = await db.execute(stmt)
     return list(result.scalars().all())
 
 
@@ -20,8 +24,9 @@ async def get_faq(db: AsyncSession, faq_id: str) -> FaqEntry:
     return entry
 
 
-async def create_faq(db: AsyncSession, data: FaqCreate) -> FaqEntry:
+async def create_faq(db: AsyncSession, data: FaqCreate, *, user: User) -> FaqEntry:
     entry = FaqEntry(
+        tenantId=user.tenantId,
         question=data.question,
         answer=data.answer,
         language=data.language,
@@ -97,6 +102,7 @@ async def upsert_faq_entry(
     context_blob: str | None,
     embedding: list[float] | None = None,
     update_embedding: bool = True,
+    tenant_id: str = DEFAULT_TENANT_ID,
 ) -> FaqEntry:
     """Insert or update one corpus entry without committing or deleting stale rows.
 
@@ -106,7 +112,7 @@ async def upsert_faq_entry(
     result = await db.execute(select(FaqEntry).where(FaqEntry.id == id))
     entry = result.scalar_one_or_none()
     if entry is None:
-        entry = FaqEntry(id=id)
+        entry = FaqEntry(id=id, tenantId=tenant_id)
         db.add(entry)
 
     entry.question = question

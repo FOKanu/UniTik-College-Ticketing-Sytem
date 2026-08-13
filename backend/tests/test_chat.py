@@ -7,12 +7,14 @@ from sqlalchemy import delete
 from app.ai import client as ai_client
 from app.ai.llm_config import LLMSettings
 from app.ai.triage import TicketSuggestion
+from app.core.cache import reset_cache_state_for_tests
 from app.core.exceptions import BadRequestError
 from app.db.base import Role
 from app.db.session import async_session_factory
 from app.models import ChatConversation, ChatMessage, User
 from app.services import chat as chat_service
 from app.services.chat import TRANSCRIPT_MAX_CHARS, _format_transcript
+from app.services.tenants import DEFAULT_TENANT_ID
 from tests.conftest import department_id_for, integration
 
 # Reserved discard port — nothing is listening, so the client must fail fast.
@@ -23,9 +25,9 @@ UNREACHABLE_BASE_URL = "http://127.0.0.1:9/v1"
 def offline_llm(monkeypatch):
     config = LLMSettings(ollama_openai_base_url=UNREACHABLE_BASE_URL).resolve()
     monkeypatch.setattr(ai_client, "get_llm_config", lambda: config)
-    monkeypatch.setattr(ai_client, "_health_cache", None)
+    reset_cache_state_for_tests()
     yield config
-    ai_client._health_cache = None
+    reset_cache_state_for_tests()
 
 
 @pytest.mark.asyncio
@@ -97,6 +99,7 @@ async def test_invalid_mode_is_rejected(client):
 
 async def _seed_conversation(db, *, with_messages: bool):
     user = User(
+        tenantId=DEFAULT_TENANT_ID,
         email=f"escalate-{uuid.uuid4()}@student.university.edu",
         displayName="Ada Lovelace",
         role=Role.STUDENT,

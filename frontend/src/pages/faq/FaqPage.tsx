@@ -2,6 +2,7 @@ import { useEffect, useState } from 'react'
 import { ROUTES } from '@/app/routes'
 import { Button, ButtonLink, SearchField } from '@/components/ui'
 import { knowledgeApi } from '@/lib/api'
+import { renderKnowledgeBody } from '@/lib/knowledge/renderBody'
 import type { KnowledgeArticle } from '@/types'
 import styles from './FaqPage.module.css'
 
@@ -21,6 +22,7 @@ export function FaqPage() {
   const [loading, setLoading] = useState(true)
   const [error, setError] = useState<string | null>(null)
   const [reloadKey, setReloadKey] = useState(0)
+  const [openId, setOpenId] = useState<string | null>(null)
 
   useEffect(() => {
     let cancelled = false
@@ -53,8 +55,17 @@ export function FaqPage() {
     setReloadKey((key) => key + 1)
   }
 
+  function toggleArticle(id: string) {
+    setOpenId((current) => (current === id ? null : id))
+  }
+
   const filtered = articles.filter((a) => {
-    const matchesQuery = a.title.toLowerCase().includes(query.toLowerCase())
+    const q = query.toLowerCase()
+    const matchesQuery =
+      !q ||
+      a.title.toLowerCase().includes(q) ||
+      a.body.toLowerCase().includes(q) ||
+      a.id.toLowerCase().includes(q)
     const matchesCategory = category === 'All' || a.category === category
     return matchesQuery && matchesCategory
   })
@@ -130,20 +141,35 @@ export function FaqPage() {
             </p>
           ) : (
             <ul>
-              {filtered.map((article) => (
-                <li key={article.id}>
-                  <button
-                    type="button"
-                    aria-label={`Read article: ${article.title}`}
-                  >
-                    <strong>{article.title}</strong>
-                    <span>
-                      {article.category} · Updated{' '}
-                      {formatUpdated(article.updatedAt)}
-                    </span>
-                  </button>
-                </li>
-              ))}
+              {filtered.map((article) => {
+                const open = openId === article.id
+                return (
+                  <li key={article.id}>
+                    <button
+                      type="button"
+                      className={open ? styles.articleOpen : undefined}
+                      aria-expanded={open}
+                      aria-controls={`faq-answer-${article.id}`}
+                      aria-label={`Read article: ${article.title}`}
+                      onClick={() => toggleArticle(article.id)}
+                    >
+                      <strong>{article.title}</strong>
+                      <span>
+                        {article.category} · Updated{' '}
+                        {formatUpdated(article.updatedAt)}
+                      </span>
+                    </button>
+                    {open ? (
+                      <div
+                        id={`faq-answer-${article.id}`}
+                        className={styles.answer}
+                      >
+                        <p>{renderKnowledgeBody(article.body)}</p>
+                      </div>
+                    ) : null}
+                  </li>
+                )
+              })}
             </ul>
           )}
         </section>
@@ -162,7 +188,12 @@ export function FaqPage() {
                     <span className={styles.rank} aria-hidden="true">
                       {index + 1}
                     </span>
-                    <button type="button">{article.title}</button>
+                    <button
+                      type="button"
+                      onClick={() => toggleArticle(article.id)}
+                    >
+                      {article.title}
+                    </button>
                   </li>
                 ))}
               </ol>

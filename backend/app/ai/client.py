@@ -4,8 +4,8 @@ The browser never reaches a model provider directly — every call goes through
 this module, which owns credentials, timeouts, and reasoning-token stripping.
 """
 
+import json
 import logging
-import time
 from collections.abc import AsyncIterator, Iterable
 
 import httpx
@@ -13,10 +13,12 @@ from openai import APIConnectionError, APIStatusError, AsyncOpenAI, OpenAIError
 
 from app.ai.llm_config import LLMProvider, ResolvedLLMConfig, get_llm_config
 from app.ai.prompts import ChatMode, mode_settings, system_prompt
+from app.core.cache import cache_delete, cache_get, cache_set
 
 logger = logging.getLogger(__name__)
 
 HEALTH_CACHE_TTL_SECONDS = 10.0
+HEALTH_CACHE_KEY = "llm:health"
 # Funnel/proxy round-trips are slower than local Ollama; keep this above a few seconds.
 HEALTH_TIMEOUT_SECONDS = 15.0
 
@@ -204,9 +206,6 @@ async def stream_chat_completion(
         yield tail
 
 
-_health_cache: tuple[float, dict] | None = None
-
-
 async def create_embedding(text: str) -> list[float]:
     """Return a single embedding vector via the OpenAI-compatible ``/v1/embeddings`` API.
 
@@ -240,19 +239,25 @@ async def create_embedding(text: str) -> list[float]:
 
 
 async def check_llm_health(force: bool = False) -> dict:
-    """Report provider reachability. Cached briefly so health polling stays cheap."""
-    global _health_cache
+    """Report provider reachability. Cached briefly so health polling stays cheap.
 
-    now = time.monotonic()
-    if not force and _health_cache and now - _health_cache[0] < HEALTH_CACHE_TTL_SECONDS:
-        return _health_cache[1]
+    Uses Redis when ``REDIS_URL`` is set so multi-worker processes share the
+    result; otherwise falls back to in-process memory via ``app.core.cache``.
+    """
+    if not force:
+        cached = await cache_get(HEALTH_CACHE_KEY)
+        if cached:
+            try:
+                return json.loads(cached)
+            except json.JSONDecodeError:
+                await cache_delete(HEALTH_CACHE_KEY)
 
     config = get_llm_config()
     result = config.public_summary()
 
     if not config.is_configured:
         result |= {"status": "unconfigured", "error": "Missing base URL, API key, or model"}
-        _health_cache = (now, result)
+        await cache_set(HEALTH_CACHE_KEY, json.dumps(result), HEALTH_CACHE_TTL_SECONDS)
         return result
 
     try:
@@ -267,5 +272,5 @@ async def check_llm_health(force: bool = False) -> dict:
         logger.warning("LLM health check failed: %s: %s", type(exc).__name__, exc)
         result |= {"status": "offline", "error": str(_wrap_error(exc, config))}
 
-    _health_cache = (now, result)
+    await cache_set(HEALTH_CACHE_KEY, json.dumps(result), HEALTH_CACHE_TTL_SECONDS)
     return result

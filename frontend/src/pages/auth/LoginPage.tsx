@@ -6,9 +6,10 @@ import { ROUTES } from '@/app/routes'
 import { Button, Input } from '@/components/ui'
 import { authApi, isApiError, usesLiveAuth } from '@/lib/api'
 import { homePathForRole } from '@/lib/auth'
+import { findInstitution, institutionEmailHint } from '@/lib/institutions'
 import { loginSchema, type LoginFormValues } from '@/lib/validation'
 import { mockAccounts } from '@/mocks/data'
-import { useAuthStore } from '@/stores/authStore'
+import { useAuthStore, useInstitutionStore } from '@/stores'
 import type { User } from '@/types'
 import styles from './AuthPages.module.css'
 
@@ -44,6 +45,9 @@ export function LoginPage() {
   const navigate = useNavigate()
   const location = useLocation()
   const setSession = useAuthStore((s) => s.setSession)
+  const institutionId = useInstitutionStore((s) => s.institutionId)
+  const institution = findInstitution(institutionId)
+  const emailHint = institutionEmailHint(institution)
   const [apiError, setApiError] = useState<string | null>(null)
 
   const {
@@ -82,7 +86,11 @@ export function LoginPage() {
 
   return (
     <div>
-      <h1 className={styles.title}>Sign in to your account</h1>
+      <h1 className={styles.title}>Sign in to {institution.short}</h1>
+      <p className={styles.hint}>
+        Signing in to <strong>{institution.name}</strong>.{' '}
+        <Link to={ROUTES.institution}>Choose a different institution</Link>
+      </p>
       <form
         className={styles.form}
         onSubmit={(e) => void handleSubmit(onSubmit)(e)}
@@ -92,7 +100,7 @@ export function LoginPage() {
           id="login-email"
           label="University Email"
           type="email"
-          placeholder="you@stud.university.edu"
+          placeholder={emailHint}
           autoComplete="username"
           error={errors.email?.message}
           {...register('email', {
@@ -131,7 +139,7 @@ export function LoginPage() {
       </Button>
 
       <div className={styles.demos}>
-        <p>Demo accounts</p>
+        <p>Demo accounts (work for any selected campus)</p>
         <ul>
           {demoAccounts.map((account) => (
             <li key={account.id}>

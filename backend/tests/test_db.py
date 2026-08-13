@@ -6,6 +6,7 @@ from sqlalchemy import select
 from app.db.base import Role
 from app.db.session import async_session_factory
 from app.models import Ticket, User
+from app.services.tenants import DEFAULT_TENANT_ID
 from tests.conftest import department_id_for, integration
 
 
@@ -14,6 +15,7 @@ from tests.conftest import department_id_for, integration
 async def test_db_user_ticket_roundtrip():
     async with async_session_factory() as db:
         user = User(
+            tenantId=DEFAULT_TENANT_ID,
             email=f"pytest-{uuid.uuid4().hex[:8]}@student.university.edu",
             displayName="Pytest User",
             role=Role.STUDENT,
@@ -22,6 +24,7 @@ async def test_db_user_ticket_roundtrip():
         db.add(user)
         await db.flush()
         ticket = Ticket(
+            tenantId=DEFAULT_TENANT_ID,
             subject="Test ticket",
             description="Created by pytest",
             createdById=user.id,

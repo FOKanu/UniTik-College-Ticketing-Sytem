@@ -225,6 +225,19 @@
   color: var(--color-primary);
 }
 
+.reassignLink {
+  font-size: 0.8rem;
+  font-weight: 700;
+  color: var(--color-primary);
+  text-decoration: none;
+  white-space: nowrap;
+}
+
+.reassignLink:hover {
+  text-decoration: underline;
+  text-underline-offset: 2px;
+}
+
 .loading,
 .empty {
   margin: 0;
