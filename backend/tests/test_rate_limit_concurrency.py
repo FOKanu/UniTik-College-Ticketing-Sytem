@@ -1,0 +1,68 @@
+import asyncio
+import pytest
+from fastapi import FastAPI
+from httpx import ASGITransport, AsyncClient
+
+from app.core.rate_limit import clear_memory_store, rate_limit
+
+
+@pytest.fixture(autouse=True)
+def reset_store():
+    clear_memory_store()
+    yield
+    clear_memory_store()
+
+
+@pytest.mark.asyncio
+async def test_concurrency_parallel_requests_memory_store(monkeypatch):
+    """Fire N+1 parallel requests and assert exactly N succeed and 1 is rejected with 429."""
+    monkeypatch.delenv("PYTEST_CURRENT_TEST", raising=False)
+
+    max_reqs = 10
+    total_reqs = max_reqs + 1
+
+    app = FastAPI()
+
+    @app.get("/concurrent", dependencies=[rate_limit(max_requests=max_reqs, window_seconds=60)])
+    async def concurrent_endpoint():
+        # Add tiny async yield to simulate real handler work
+        await asyncio.sleep(0.001)
+        return {"status": "ok"}
+
+    transport = ASGITransport(app=app)
+    async with AsyncClient(transport=transport, base_url="http://testserver") as client:
+        # Fire 11 requests concurrently using asyncio.gather
+        tasks = [client.get("/concurrent") for _ in range(total_reqs)]
+        responses = await asyncio.gather(*tasks)
+
+    status_codes = [r.status_code for r in responses]
+
+    # Exactly 10 must succeed (200) and 1 must fail (429)
+    assert status_codes.count(200) == max_reqs
+    assert status_codes.count(429) == 1
+
+
+@pytest.mark.asyncio
+async def test_concurrency_high_volume_parallel_requests(monkeypatch):
+    """Fire 50 parallel requests with max_requests=25 and assert exactly 25 succeed and 25 are rejected."""
+    monkeypatch.delenv("PYTEST_CURRENT_TEST", raising=False)
+
+    max_reqs = 25
+    total_reqs = 50
+
+    app = FastAPI()
+
+    @app.get("/high-load", dependencies=[rate_limit(max_requests=max_reqs, window_seconds=60)])
+    async def high_load_endpoint():
+        await asyncio.sleep(0.001)
+        return {"status": "ok"}
+
+    transport = ASGITransport(app=app)
+    async with AsyncClient(transport=transport, base_url="http://testserver") as client:
+        tasks = [client.get("/high-load") for _ in range(total_reqs)]
+        responses = await asyncio.gather(*tasks)
+
+    status_codes = [r.status_code for r in responses]
+
+    assert status_codes.count(200) == 25
+    assert status_codes.count(429) == 25

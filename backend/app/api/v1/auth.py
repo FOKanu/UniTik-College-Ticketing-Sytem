@@ -1,4 +1,4 @@
-from fastapi import APIRouter, Depends
+from fastapi import APIRouter
 
 from app.core.deps import CurrentUser, DbSession
 from app.core.rate_limit import rate_limit
@@ -10,13 +10,13 @@ from app.services import sso as sso_service
 router = APIRouter(prefix="/auth", tags=["auth"])
 
 
-@router.post("/login", dependencies=[Depends(rate_limit(max_requests=5, window_seconds=60))])
+@router.post("/login", dependencies=[rate_limit(max_requests=5, window_seconds=60)])
 async def login(db: DbSession, body: LoginRequest):
     result = await auth_service.login(db, body)
     return success_response(result.model_dump(mode="json"))
 
 
-@router.post("/register", dependencies=[Depends(rate_limit(max_requests=3, window_seconds=60))])
+@router.post("/register", dependencies=[rate_limit(max_requests=3, window_seconds=60)])
 async def register(db: DbSession, body: RegisterRequest):
     result = await auth_service.register(db, body)
     return success_response(result.model_dump(mode="json"), status_code=201)
