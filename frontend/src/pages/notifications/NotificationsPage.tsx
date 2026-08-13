@@ -45,6 +45,10 @@ export function NotificationsPage() {
       ) : null}
       {error ? <p role="alert">{error}</p> : null}
 
+      {!loading && !error && items.length === 0 ? (
+        <p className={styles.empty}>No notifications right now.</p>
+      ) : null}
+
       <ul className={styles.list}>
         {items.map((item) => (
           <li key={item.id} className={item.read ? styles.read : styles.unread}>

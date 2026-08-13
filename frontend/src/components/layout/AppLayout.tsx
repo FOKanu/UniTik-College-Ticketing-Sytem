@@ -46,7 +46,7 @@ const staffNav: NavItem[] = [
   { to: ROUTES.agent, label: 'Dashboard', icon: <IconDashboard />, end: true },
   { to: ROUTES.queue, label: 'Ticket Queue', icon: <IconTicket /> },
   { to: ROUTES.knowledge, label: 'Knowledge Base', icon: <IconBook /> },
-  { to: ROUTES.analytics, label: 'Analytics', icon: <IconChart />, soon: true },
+  { to: ROUTES.analytics, label: 'Analytics', icon: <IconChart /> },
   { to: ROUTES.profile, label: 'Profile', icon: <IconUser /> },
 ]
 
@@ -54,7 +54,7 @@ const adminNav: NavItem[] = [
   { to: ROUTES.admin, label: 'Dashboard', icon: <IconDashboard />, end: true },
   { to: ROUTES.queue, label: 'Ticket Queue', icon: <IconTicket /> },
   { to: ROUTES.knowledge, label: 'Knowledge Base', icon: <IconBook /> },
-  { to: ROUTES.analytics, label: 'Analytics', icon: <IconChart />, soon: true },
+  { to: ROUTES.analytics, label: 'Analytics', icon: <IconChart /> },
   { to: ROUTES.profile, label: 'Profile', icon: <IconUser /> },
   { to: ROUTES.settings, label: 'Settings', icon: <IconSettings /> },
 ]

@@ -128,9 +128,7 @@ export function TicketListPage() {
             {!loading &&
               items.map((ticket) => (
                 <tr key={ticket.id}>
-                  <td>
-                    <Link to={ticketDetailPath(ticket.id)}>{ticket.id}</Link>
-                  </td>
+                  <td className={styles.idCell}>{ticket.id}</td>
                   <td>
                     <Link to={ticketDetailPath(ticket.id)}>
                       {ticket.subject}

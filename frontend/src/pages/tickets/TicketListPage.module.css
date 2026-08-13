@@ -61,6 +61,12 @@
   border-bottom: none;
 }
 
+.idCell {
+  color: var(--neutral-500);
+  cursor: text;
+  user-select: text;
+}
+
 .table th {
   font-size: var(--text-caption);
   text-transform: uppercase;
