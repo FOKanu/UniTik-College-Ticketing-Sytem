@@ -2,6 +2,7 @@ import { zodResolver } from '@hookform/resolvers/zod'
 import { useState } from 'react'
 import { useForm } from 'react-hook-form'
 import { Link, useLocation, useNavigate } from 'react-router-dom'
+import { useTranslation } from 'react-i18next'
 import { ROUTES } from '@/app/routes'
 import { Button, Input } from '@/components/ui'
 import { authApi, isApiError, usesLiveAuth } from '@/lib/api'
@@ -39,6 +40,7 @@ const SEED_PASSWORD = 'demo1234'
 const MOCK_PASSWORD = 'password'
 
 export function LoginPage() {
+  const { t } = useTranslation()
   const usingMocks = !usesLiveAuth()
   const demoAccounts = usingMocks ? mockAccounts : SEEDED_ACCOUNTS
   const demoPassword = usingMocks ? MOCK_PASSWORD : SEED_PASSWORD
@@ -79,17 +81,17 @@ export function LoginPage() {
       )
     } catch (err) {
       setApiError(
-        isApiError(err) ? err.message : 'Unable to sign in. Please try again.',
+        isApiError(err) ? err.message : t('auth.signInFailed'),
       )
     }
   }
 
   return (
     <div>
-      <h1 className={styles.title}>Sign in to {institution.short}</h1>
+      <h1 className={styles.title}>{t('auth.signInTo', { institution: institution.short })}</h1>
       <p className={styles.hint}>
-        Signing in to <strong>{institution.name}</strong>.{' '}
-        <Link to={ROUTES.institution}>Choose a different institution</Link>
+        {t('auth.signingInTo', { institution: institution.name })}{' '}
+        <Link to={ROUTES.institution}>{t('auth.chooseDifferent')}</Link>
       </p>
       <form
         className={styles.form}
@@ -98,11 +100,11 @@ export function LoginPage() {
       >
         <Input
           id="login-email"
-          label="University Email"
+          label={t('auth.email')}
           type="email"
           placeholder={emailHint}
           autoComplete="username"
-          error={errors.email?.message}
+          error={errors.email?.message ? t(errors.email.message) : undefined}
           {...register('email', {
             onChange: () => setApiError(null),
           })}
@@ -110,14 +112,14 @@ export function LoginPage() {
         <div className={styles.passwordField}>
           <Input
             id="login-password"
-            label="Password"
+            label={t('auth.password')}
             type="password"
             autoComplete="current-password"
-            error={errors.password?.message}
+            error={errors.password?.message ? t(errors.password.message) : undefined}
             {...register('password')}
           />
           <button type="button" className={styles.forgot} disabled>
-            Forgot password?
+            {t('auth.forgot')}
           </button>
         </div>
         {apiError ? (
@@ -126,26 +128,26 @@ export function LoginPage() {
           </p>
         ) : null}
         <Button type="submit" fullWidth size="lg" disabled={isSubmitting}>
-          {isSubmitting ? 'Signing in…' : 'Sign In'}
+          {isSubmitting ? t('auth.signingIn') : t('auth.signIn')}
         </Button>
       </form>
 
       <div className={styles.divider}>
-        <span>or</span>
+        <span>{t('auth.or')}</span>
       </div>
 
       <Button type="button" variant="secondary" fullWidth disabled>
-        Continue with University SSO
+        {t('auth.sso')}
       </Button>
 
       <div className={styles.demos}>
-        <p>Demo accounts (work for any selected campus)</p>
+        <p>{t('auth.demo')}</p>
         <ul>
           {demoAccounts.map((account) => (
             <li key={account.id}>
               <button
                 type="button"
-                aria-label={`Fill demo credentials for ${account.role}`}
+                aria-label={t('auth.fillDemo', { role: account.role })}
                 onClick={() => {
                   setValue('email', account.email)
                   setValue('password', demoPassword)
@@ -161,7 +163,7 @@ export function LoginPage() {
       </div>
 
       <p className={styles.footer}>
-        Don&apos;t have an account? <Link to={ROUTES.register}>Sign Up</Link>
+        {t('authLayout.noAccount')} <Link to={ROUTES.register}>{t('authLayout.signUp')}</Link>
       </p>
     </div>
   )

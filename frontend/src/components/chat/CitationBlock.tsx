@@ -1,4 +1,5 @@
 import type { Citation } from '@/lib/api'
+import { useTranslation } from 'react-i18next'
 import { toDepartment } from '@/lib/api/adapters'
 import { DepartmentBadge } from '@/components/ui'
 import { IconAlert } from '@/components/ui/icons'
@@ -30,8 +31,9 @@ export function CitationBlock({
   canEscalate = false,
   isEscalating = false,
   onEscalate,
-  escalateLabel = 'Escalate to Ticket',
+  escalateLabel,
 }: CitationBlockProps) {
+  const { t } = useTranslation()
   const sources = citations.slice(0, MAX_SOURCES)
   // Strong hits show sources. Weak hits may show a caution + escalate with no
   // "closest articles" list (backend now returns empty citations when weak).
@@ -46,8 +48,7 @@ export function CitationBlock({
         <p className={styles.weak} role="note">
           <IconAlert width={14} height={14} aria-hidden="true" />
           <span>
-            No strong match in the knowledge base — this answer may be
-            incomplete. Double-check anything important.
+            {t('chatbot.weak')}
           </span>
         </p>
       ) : null}
@@ -55,8 +56,8 @@ export function CitationBlock({
       {sources.length > 0 ? (
         <>
           <p className={styles.label}>
-            Sources
-            <span className={styles.origin}>· knowledge base</span>
+            {t('chatbot.sources')}
+            <span className={styles.origin}>· {t('chatbot.knowledgeBase')}</span>
           </p>
           <ul className={styles.list}>
             {sources.map((citation) => (
@@ -80,7 +81,7 @@ export function CitationBlock({
           disabled={isEscalating}
           onClick={onEscalate}
         >
-          {isEscalating ? 'Creating ticket…' : escalateLabel}
+          {isEscalating ? t('chatbot.creatingTicket') : (escalateLabel ?? t('chatbot.escalate'))}
         </button>
       ) : null}
     </div>

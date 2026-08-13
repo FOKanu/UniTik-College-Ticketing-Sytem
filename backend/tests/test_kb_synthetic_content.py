@@ -11,14 +11,18 @@ from app.services.kb_content_parser import (
 )
 
 KB_DIR = Path(__file__).parents[2] / "docs" / "knowledge-base"
-FOCUSED_FILES = ("registrar.md", "housing.md")
+FOCUSED_FILES = ("registrar_EN.md", "housing_EN.md")
 EXPECTED_COUNTS = {
-    "academics.md": 30,
-    "finance.md": 15,
-    "it-support.md": 15,
-    "maintenance.md": 15,
-    "registrar.md": 55,
-    "housing.md": 53,
+    f"{name}_{language}.md": count
+    for name, count in {
+        "academics": 30,
+        "finance": 15,
+        "it-support": 15,
+        "maintenance": 15,
+        "registrar": 55,
+        "housing": 53,
+    }.items()
+    for language in ("EN", "DE")
 }
 FORBIDDEN = (
     "university of rochester",
@@ -45,19 +49,45 @@ FORBIDDEN = (
 )
 
 
+def _protected_values(text: str) -> set[str]:
+    return {
+        value.rstrip(".,;:!?\"'`")
+        for value in re.findall(
+            r"https?://[^\s,)]+|[\w.+-]+@[\w.-]+|faq-[a-z-]+-\d{3}", text
+        )
+    }
+
+
+def test_translation_pairs_preserve_ids_links_and_addresses():
+    for base in ("academics", "finance", "it-support", "maintenance", "registrar", "housing"):
+        english = (KB_DIR / f"{base}_EN.md").read_text(encoding="utf-8")
+        german = (KB_DIR / f"{base}_DE.md").read_text(encoding="utf-8")
+        assert _protected_values(english) == _protected_values(german)
+        english_doc = next(
+            doc for doc in load_corpus(KB_DIR) if Path(doc.file_path).name == f"{base}_EN.md"
+        )
+        german_doc = next(
+            doc for doc in load_corpus(KB_DIR) if Path(doc.file_path).name == f"{base}_DE.md"
+        )
+        assert [entry.id for entry in english_doc.entries] == [
+            entry.id for entry in german_doc.entries
+        ]
+
+
 def test_complete_corpus_counts_ids_and_questions_are_consistent():
     documents = load_corpus(KB_DIR)
     entries = validate_corpus(documents)
-    assert len(documents) == len(EXPECTED_COUNTS) == 6
-    assert TOTAL_CANONICAL_ENTRIES == sum(EXPECTED_COUNTS.values()) == 183
-    assert len(entries) == 183
-    assert len({entry.id for entry in entries}) == 183
-    assert len({normalize_question(entry.question) for entry in entries}) == 183
+    assert len(documents) == len(EXPECTED_COUNTS) == 12
+    assert TOTAL_CANONICAL_ENTRIES == sum(EXPECTED_COUNTS.values()) == 366
+    assert len(entries) == 366
+    assert len({(entry.id, entry.language) for entry in entries}) == 366
+    assert len({(normalize_question(entry.question), entry.language) for entry in entries}) == 366
     for document in documents:
         filename = Path(document.file_path).name
-        department, prefix, count = CANONICAL_FILES[filename]
+        department, prefix, count, language = CANONICAL_FILES[filename]
         assert count == EXPECTED_COUNTS[filename]
         assert document.department == department
+        assert document.language == language
         assert len(document.entries) == count
         assert [entry.id for entry in document.entries] == [
             f"{prefix}{index:03d}" for index in range(1, count + 1)
@@ -98,7 +128,12 @@ def test_every_canonical_document_is_deidentified():
 
 
 def test_cross_department_workflows_share_canonical_ownership():
-    entries = {entry.id: entry for document in load_corpus(KB_DIR) for entry in document.entries}
+    entries = {
+        entry.id: entry
+        for document in load_corpus(KB_DIR)
+        if document.language == "en"
+        for entry in document.entries
+    }
 
     transcript_url = "https://portal.university.example/registrar/transcripts"
     for entry_id in ("faq-academics-023", "faq-registrar-020"):

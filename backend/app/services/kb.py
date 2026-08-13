@@ -1,3 +1,5 @@
+import uuid
+
 from sqlalchemy import select, text
 from sqlalchemy.ext.asyncio import AsyncSession
 
@@ -8,10 +10,14 @@ from app.services import embedding_jobs as jobs_service
 from app.services.tenants import DEFAULT_TENANT_ID
 
 
-async def list_faq(db: AsyncSession, *, tenant_id: str | None = None) -> list[FaqEntry]:
+async def list_faq(
+    db: AsyncSession, *, tenant_id: str | None = None, language: str | None = None
+) -> list[FaqEntry]:
     stmt = select(FaqEntry).order_by(FaqEntry.createdAt)
     if tenant_id is not None:
         stmt = stmt.where(FaqEntry.tenantId == tenant_id)
+    if language is not None:
+        stmt = stmt.where(FaqEntry.language == language)
     result = await db.execute(stmt)
     return list(result.scalars().all())
 
@@ -26,6 +32,8 @@ async def get_faq(db: AsyncSession, faq_id: str) -> FaqEntry:
 
 async def create_faq(db: AsyncSession, data: FaqCreate, *, user: User) -> FaqEntry:
     entry = FaqEntry(
+        id=str(uuid.uuid4()),
+        documentId=str(uuid.uuid4()),
         tenantId=user.tenantId,
         question=data.question,
         answer=data.answer,
@@ -41,18 +49,23 @@ async def create_faq(db: AsyncSession, data: FaqCreate, *, user: User) -> FaqEnt
     return entry
 
 
-async def search_faq(db: AsyncSession, query: str, limit: int = 5) -> list[FaqSearchResult]:
+async def search_faq(
+    db: AsyncSession, query: str, limit: int = 5, language: str = "en"
+) -> list[FaqSearchResult]:
     """Text search fallback when embeddings are not yet populated."""
     pattern = f"%{query}%"
     result = await db.execute(
         select(FaqEntry)
-        .where(FaqEntry.question.ilike(pattern) | FaqEntry.answer.ilike(pattern))
+        .where(
+            FaqEntry.language == language,
+            FaqEntry.question.ilike(pattern) | FaqEntry.answer.ilike(pattern),
+        )
         .limit(limit)
     )
     entries = list(result.scalars().all())
     return [
         FaqSearchResult(
-            id=e.id,
+            id=e.documentId,
             question=e.question,
             answer=e.answer,
             category=e.category,
@@ -63,17 +76,19 @@ async def search_faq(db: AsyncSession, query: str, limit: int = 5) -> list[FaqSe
 
 
 async def search_faq_vector(
-    db: AsyncSession, embedding: list[float], limit: int = 5
+    db: AsyncSession, embedding: list[float], limit: int = 5, language: str = "en"
 ) -> list[FaqSearchResult]:
     sql = text("""
-        SELECT id, question, answer, category,
+        SELECT "documentId" AS id, question, answer, category,
                1 - (embedding <=> :embedding) AS score
         FROM "FaqEntry"
-        WHERE embedding IS NOT NULL
+        WHERE embedding IS NOT NULL AND language = :language
         ORDER BY embedding <=> :embedding
         LIMIT :limit
         """)
-    result = await db.execute(sql, {"embedding": str(embedding), "limit": limit})
+    result = await db.execute(
+        sql, {"embedding": str(embedding), "limit": limit, "language": language}
+    )
     rows = result.mappings().all()
     return [
         FaqSearchResult(
@@ -103,6 +118,7 @@ async def upsert_faq_entry(
     embedding: list[float] | None = None,
     update_embedding: bool = True,
     tenant_id: str = DEFAULT_TENANT_ID,
+    document_id: str | None = None,
 ) -> FaqEntry:
     """Insert or update one corpus entry without committing or deleting stale rows.
 
@@ -112,9 +128,10 @@ async def upsert_faq_entry(
     result = await db.execute(select(FaqEntry).where(FaqEntry.id == id))
     entry = result.scalar_one_or_none()
     if entry is None:
-        entry = FaqEntry(id=id, tenantId=tenant_id)
+        entry = FaqEntry(id=id, documentId=document_id or id, tenantId=tenant_id)
         db.add(entry)
 
+    entry.documentId = document_id or id
     entry.question = question
     entry.answer = answer
     entry.language = language

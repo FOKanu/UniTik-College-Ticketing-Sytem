@@ -1,4 +1,5 @@
 import { useRef, useState } from 'react'
+import { useTranslation } from 'react-i18next'
 import { Button, Avatar, Input } from '@/components/ui'
 import { IconCheck, IconLogout, IconUser } from '@/components/ui/icons'
 import { signOut } from '@/lib/api'
@@ -18,13 +19,9 @@ const AVATAR_COLORS = [
 
 const DEFAULT_COLOR = AVATAR_COLORS[0].value
 
-function roleLabel(role: string | undefined): string {
-  if (role === 'agent') return 'Support agent'
-  if (role === 'admin') return 'Administrator'
-  return 'Student'
-}
-
 export function ProfilePage() {
+  const { t } = useTranslation()
+  const roleLabel = (role: string | undefined) => t(`profile.${role === 'admin' ? 'administrator' : role === 'agent' ? 'agent' : 'student'}`)
   const user = useAuthStore((s) => s.user)
   const updateProfile = useAuthStore((s) => s.updateProfile)
   const pushToast = useUiStore((s) => s.pushToast)
@@ -41,7 +38,7 @@ export function ProfilePage() {
   if (!user) {
     return (
       <div className={styles.page}>
-        <p>You need to sign in to view your profile.</p>
+        <p>{t('profile.signInRequired')}</p>
       </div>
     )
   }
@@ -54,16 +51,16 @@ export function ProfilePage() {
     const nextName = displayName.trim()
     if (nextName.length < 2) {
       pushToast({
-        title: 'Name too short',
-        body: 'Please enter at least 2 characters.',
+        title: t('profile.short'),
+        body: t('profile.shortBody'),
         tone: 'error',
       })
       return
     }
     updateProfile({ displayName: nextName, avatarColor })
     pushToast({
-      title: 'Profile updated',
-      body: 'Your name and avatar color were saved.',
+      title: t('profile.saved'),
+      body: t('profile.savedBody'),
       tone: 'success',
     })
   }
@@ -72,8 +69,8 @@ export function ProfilePage() {
     <div className={styles.page}>
       <header className={styles.header}>
         <div>
-          <h1>Profile</h1>
-          <p>Manage how you appear across TicketHub.</p>
+          <h1>{t('profile.title')}</h1>
+          <p>{t('profile.description')}</p>
         </div>
       </header>
 
@@ -96,32 +93,32 @@ export function ProfilePage() {
         <section className={styles.card}>
           <header className={styles.cardHeader}>
             <IconUser width={18} height={18} />
-            <h3>Account</h3>
+            <h3>{t('profile.account')}</h3>
           </header>
 
           <div className={styles.fields}>
             <Input
               id="profile-name"
-              label="Display name"
+              label={t('profile.displayName')}
               value={displayName}
               onChange={(e) => setDisplayName(e.target.value)}
               autoComplete="name"
             />
             <Input
               id="profile-email"
-              label="Email"
+              label={t('profile.email')}
               value={user.email}
               readOnly
-              hint="Email is managed by your institution."
+              hint={t('profile.emailManaged')}
             />
             <div className={styles.metaRow}>
               <div>
-                <span className={styles.metaLabel}>Role</span>
+                <span className={styles.metaLabel}>{t('profile.role')}</span>
                 <strong>{roleLabel(user.role)}</strong>
               </div>
               {user.department ? (
                 <div>
-                  <span className={styles.metaLabel}>Department</span>
+                  <span className={styles.metaLabel}>{t('profile.department')}</span>
                   <strong>{user.department}</strong>
                 </div>
               ) : null}
@@ -131,16 +128,15 @@ export function ProfilePage() {
 
         <section className={styles.card}>
           <header className={styles.cardHeader}>
-            <h3>Avatar color</h3>
+            <h3>{t('profile.avatarColor')}</h3>
           </header>
           <p className={styles.hint}>
-            Pick a color for your initials badge. Used in the header and
-            conversations.
+            {t('profile.avatarHelp')}
           </p>
           <div
             className={styles.swatches}
             role="radiogroup"
-            aria-label="Avatar color"
+            aria-label={t('profile.avatarColor')}
           >
             {AVATAR_COLORS.map((swatch) => {
               const selected = avatarColor === swatch.value
@@ -164,12 +160,20 @@ export function ProfilePage() {
               )
             })}
           </div>
+          <div className={styles.preview}>
+            <Avatar
+              name={displayName || user.displayName}
+              size="lg"
+              color={avatarColor}
+            />
+            <span>{t('common.preview')}</span>
+          </div>
         </section>
       </div>
 
       <footer className={styles.actions}>
         <Button onClick={handleSave} disabled={!dirty}>
-          Save changes
+          {t('common.save')}
         </Button>
         <Button
           variant="secondary"
@@ -179,7 +183,7 @@ export function ProfilePage() {
           }}
           disabled={!dirty}
         >
-          Reset
+          {t('common.reset')}
         </Button>
         <Button
           variant="ghost"
@@ -187,7 +191,7 @@ export function ProfilePage() {
           onClick={() => void signOut()}
         >
           <IconLogout width={16} height={16} />
-          Sign out
+          {t('profile.signOut')}
         </Button>
       </footer>
     </div>

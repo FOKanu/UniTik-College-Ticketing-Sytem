@@ -3,9 +3,11 @@ import type { KnowledgeArticle } from '@/types'
 import { type Envelope, toDepartment, unwrap } from './adapters'
 import { get, mockLatency, post, usesMockKnowledge } from './client'
 import { ApiError } from './errors'
+import i18n from '@/i18n'
 
 interface BackendFaq {
   id: string
+  documentId: string
   question: string
   answer: string
   language: string
@@ -16,7 +18,7 @@ interface BackendFaq {
 
 function toArticle(raw: BackendFaq): KnowledgeArticle {
   return {
-    id: raw.id,
+    id: raw.documentId,
     title: raw.question,
     body: raw.answer,
     category: toDepartment(raw.category),
@@ -65,7 +67,8 @@ export const knowledgeApi = {
       return mockArticles.filter((article) => matchesFilters(article, params))
     }
 
-    const raw = unwrap(await get<Envelope<BackendFaq[]>>('/kb/faq'))
+    const language = i18n.resolvedLanguage?.startsWith('de') ? 'de' : 'en'
+    const raw = unwrap(await get<Envelope<BackendFaq[]>>(`/kb/faq?language=${language}`))
     return raw
       .map(toArticle)
       .filter((article) => matchesFilters(article, params))
@@ -89,6 +92,7 @@ export const knowledgeApi = {
         question: data.question,
         answer: data.answer,
         category: data.category ?? null,
+        language: i18n.resolvedLanguage?.startsWith('de') ? 'de' : 'en',
       }),
     )
     return toArticle(raw)

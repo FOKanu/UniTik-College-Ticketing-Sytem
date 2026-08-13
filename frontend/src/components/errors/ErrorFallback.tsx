@@ -1,4 +1,5 @@
 import { ROUTES } from '@/app/routes'
+import { useTranslation } from 'react-i18next'
 import { Button, ButtonLink } from '@/components/ui'
 import { homePathForRole } from '@/lib/auth'
 import { useAuthStore } from '@/stores/authStore'
@@ -14,11 +15,12 @@ export interface ErrorFallbackProps {
 
 export function ErrorFallback({
   error,
-  title = 'Something went wrong',
-  description = 'An unexpected error occurred. You can try again or return home.',
+  title,
+  description,
   compact = false,
   onRetry,
 }: ErrorFallbackProps) {
+  const { t } = useTranslation()
   const user = useAuthStore((s) => s.user)
   const home = user ? homePathForRole(user.role) : ROUTES.login
   const showDetails = import.meta.env.DEV && error
@@ -29,20 +31,20 @@ export function ErrorFallback({
       role="alert"
     >
       <div className={styles.card}>
-        <p className={styles.code}>Error</p>
-        <h1>{title}</h1>
-        <p className={styles.copy}>{description}</p>
+        <p className={styles.code}>{t('errors.label')}</p>
+        <h1>{title ?? t('errors.generic')}</h1>
+        <p className={styles.copy}>{description ?? t('errors.genericBody')}</p>
         {showDetails ? (
           <pre className={styles.details}>{error.message}</pre>
         ) : null}
         <div className={styles.actions}>
           {onRetry ? (
             <Button type="button" onClick={onRetry}>
-              Try again
+              {t('common.retry')}
             </Button>
           ) : null}
           <ButtonLink to={home} variant="secondary">
-            Go home
+            {t('errors.goHome')}
           </ButtonLink>
         </div>
       </div>

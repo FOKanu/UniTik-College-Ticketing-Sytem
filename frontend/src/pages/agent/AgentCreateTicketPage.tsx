@@ -2,6 +2,7 @@ import { useEffect, useState } from 'react'
 import { zodResolver } from '@hookform/resolvers/zod'
 import { Controller, useForm } from 'react-hook-form'
 import { useNavigate } from 'react-router-dom'
+import { useTranslation } from 'react-i18next'
 import { ROUTES } from '@/app/routes'
 import {
   Button,
@@ -23,6 +24,7 @@ const CATEGORIES: Department[] = ['Academics', 'IT', 'Finance', 'Maintenance']
 const PRIORITIES: TicketPriority[] = ['low', 'medium', 'high', 'urgent']
 
 export function AgentCreateTicketPage() {
+  const { t } = useTranslation()
   const navigate = useNavigate()
   const currentUser = useAuthStore((s) => s.user)
   const [staff, setStaff] = useState<StaffMember[]>([])
@@ -82,8 +84,7 @@ export function AgentCreateTicketPage() {
       <div className={styles.layout}>
         <section className={styles.formCard}>
           <header>
-            <h1>Log a New Ticket</h1>
-            <p>Create a ticket on behalf of a student, or log an internal issue.</p>
+            <h1>{t('titles.logTicket')}</h1><p>{t('agentCreate.description')}</p>
           </header>
 
           <form
@@ -97,14 +98,12 @@ export function AgentCreateTicketPage() {
               render={({ field }) => (
                 <PillRadioGroup
                   name="requester-type"
-                  legend="Requester type"
+                  legend={t('agentCreate.requesterType')}
                   value={field.value}
                   onChange={field.onChange}
-                  error={errors.requesterType?.message}
+                  error={errors.requesterType?.message ? t(errors.requesterType.message) : undefined}
                   options={[
-                    { value: 'student', label: 'Student' },
-                    { value: 'walkin', label: 'Walk-in / Phone' },
-                    { value: 'internal', label: 'Internal Staff Issue' },
+                    { value: 'student', label: t('agentCreate.student') }, { value: 'walkin', label: t('agentCreate.walkin') }, { value: 'internal', label: t('agentCreate.internal') },
                   ]}
                 />
               )}
@@ -112,9 +111,9 @@ export function AgentCreateTicketPage() {
 
             <Input
               id="student-search"
-              label="Requester"
-              placeholder="Search student by name, ID, or email..."
-              error={errors.requester?.message}
+              label={t('agentCreate.requester')}
+              placeholder={t('agentCreate.requesterPlaceholder')}
+              error={errors.requester?.message ? t(errors.requester.message) : undefined}
               {...register('requester')}
             />
 
@@ -124,13 +123,13 @@ export function AgentCreateTicketPage() {
               render={({ field }) => (
                 <PillRadioGroup
                   name="agent-category"
-                  legend="Category"
+                  legend={t('common.category')}
                   value={field.value}
                   onChange={field.onChange}
-                  error={errors.category?.message}
+                  error={errors.category?.message ? t(errors.category.message) : undefined}
                   options={CATEGORIES.map((item) => ({
                     value: item,
-                    label: item,
+                    label: t(`departments.${item === 'IT' ? 'it' : item.toLowerCase()}`),
                   }))}
                 />
               )}
@@ -138,16 +137,14 @@ export function AgentCreateTicketPage() {
 
             <Input
               id="agent-subject"
-              label="Subject"
-              placeholder="Brief summary of the issue"
-              error={errors.subject?.message}
+              label={t('tickets.subject')} placeholder={t('tickets.summaryPlaceholder')}
+              error={errors.subject?.message ? t(errors.subject.message) : undefined}
               {...register('subject')}
             />
             <Textarea
               id="agent-description"
-              label="Description"
-              placeholder="Describe the issue in detail..."
-              error={errors.description?.message}
+              label={t('tickets.description')} placeholder={t('tickets.describePlaceholder')}
+              error={errors.description?.message ? t(errors.description.message) : undefined}
               {...register('description')}
             />
 
@@ -157,13 +154,13 @@ export function AgentCreateTicketPage() {
               render={({ field }) => (
                 <PillRadioGroup
                   name="agent-priority"
-                  legend="Priority"
+                  legend={t('tickets.priority')}
                   value={field.value}
                   onChange={field.onChange}
-                  error={errors.priority?.message}
+                  error={errors.priority?.message ? t(errors.priority.message) : undefined}
                   options={PRIORITIES.map((item) => ({
                     value: item,
-                    label: item.charAt(0).toUpperCase() + item.slice(1),
+                    label: t(`common.${item}`),
                   }))}
                 />
               )}
@@ -171,32 +168,29 @@ export function AgentCreateTicketPage() {
 
             <Select
               id="assign-to"
-              label="Assign To"
+              label={t('agentCreate.assign')}
               options={assignOptions}
-              error={errors.assignTo?.message}
+              error={errors.assignTo?.message ? t(errors.assignTo.message) : undefined}
               {...register('assignTo')}
             />
 
             <div className={styles.actions}>
-              <Button type="submit">Create Ticket</Button>
+              <Button type="submit">{t('tickets.create')}</Button>
               <Button
                 type="button"
                 variant="secondary"
                 onClick={() => void navigate(ROUTES.queue)}
               >
-                Cancel
+                {t('common.cancel')}
               </Button>
             </div>
           </form>
         </section>
 
         <aside className={styles.info}>
-          <h2>Logging on behalf of someone?</h2>
+          <h2>{t('agentCreate.behalf')}</h2>
           <ul>
-            <li>Search by ID auto-fills student details</li>
-            <li>Tickets are tagged &quot;Staff-logged&quot;</li>
-            <li>Email confirmations are sent automatically</li>
-            <li>Internal issues route to specific queues</li>
+            <li>{t('agentCreate.note1')}</li><li>{t('agentCreate.note2')}</li><li>{t('agentCreate.note3')}</li><li>{t('agentCreate.note4')}</li>
           </ul>
         </aside>
       </div>

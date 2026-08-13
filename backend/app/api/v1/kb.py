@@ -1,4 +1,4 @@
-from typing import Annotated
+from typing import Annotated, Literal
 
 from fastapi import APIRouter, Depends, Query
 
@@ -16,8 +16,10 @@ AdminOnly = Annotated[User, Depends(require_roles(Role.ADMIN))]
 
 
 @router.get("/faq")
-async def list_faq(db: DbSession):
-    entries = await kb_service.list_faq(db)
+async def list_faq(
+    db: DbSession, language: Annotated[Literal["en", "de"] | None, Query()] = None
+):
+    entries = await kb_service.list_faq(db, language=language)
     return success_response([kb_service.faq_to_response(e).model_dump() for e in entries])
 
 
@@ -39,7 +41,9 @@ async def create_faq(
 
 @router.post("/search")
 async def search_faq(db: DbSession, body: FaqSearchRequest):
-    results = await kb_service.search_faq(db, body.query, body.limit)
+    results = await kb_service.search_faq(
+        db, body.query, body.limit, language=body.language
+    )
     return success_response([r.model_dump() for r in results])
 
 

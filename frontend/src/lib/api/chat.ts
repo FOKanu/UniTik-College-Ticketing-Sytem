@@ -176,6 +176,7 @@ export const chatApi = {
     conversationId: string,
     content: string,
     mode: ChatMode,
+    language: 'en' | 'de',
     handlers: StreamHandlers = {},
     signal?: AbortSignal,
   ): Promise<StreamResult> {
@@ -188,7 +189,7 @@ export const chatApi = {
           Accept: 'text/event-stream',
           ...authHeaders(),
         },
-        body: JSON.stringify({ content, mode }),
+        body: JSON.stringify({ content, mode, language }),
         signal,
       },
     )

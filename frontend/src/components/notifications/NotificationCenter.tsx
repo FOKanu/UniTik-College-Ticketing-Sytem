@@ -1,5 +1,6 @@
 import { useCallback, useEffect, useId, useRef, useState } from 'react'
 import { Link, useNavigate } from 'react-router-dom'
+import { useTranslation } from 'react-i18next'
 import { ROUTES } from '@/app/routes'
 import { Button } from '@/components/ui'
 import { usePermissions } from '@/hooks/useAuth'
@@ -11,6 +12,7 @@ import {
 import { useNotificationStore } from '@/stores'
 import type { NotificationItem } from '@/types'
 import styles from './NotificationCenter.module.css'
+import { browserLocale } from '@/i18n'
 
 const PREVIEW_LIMIT = 6
 
@@ -40,6 +42,8 @@ function BellIcon() {
 }
 
 export function NotificationCenter() {
+  const { t, i18n } = useTranslation()
+  const locale = browserLocale(i18n.resolvedLanguage)
   const panelId = useId()
   const rootRef = useRef<HTMLDivElement>(null)
   const panelRef = useRef<HTMLDivElement>(null)
@@ -125,15 +129,15 @@ export function NotificationCenter() {
           className={styles.panel}
           role="dialog"
           aria-modal="true"
-          aria-label="Notification history"
+        aria-label={t('notifications.history')}
         >
           <header className={styles.header}>
             <div>
-              <h2>Notifications</h2>
+              <h2>{t('notifications.title')}</h2>
               {unread > 0 ? (
                 <p>{unread} unread</p>
               ) : (
-                <p>You're all caught up</p>
+              <p>{t('notifications.caughtUp')}</p>
               )}
             </div>
             <Button
@@ -148,9 +152,9 @@ export function NotificationCenter() {
 
           <div className={styles.listWrap}>
             {loading && items.length === 0 ? (
-              <p className={styles.empty}>Loading…</p>
+              <p className={styles.empty}>{t('common.loading')}</p>
             ) : preview.length === 0 ? (
-              <p className={styles.empty}>No notifications yet.</p>
+              <p className={styles.empty}>{t('notifications.empty')}</p>
             ) : (
               <ul className={styles.list}>
                 {preview.map((item) => (
@@ -165,7 +169,7 @@ export function NotificationCenter() {
                       <span className={styles.itemTitle}>{item.title}</span>
                       <span className={styles.itemBody}>{item.body}</span>
                       <time dateTime={item.createdAt}>
-                        {formatNotificationTime(item.createdAt)}
+                        {formatNotificationTime(item.createdAt, locale)}
                       </time>
                     </button>
                   </li>

@@ -38,6 +38,14 @@ LLM_EMPTY_REPLY = (
     "I could not produce an answer for that turn. Please try again, or propose "
     "a support ticket from this conversation."
 )
+LLM_OFFLINE_REPLY_DE = (
+    "Ich kann den KI-Assistenten derzeit nicht erreichen. Ein Supportmitarbeiter kann helfen, "
+    "wenn Sie dieses Gespräch als Ticket weiterleiten."
+)
+
+
+def offline_reply(language: str) -> str:
+    return LLM_OFFLINE_REPLY_DE if language == "de" else LLM_OFFLINE_REPLY
 
 # Soft prompts — avoid forcing "escalate" / FAQ chrome on greetings.
 CHITCHAT_KB_CONTEXT = (
@@ -59,10 +67,21 @@ _GREETING_RE = re.compile(
     re.IGNORECASE,
 )
 
+_GERMAN_GREETING_RE = re.compile(
+    r"^(hallo|hi|hey|guten\s+(morgen|tag|abend)|danke|vielen\s+dank|tschüss|auf\s+wiedersehen)[\s!.?]*$",
+    re.IGNORECASE,
+)
+
 _SUPPORT_HINT_RE = re.compile(
     r"\b(help|problem|issue|broken|error|bug|can't|cannot|unable|won't|dont|"
     r"don't|how\s+(do|to|can)|where|when|why|ticket|login|password|vpn|"
     r"wifi|grade|exam|pay|tuition|refund|register|appeal)\b",
+    re.IGNORECASE,
+)
+
+_GERMAN_SUPPORT_HINT_RE = re.compile(
+    r"\b(hilfe|problem|fehler|kaputt|kann nicht|wie|wo|wann|warum|ticket|anmeldung|"
+    r"passwort|vergessen|vpn|wlan|note|prüfung|zahlen|gebühr|erstattung|einschreiben)\b",
     re.IGNORECASE,
 )
 
@@ -72,11 +91,16 @@ def is_chitchat_query(query: str) -> bool:
     text = " ".join(query.strip().split())
     if not text:
         return True
-    if _GREETING_RE.match(text):
+    if _GREETING_RE.match(text) or _GERMAN_GREETING_RE.match(text):
         return True
     words = text.split()
     # Short utterances without a question mark and without support keywords.
-    if len(words) <= 3 and "?" not in text and not _SUPPORT_HINT_RE.search(text):
+    if (
+        len(words) <= 3
+        and "?" not in text
+        and not _SUPPORT_HINT_RE.search(text)
+        and not _GERMAN_SUPPORT_HINT_RE.search(text)
+    ):
         return True
     return False
 
@@ -88,7 +112,7 @@ def looks_like_support_issue(query: str) -> bool:
         return False
     if "?" in text:
         return True
-    return bool(_SUPPORT_HINT_RE.search(text))
+    return bool(_SUPPORT_HINT_RE.search(text) or _GERMAN_SUPPORT_HINT_RE.search(text))
 
 
 @dataclass
@@ -165,7 +189,7 @@ def _citations_from_hits(hits: list[FaqSearchResult]) -> list[Citation]:
     ]
 
 
-def _format_kb_context(hits: list[FaqSearchResult]) -> str:
+def _format_kb_context(hits: list[FaqSearchResult], language: str = "en") -> str:
     blocks = [
         f"[{index}] id={hit.id} category={hit.category or 'General'}\n"
         f"Q: {hit.question}\nA: {hit.answer}"
@@ -174,10 +198,11 @@ def _format_kb_context(hits: list[FaqSearchResult]) -> str:
     return (
         "Knowledge-base excerpts (use these; cite FAQ ids when you rely on them):\n\n"
         + "\n\n".join(blocks)
+        + ("\n\nRespond in German." if language == "de" else "\n\nRespond in English.")
     )
 
 
-async def retrieve_for_query(db: AsyncSession, query: str) -> RetrievalBundle:
+async def retrieve_for_query(db: AsyncSession, query: str, language: str = "en") -> RetrievalBundle:
     """Vector search with text fallback. Skips RAG chrome for chitchat.
 
     Weak hits no longer surface "closest articles" — empty citations keep the
@@ -193,16 +218,16 @@ async def retrieve_for_query(db: AsyncSession, query: str) -> RetrievalBundle:
     hits: list[FaqSearchResult] = []
     try:
         vector = await embed_text(query)
-        hits = await kb_service.search_faq_vector(db, vector, limit=RAG_TOP_K)
+        hits = await kb_service.search_faq_vector(db, vector, limit=RAG_TOP_K, language=language)
     except EmbeddingProviderError as exc:
         logger.warning("Embedding retrieval failed; falling back to text search: %s", exc)
-        hits = await kb_service.search_faq(db, query, limit=RAG_TOP_K)
+        hits = await kb_service.search_faq(db, query, limit=RAG_TOP_K, language=language)
 
     strong = [hit for hit in hits if hit.score >= RAG_MIN_SCORE]
     if strong:
         return RetrievalBundle(
             citations=_citations_from_hits(strong),
-            kb_context=_format_kb_context(strong),
+            kb_context=_format_kb_context(strong, language),
             retrieval_weak=False,
         )
 
@@ -229,7 +254,7 @@ async def start_user_turn(
     await db.commit()
     await db.refresh(user_message)
 
-    retrieval = await retrieve_for_query(db, data.content)
+    retrieval = await retrieve_for_query(db, data.content, data.language)
     history = await _recent_history(db, conversation.id)
     prompt = build_messages(history, data.mode, kb_context=retrieval.kb_context)
     return user_message, prompt, retrieval
@@ -257,7 +282,7 @@ async def send_message(
     except LLMUnavailableError as exc:
         # A dead model server must not lose the user's message or 500 the request.
         logger.warning("Falling back to offline reply: %s", exc)
-        reply = LLM_OFFLINE_REPLY
+        reply = offline_reply(data.language)
 
     bot_message = await finish_bot_turn(db, conversation_id, reply)
     return user_message, bot_message, retrieval

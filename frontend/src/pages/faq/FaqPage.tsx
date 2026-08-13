@@ -1,21 +1,29 @@
 import { useEffect, useState } from 'react'
+import { useTranslation } from 'react-i18next'
 import { ROUTES } from '@/app/routes'
 import { Button, ButtonLink, SearchField } from '@/components/ui'
 import { knowledgeApi } from '@/lib/api'
 import { renderKnowledgeBody } from '@/lib/knowledge/renderBody'
 import type { KnowledgeArticle } from '@/types'
 import styles from './FaqPage.module.css'
+import { browserLocale } from '@/i18n'
 
 const CATEGORIES = ['All', 'IT', 'Finance', 'Academics', 'Maintenance'] as const
+const CATEGORY_KEYS = {
+  All: 'departments.all', IT: 'departments.it', Finance: 'departments.finance',
+  Academics: 'departments.academics', Maintenance: 'departments.maintenance',
+} as const
 
-function formatUpdated(iso: string): string {
-  return new Date(iso).toLocaleDateString(undefined, {
+function formatUpdated(iso: string, locale: string): string {
+  return new Date(iso).toLocaleDateString(locale, {
     month: 'short',
     day: 'numeric',
   })
 }
 
 export function FaqPage() {
+  const { t, i18n } = useTranslation()
+  const locale = browserLocale(i18n.resolvedLanguage)
   const [query, setQuery] = useState('')
   const [category, setCategory] = useState<(typeof CATEGORIES)[number]>('All')
   const [articles, setArticles] = useState<KnowledgeArticle[]>([])
@@ -38,7 +46,7 @@ export function FaqPage() {
         setError(
           err instanceof Error
             ? err.message
-            : 'Could not load articles. Check your connection and try again.',
+            : t('faq.loadError'),
         )
       } finally {
         if (!cancelled) setLoading(false)
@@ -47,7 +55,7 @@ export function FaqPage() {
     return () => {
       cancelled = true
     }
-  }, [reloadKey])
+  }, [i18n.resolvedLanguage, reloadKey, t])
 
   function retry() {
     setLoading(true)
@@ -83,13 +91,13 @@ export function FaqPage() {
   return (
     <div className={styles.page}>
       <header>
-        <h1>FAQ / Help Center</h1>
-        <p>Browse popular articles or search for answers.</p>
+        <h1>{t('faq.heading')}</h1>
+        <p>{t('faq.subtitle')}</p>
       </header>
 
       <SearchField
         id="faq-search"
-        placeholder="Search articles..."
+        placeholder={t('faq.search')}
         value={query}
         onChange={(e) => setQuery(e.target.value)}
         className={styles.search}
@@ -98,7 +106,7 @@ export function FaqPage() {
       <div
         className={styles.categories}
         role="group"
-        aria-label="Article categories"
+        aria-label={t('faq.categories')}
       >
         {CATEGORIES.map((item) => (
           <button
@@ -108,36 +116,34 @@ export function FaqPage() {
             aria-pressed={category === item}
             onClick={() => setCategory(item)}
           >
-            {item}
+            {t(CATEGORY_KEYS[item])}
           </button>
         ))}
       </div>
 
       <div className={styles.grid}>
         <section className={styles.panel} aria-busy={loading}>
-          <h2>Articles</h2>
+          <h2>{t('faq.articles')}</h2>
           {loading ? (
             <p className={styles.empty} aria-live="polite">
-              Loading articles…
+              {t('faq.loading')}
             </p>
           ) : error ? (
             <div className={styles.stateBox} role="alert">
               <p>{error}</p>
               <Button variant="secondary" size="sm" onClick={retry}>
-                Try again
+                {t('common.retry')}
               </Button>
             </div>
           ) : !hasCorpus ? (
             <div className={styles.stateBox}>
               <p>
-                No articles have been published yet. Ask the AI Assistant or
-                open a ticket — staff answers often become new articles.
+                {t('faq.nonePublished')}
               </p>
             </div>
           ) : filtered.length === 0 && isFiltering ? (
             <p className={styles.empty}>
-              No articles match your search. Try different keywords or clear the
-              category filter.
+              {t('faq.noMatchesLong')}
             </p>
           ) : (
             <ul>
@@ -150,13 +156,13 @@ export function FaqPage() {
                       className={open ? styles.articleOpen : undefined}
                       aria-expanded={open}
                       aria-controls={`faq-answer-${article.id}`}
-                      aria-label={`Read article: ${article.title}`}
+                      aria-label={t('faq.read', { title: article.title })}
                       onClick={() => toggleArticle(article.id)}
                     >
                       <strong>{article.title}</strong>
                       <span>
-                        {article.category} · Updated{' '}
-                        {formatUpdated(article.updatedAt)}
+                        {t(CATEGORY_KEYS[article.category as keyof typeof CATEGORY_KEYS] ?? 'common.category')} · {t('faq.updated')}{' '}
+                        {formatUpdated(article.updatedAt, locale)}
                       </span>
                     </button>
                     {open ? (
@@ -176,10 +182,10 @@ export function FaqPage() {
 
         <aside className={styles.rail}>
           <section className={styles.panel}>
-            <h2>Recently updated</h2>
+            <h2>{t('faq.recent')}</h2>
             {loading || error || recentlyUpdated.length === 0 ? (
               <p className={styles.empty}>
-                {loading ? 'Loading…' : 'Nothing here yet.'}
+                {loading ? t('common.loading') : t('faq.nothing')}
               </p>
             ) : (
               <ol className={styles.mostAsked}>
@@ -201,11 +207,11 @@ export function FaqPage() {
           </section>
 
           <section className={styles.help}>
-            <h2>Still need help?</h2>
-            <p>Ask the AI Assistant or open a ticket with campus support.</p>
-            <ButtonLink to={ROUTES.assistant}>Ask assistant</ButtonLink>
+            <h2>{t('faq.stillNeedHelp')}</h2>
+            <p>{t('faq.helpText')}</p>
+            <ButtonLink to={ROUTES.assistant}>{t('faq.askAssistant')}</ButtonLink>
             <ButtonLink to={ROUTES.ticketNew} variant="secondary">
-              Contact support
+              {t('faq.contact')}
             </ButtonLink>
           </section>
         </aside>
