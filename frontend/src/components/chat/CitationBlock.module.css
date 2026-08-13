@@ -1,0 +1,100 @@
+.block {
+  margin-top: var(--space-3);
+  padding-top: var(--space-3);
+  border-top: 1px solid var(--neutral-200);
+  display: grid;
+  gap: var(--space-2);
+}
+
+.weak {
+  margin: 0;
+  display: flex;
+  align-items: flex-start;
+  gap: var(--space-2);
+  font-size: var(--text-caption);
+  line-height: 1.4;
+  color: var(--color-warning, #8a5a08);
+}
+
+.weak svg {
+  flex-shrink: 0;
+  margin-top: 1px;
+}
+
+.label {
+  margin: 0;
+  font-size: var(--text-overline);
+  font-weight: 600;
+  letter-spacing: 0.04em;
+  text-transform: uppercase;
+  color: var(--neutral-500);
+}
+
+.origin {
+  margin-left: 0.35rem;
+  font-weight: 400;
+  text-transform: none;
+  letter-spacing: normal;
+}
+
+.list {
+  list-style: none;
+  margin: 0;
+  padding: 0;
+  display: grid;
+  gap: var(--space-1, 0.25rem);
+}
+
+.item {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: var(--space-2);
+  font-size: var(--text-caption);
+  color: var(--neutral-700);
+}
+
+.question {
+  min-width: 0;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+.escalateBtn {
+  justify-self: start;
+  border: 1px solid var(--brand-300, #6fb2de);
+  background: var(--neutral-0, #fff);
+  color: var(--brand-700, #1d5c87);
+  border-radius: var(--radius-md);
+  padding: 0.3rem 0.65rem;
+  font: inherit;
+  font-size: var(--text-caption);
+  font-weight: 600;
+  cursor: pointer;
+}
+
+.escalateBtn:hover {
+  background: var(--brand-50, #eef6fc);
+}
+
+.escalateBtn:disabled {
+  opacity: 0.65;
+  cursor: not-allowed;
+}
+
+/* ChatbotFab panel — tighter; the surface provides the bubble chrome. */
+.compact {
+  margin-top: 0;
+  padding-top: 0;
+  border-top: 0;
+  gap: 0.3rem;
+}
+
+.compact .item {
+  font-size: var(--text-overline);
+}
+
+.compact .weak {
+  font-size: var(--text-overline);
+}

@@ -2,16 +2,22 @@ import { zodResolver } from '@hookform/resolvers/zod'
 import { useState } from 'react'
 import { useForm } from 'react-hook-form'
 import { Link, useNavigate } from 'react-router-dom'
+import { useTranslation } from 'react-i18next'
 import { ROUTES } from '@/app/routes'
 import { Button, Input } from '@/components/ui'
 import { authApi, isApiError } from '@/lib/api'
+import { findInstitution, institutionEmailHint } from '@/lib/institutions'
 import { registerSchema, type RegisterFormValues } from '@/lib/validation'
-import { useAuthStore } from '@/stores/authStore'
+import { useAuthStore, useInstitutionStore } from '@/stores'
 import styles from './AuthPages.module.css'
 
 export function RegisterPage() {
+  const { t } = useTranslation()
   const navigate = useNavigate()
   const setSession = useAuthStore((s) => s.setSession)
+  const institutionId = useInstitutionStore((s) => s.institutionId)
+  const institution = findInstitution(institutionId)
+  const emailHint = institutionEmailHint(institution)
   const [apiError, setApiError] = useState<string | null>(null)
 
   const {
@@ -42,14 +48,18 @@ export function RegisterPage() {
       setApiError(
         isApiError(err)
           ? err.message
-          : 'Unable to create account. Please try again.',
+          : t('auth.registerFailed'),
       )
     }
   }
 
   return (
     <div>
-      <h1 className={styles.title}>Create your account</h1>
+      <h1 className={styles.title}>{t('auth.join', { institution: institution.short })}</h1>
+      <p className={styles.hint}>
+        {t('auth.creatingFor', { institution: institution.name })}{' '}
+        <Link to={ROUTES.institution}>{t('auth.chooseDifferent')}</Link>
+      </p>
       <form
         className={styles.form}
         onSubmit={(e) => void handleSubmit(onSubmit)(e)}
@@ -57,56 +67,55 @@ export function RegisterPage() {
       >
         <Input
           id="register-name"
-          label="Full Name"
+          label={t('auth.fullName')}
           placeholder="Amara Kanu"
-          error={errors.displayName?.message}
+          error={errors.displayName?.message ? t(errors.displayName.message) : undefined}
           {...register('displayName')}
         />
         <Input
           id="register-email"
-          label="University Email"
+          label={t('auth.email')}
           type="email"
-          placeholder="you@stud.university.edu"
+          placeholder={emailHint}
           autoComplete="email"
-          error={errors.email?.message}
+          error={errors.email?.message ? t(errors.email.message) : undefined}
           {...register('email')}
         />
         <Input
           id="register-password"
-          label="Password"
+          label={t('auth.password')}
           type="password"
           autoComplete="new-password"
-          error={errors.password?.message}
+          error={errors.password?.message ? t(errors.password.message) : undefined}
           {...register('password')}
         />
         <Input
           id="register-confirm"
-          label="Confirm Password"
+          label={t('auth.confirmPassword')}
           type="password"
           autoComplete="new-password"
-          error={errors.confirmPassword?.message}
+          error={errors.confirmPassword?.message ? t(errors.confirmPassword.message) : undefined}
           {...register('confirmPassword')}
         />
         <p className={styles.hint}>
-          Student and staff accounts are verified via your university email
-          domain.
+          {t('auth.campusEmail', { domains: institution.domains })}
         </p>
         {apiError ? <p className={styles.error} role="alert">{apiError}</p> : null}
         <Button type="submit" fullWidth size="lg" disabled={isSubmitting}>
-          {isSubmitting ? 'Creating…' : 'Create Account'}
+          {isSubmitting ? t('auth.creating') : t('auth.createAccount')}
         </Button>
       </form>
 
       <div className={styles.divider}>
-        <span>or</span>
+        <span>{t('auth.or')}</span>
       </div>
 
       <Button type="button" variant="secondary" fullWidth disabled>
-        Continue with University SSO
+        {t('auth.sso')}
       </Button>
 
       <p className={styles.footer}>
-        Already have an account? <Link to={ROUTES.login}>Sign In</Link>
+        {t('auth.already')} <Link to={ROUTES.login}>{t('auth.signIn')}</Link>
       </p>
     </div>
   )

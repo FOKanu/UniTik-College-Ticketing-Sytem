@@ -46,9 +46,15 @@ coverage/
 *.tsbuildinfo
 .eslintcache
 .venv/
+__pycache__/
 **/__pycache__/
+*.pyc
 *.py[cod]
 *.egg-info/
+
+# local ticket attachment uploads (see UPLOAD_DIR)
+backend/uploads/
+uploads/
 
 # TS project-reference build cache (see frontend/tsconfig.node.json)
 .tsc-cache/

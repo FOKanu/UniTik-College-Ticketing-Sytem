@@ -1,22 +1,28 @@
+"""KB embedding helpers — context blobs + validated vectors via ``app.ai``.
+
+Embeddings use the same OpenAI-compatible provider as chat (Ollama Funnel / OpenAI /
+Gemini). There is no separate ``EMBEDDING_SERVICE_URL`` microservice.
+"""
+
+from __future__ import annotations
+
 import json
 import math
-import os
 from collections.abc import Mapping
 from numbers import Real
 
-import httpx
+from app.ai.client import LLMUnavailableError, create_embedding
+from app.ai.llm_config import get_llm_config
 
-EMBEDDING_DIMENSIONS = 1536
-EMBEDDING_TIMEOUT_SECONDS = 60.0
-EMBEDDING_SERVICE_URL = os.getenv("EMBEDDING_SERVICE_URL", "http://localhost:8001/embed")
+EMBEDDING_DIMENSIONS = 768
 
 
 class EmbeddingProviderError(Exception):
-    """Sanitized operational failure from the configured embedding service."""
+    """Sanitized operational failure from the configured embedding provider."""
 
 
 class InvalidEmbeddingResponseError(EmbeddingProviderError):
-    """The embedding service returned data that does not match the KB contract."""
+    """The embedding provider returned data that does not match the KB contract."""
 
 
 def build_context_blob(entry) -> str:
@@ -37,19 +43,16 @@ def build_context_blob(entry) -> str:
     )
 
 
-def validate_embedding_response(data: object) -> list[float]:
-    if not isinstance(data, Mapping):
-        raise InvalidEmbeddingResponseError("Embedding provider returned an invalid response.")
-    if "embedding" not in data or data["embedding"] is None:
-        raise InvalidEmbeddingResponseError("Embedding provider response is missing an embedding.")
-
-    vector = data["embedding"]
+def validate_embedding_vector(
+    vector: object,
+    *,
+    expected_dimensions: int | None = None,
+) -> list[float]:
+    dims = expected_dimensions if expected_dimensions is not None else EMBEDDING_DIMENSIONS
     if not isinstance(vector, list):
         raise InvalidEmbeddingResponseError("Embedding provider returned an invalid embedding.")
-    if len(vector) != EMBEDDING_DIMENSIONS:
-        raise InvalidEmbeddingResponseError(
-            f"Embedding must contain exactly {EMBEDDING_DIMENSIONS} values."
-        )
+    if len(vector) != dims:
+        raise InvalidEmbeddingResponseError(f"Embedding must contain exactly {dims} values.")
 
     normalized: list[float] = []
     for value in vector:
@@ -65,26 +68,28 @@ def validate_embedding_response(data: object) -> list[float]:
     return normalized
 
 
-async def embed_text(text: str, *, client: httpx.AsyncClient | None = None) -> list[float]:
-    async def request(active_client: httpx.AsyncClient) -> list[float]:
-        try:
-            response = await active_client.post(EMBEDDING_SERVICE_URL, json={"input": text})
-            response.raise_for_status()
-            try:
-                data = response.json()
-            except ValueError:
-                raise EmbeddingProviderError("Embedding provider returned invalid JSON.") from None
-            return validate_embedding_response(data)
-        except httpx.TimeoutException:
-            raise EmbeddingProviderError("Embedding provider request timed out.") from None
-        except httpx.ConnectError:
-            raise EmbeddingProviderError("Could not connect to the embedding provider.") from None
-        except httpx.HTTPStatusError:
-            raise EmbeddingProviderError(
-                "Embedding provider returned an unsuccessful status."
-            ) from None
+def validate_embedding_response(data: object) -> list[float]:
+    """Accept either a raw vector list or ``{"embedding": [...]}`` (legacy test shape)."""
+    if isinstance(data, list):
+        return validate_embedding_vector(data)
+    if not isinstance(data, Mapping):
+        raise InvalidEmbeddingResponseError("Embedding provider returned an invalid response.")
+    if "embedding" not in data or data["embedding"] is None:
+        raise InvalidEmbeddingResponseError("Embedding provider response is missing an embedding.")
+    return validate_embedding_vector(data["embedding"])
 
-    if client is not None:
-        return await request(client)
-    async with httpx.AsyncClient(timeout=EMBEDDING_TIMEOUT_SECONDS) as managed_client:
-        return await request(managed_client)
+
+async def embed_text(text: str) -> list[float]:
+    """Embed ``text`` through ``app.ai.create_embedding`` and enforce column width."""
+    config = get_llm_config()
+    try:
+        raw = await create_embedding(text)
+    except LLMUnavailableError as exc:
+        raise EmbeddingProviderError(str(exc)) from exc
+
+    try:
+        return validate_embedding_vector(raw, expected_dimensions=config.embedding_dimensions)
+    except InvalidEmbeddingResponseError:
+        raise
+    except Exception as exc:  # noqa: BLE001 — normalize unexpected provider shapes
+        raise EmbeddingProviderError("Embedding provider returned an invalid response.") from exc

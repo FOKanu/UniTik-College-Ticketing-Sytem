@@ -7,21 +7,23 @@
   "scripts": {
     "dev": "vite",
     "build": "tsc -b && vite build",
-    "typecheck": "tsc -b --pretty false",
+    "preview": "vite preview",
+    "typecheck": "tsc --noEmit",
     "lint": "eslint .",
     "lint:fix": "eslint . --fix",
     "format": "prettier --write .",
     "format:check": "prettier --check .",
     "test": "vitest run",
-    "test:watch": "vitest",
-    "preview": "vite preview"
+    "test:watch": "vitest"
   },
   "dependencies": {
     "@hookform/resolvers": "^5.4.0",
     "axios": "^1.18.1",
+    "i18next": "^26.3.6",
     "react": "^19.2.7",
     "react-dom": "^19.2.7",
     "react-hook-form": "^7.82.0",
+    "react-i18next": "^17.0.11",
     "react-router-dom": "^7.18.1",
     "zod": "^4.4.3",
     "zustand": "^5.0.14"

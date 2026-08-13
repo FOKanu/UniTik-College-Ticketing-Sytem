@@ -31,11 +31,36 @@ class TicketResponse(BaseModel):
     priority: TicketPriority
     category: str | None
     department: str | None
+    # "manual" | "rule-engine" | null — how department was assigned (NEG-6).
+    classificationSource: str | None = None
     createdById: str
     assignedToId: str | None
     problemId: str | None
     createdAt: datetime
     updatedAt: datetime
+    # Resolved from the requester/assignee relationships so clients can show
+    # people without a second round trip to the user directory.
+    createdByName: str | None = None
+    createdByEmail: str | None = None
+    assignedToName: str | None = None
+    # First-response SLA (computed remaining hours; due/breach from DB).
+    slaDueAt: datetime | None = None
+    slaBreachedAt: datetime | None = None
+    slaHoursRemaining: int | None = None
+    slaBreached: bool = False
+
+    model_config = {"from_attributes": True}
+
+
+class StatusHistoryResponse(BaseModel):
+    id: str
+    ticketId: str
+    fromStatus: TicketStatus | None
+    toStatus: TicketStatus
+    changedById: str | None
+    changedByName: str | None = None
+    reason: str | None
+    createdAt: datetime
 
     model_config = {"from_attributes": True}
 
@@ -54,3 +79,12 @@ class CommentResponse(BaseModel):
     createdAt: datetime
 
     model_config = {"from_attributes": True}
+
+
+class AttachmentResponse(BaseModel):
+    id: str
+    ticketId: str
+    name: str
+    fileType: str
+    fileSizeBytes: int
+    uploadedAt: datetime

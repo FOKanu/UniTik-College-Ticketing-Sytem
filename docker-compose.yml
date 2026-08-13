@@ -21,6 +21,21 @@ services:
       timeout: 5s
       retries: 5
 
+  # Optional shared cache (LLM health). Backend does not depend_on this —
+  # leave REDIS_URL empty for in-process memory fallback.
+  redis:
+    image: redis:7-alpine
+    container_name: uts-redis
+    restart: unless-stopped
+    ports:
+      # Host port overridable when 6379 is already taken on the machine.
+      - "127.0.0.1:${REDIS_HOST_PORT:-6379}:6379"
+    healthcheck:
+      test: ["CMD", "redis-cli", "ping"]
+      interval: 10s
+      timeout: 3s
+      retries: 5
+
   backend:
     build:
       context: ./backend
@@ -34,6 +49,8 @@ services:
       # Team default: public Tailscale Funnel → Caddy Bearer → Ollama.
       # Override in backend/.env for on-box loopback development.
       OLLAMA_OPENAI_BASE_URL: ${OLLAMA_OPENAI_BASE_URL:-https://muc-a-3099.tail129a23.ts.net/v1}
+      # Set in backend/.env to share LLM health cache across workers:
+      # REDIS_URL: redis://redis:6379/0
     extra_hosts:
       - "host.docker.internal:host-gateway"
     ports:
@@ -43,11 +60,13 @@ services:
         condition: service_healthy
     volumes:
       - ./backend:/app
+      - ./docs/knowledge-base:/docs/knowledge-base:ro
 
   frontend:
     build:
-      context: ./frontend
-      dockerfile: ../docker/frontend.Dockerfile
+      context: .
+      dockerfile: docker/frontend.Dockerfile
+      target: development
     container_name: uts-frontend
     restart: unless-stopped
     env_file:
@@ -59,6 +78,21 @@ services:
     volumes:
       - ./frontend:/app
       - /app/node_modules
+
+  # Production-style static SPA (nginx + long-cache hashed assets).
+  # Usage: docker compose --profile prod-frontend up --build frontend-prod
+  frontend-prod:
+    profiles: ["prod-frontend"]
+    build:
+      context: .
+      dockerfile: docker/frontend.Dockerfile
+      target: production
+    container_name: uts-frontend-prod
+    restart: unless-stopped
+    ports:
+      - "127.0.0.1:8080:80"
+    depends_on:
+      - backend
 
 volumes:
   postgres_data:

@@ -20,6 +20,16 @@
   color: var(--color-text-muted);
 }
 
+.empty {
+  text-align: center;
+  color: var(--color-text-muted);
+  background: #fff;
+  border: 1px dashed var(--color-border);
+  border-radius: 12px;
+  padding: 2rem 1rem;
+  margin: 0;
+}
+
 .list {
   list-style: none;
   margin: 0;

@@ -12,8 +12,8 @@
 
 .header h1 {
   margin: 0;
-  font-size: var(--text-h1);
-  letter-spacing: -0.02em;
+  font-size: 1.75rem;
+  letter-spacing: -0.03em;
 }
 
 .header p {
@@ -59,6 +59,12 @@
 
 .table tbody tr:last-child td {
   border-bottom: none;
+}
+
+.idCell {
+  color: var(--neutral-500);
+  cursor: text;
+  user-select: text;
 }
 
 .table th {

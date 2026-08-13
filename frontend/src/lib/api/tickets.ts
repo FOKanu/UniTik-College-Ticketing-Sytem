@@ -1,6 +1,6 @@
-import { mockTickets } from '@/mocks/data'
+import { findStaffMember, mockTickets } from '@/mocks/data'
 import { useAuthStore } from '@/stores/authStore'
-import type { Ticket, TicketComment } from '@/types'
+import type { Ticket, TicketAttachment, TicketComment } from '@/types'
 import {
   type Envelope,
   fromTicketPriority,
@@ -10,7 +10,16 @@ import {
   toTicketStatus,
   unwrap,
 } from './adapters'
-import { get, mockLatency, patch, post, usesLiveTickets } from './client'
+import {
+  apiClient,
+  del,
+  get,
+  mockLatency,
+  patch,
+  post,
+  postForm,
+  usesLiveTickets,
+} from './client'
 import { ApiError } from './errors'
 import type {
   AddCommentPayload,
@@ -32,6 +41,13 @@ interface BackendTicket {
   assignedToId: string | null
   createdAt: string
   updatedAt: string
+  createdByName?: string | null
+  createdByEmail?: string | null
+  assignedToName?: string | null
+  slaDueAt?: string | null
+  slaBreachedAt?: string | null
+  slaHoursRemaining?: number | null
+  slaBreached?: boolean
 }
 
 interface BackendComment {
@@ -43,11 +59,38 @@ interface BackendComment {
   createdAt: string
 }
 
+interface BackendAttachment {
+  id: string
+  ticketId: string
+  name: string
+  fileType: string
+  fileSizeBytes: number
+  uploadedAt: string
+}
+
 function currentUserId(): string | undefined {
   return useAuthStore.getState().user?.id
 }
 
-function toTicket(raw: BackendTicket, comments: TicketComment[] = []): Ticket {
+export function formatFileSize(bytes: number): string {
+  if (bytes < 1024) return `${bytes} B`
+  if (bytes < 1024 * 1024) return `${(bytes / 1024).toFixed(1)} KB`
+  return `${(bytes / (1024 * 1024)).toFixed(1)} MB`
+}
+
+function toAttachment(raw: BackendAttachment): TicketAttachment {
+  return {
+    id: raw.id,
+    name: raw.name,
+    sizeLabel: formatFileSize(raw.fileSizeBytes),
+  }
+}
+
+function toTicket(
+  raw: BackendTicket,
+  comments: TicketComment[] = [],
+  attachments: TicketAttachment[] = [],
+): Ticket {
   return {
     id: raw.id,
     subject: raw.subject,
@@ -57,9 +100,19 @@ function toTicket(raw: BackendTicket, comments: TicketComment[] = []): Ticket {
     priority: toTicketPriority(raw.priority),
     createdBy: raw.createdById,
     assignedTo: raw.assignedToId ?? undefined,
+    // Names are resolved server-side from the user relationships. Without
+    // them every row would read "Unassigned" even when assignedToId is set.
+    assignedName: raw.assignedToName ?? undefined,
+    requesterName: raw.createdByName ?? undefined,
+    requesterEmail: raw.createdByEmail ?? undefined,
     createdAt: raw.createdAt,
     updatedAt: raw.updatedAt,
+    slaDueAt: raw.slaDueAt ?? null,
+    slaBreachedAt: raw.slaBreachedAt ?? null,
+    slaHoursRemaining: raw.slaHoursRemaining ?? undefined,
+    slaBreached: raw.slaBreached ?? false,
     comments,
+    attachments: attachments.length > 0 ? attachments : undefined,
   }
 }
 
@@ -77,11 +130,7 @@ function toComment(raw: BackendComment): TicketComment {
   }
 }
 
-function paginate<T>(
-  items: T[],
-  page = 1,
-  pageSize = 20,
-): Paginated<T> {
+function paginate<T>(items: T[], page = 1, pageSize = 20): Paginated<T> {
   const safePage = Math.max(1, page)
   const start = (safePage - 1) * pageSize
   return {
@@ -134,8 +183,7 @@ function filterTickets(
   }
 
   return list.sort(
-    (a, b) =>
-      new Date(b.updatedAt).getTime() - new Date(a.updatedAt).getTime(),
+    (a, b) => new Date(b.updatedAt).getTime() - new Date(a.updatedAt).getTime(),
   )
 }
 
@@ -144,7 +192,10 @@ export const ticketsApi = {
     if (!usesLiveTickets()) {
       await mockLatency()
       return paginate(
-        filterTickets(mockTickets, params, { self: 'user-1', agent: 'agent-1' }),
+        filterTickets(mockTickets, params, {
+          self: 'user-1',
+          agent: 'agent-1',
+        }),
         params.page ?? 1,
         params.pageSize ?? 20,
       )
@@ -177,11 +228,16 @@ export const ticketsApi = {
       return structuredClone(ticket)
     }
 
-    const [ticket, comments] = await Promise.all([
+    const [ticket, comments, attachments] = await Promise.all([
       get<Envelope<BackendTicket>>(`/tickets/${ticketId}`),
       get<Envelope<BackendComment[]>>(`/tickets/${ticketId}/comments`),
+      get<Envelope<BackendAttachment[]>>(`/tickets/${ticketId}/attachments`),
     ])
-    return toTicket(unwrap(ticket), unwrap(comments).map(toComment))
+    return toTicket(
+      unwrap(ticket),
+      unwrap(comments).map(toComment),
+      unwrap(attachments).map(toAttachment),
+    )
   },
 
   async create(payload: CreateTicketPayload): Promise<Ticket> {
@@ -209,7 +265,9 @@ export const ticketsApi = {
         subject: payload.subject,
         description: payload.description,
         category: payload.category,
-        priority: fromTicketPriority(payload.urgent ? 'urgent' : payload.priority),
+        priority: fromTicketPriority(
+          payload.urgent ? 'urgent' : payload.priority,
+        ),
       }),
     )
     return toTicket(created)
@@ -228,13 +286,39 @@ export const ticketsApi = {
           status: 404,
         })
       }
-      Object.assign(ticket, payload, { updatedAt: new Date().toISOString() })
+
+      const next: UpdateTicketPayload = { ...payload }
+      if (payload.assignedTo !== undefined) {
+        if (payload.assignedTo === null) {
+          next.assignedTo = null
+          next.assignedName = null
+        } else {
+          const staff = findStaffMember(payload.assignedTo)
+          next.assignedTo = payload.assignedTo
+          next.assignedName =
+            payload.assignedName ?? staff?.name ?? payload.assignedTo
+        }
+      }
+
+      Object.assign(ticket, next, { updatedAt: new Date().toISOString() })
+
+      if (next.assignedTo === null) {
+        delete ticket.assignedTo
+        delete ticket.assignedName
+      }
+
       return structuredClone(ticket)
     }
 
     const body: Record<string, unknown> = {}
     if (payload.status) body.status = fromTicketStatus(payload.status)
     if (payload.priority) body.priority = fromTicketPriority(payload.priority)
+    if (payload.category !== undefined) {
+      // Keep category + department aligned so queue filters and staff routing
+      // see the same bucket the UI picker chose.
+      body.category = payload.category
+      body.department = payload.category
+    }
     if (payload.assignedTo !== undefined) body.assignedToId = payload.assignedTo
 
     const updated = unwrap(
@@ -277,5 +361,99 @@ export const ticketsApi = {
       }),
     )
     return toComment(created)
+  },
+
+  async listAttachments(ticketId: string): Promise<TicketAttachment[]> {
+    if (!usesLiveTickets()) {
+      await mockLatency()
+      const ticket = mockTickets.find((t) => t.id === ticketId)
+      return structuredClone(ticket?.attachments ?? [])
+    }
+
+    const raw = unwrap(
+      await get<Envelope<BackendAttachment[]>>(
+        `/tickets/${ticketId}/attachments`,
+      ),
+    )
+    return raw.map(toAttachment)
+  },
+
+  async uploadAttachment(
+    ticketId: string,
+    file: File,
+  ): Promise<TicketAttachment> {
+    if (!usesLiveTickets()) {
+      await mockLatency(400)
+      const ticket = mockTickets.find((t) => t.id === ticketId)
+      if (!ticket) {
+        throw new ApiError(`Ticket ${ticketId} was not found.`, {
+          code: 'NOT_FOUND',
+          status: 404,
+        })
+      }
+      const attachment: TicketAttachment = {
+        id: `a-${Date.now()}`,
+        name: file.name,
+        sizeLabel: formatFileSize(file.size),
+      }
+      ticket.attachments = [...(ticket.attachments ?? []), attachment]
+      return attachment
+    }
+
+    const form = new FormData()
+    form.append('file', file)
+    const created = unwrap(
+      await postForm<Envelope<BackendAttachment>>(
+        `/tickets/${ticketId}/attachments`,
+        form,
+      ),
+    )
+    return toAttachment(created)
+  },
+
+  async deleteAttachment(
+    ticketId: string,
+    attachmentId: string,
+  ): Promise<void> {
+    if (!usesLiveTickets()) {
+      await mockLatency()
+      const ticket = mockTickets.find((t) => t.id === ticketId)
+      if (!ticket?.attachments) return
+      ticket.attachments = ticket.attachments.filter(
+        (a) => a.id !== attachmentId,
+      )
+      return
+    }
+
+    unwrap(
+      await del<Envelope<{ deleted: boolean }>>(
+        `/tickets/${ticketId}/attachments/${attachmentId}`,
+      ),
+    )
+  },
+
+  async downloadAttachment(
+    ticketId: string,
+    attachment: TicketAttachment,
+  ): Promise<void> {
+    if (!usesLiveTickets()) {
+      // Mock mode has no bytes on disk ? surface a clear failure instead of a
+      // silent no-op that looks like a broken download button.
+      throw new ApiError('Downloads are only available against the live API.', {
+        code: 'NOT_FOUND',
+        status: 404,
+      })
+    }
+
+    const response = await apiClient.get<Blob>(
+      `/tickets/${ticketId}/attachments/${attachment.id}`,
+      { responseType: 'blob' },
+    )
+    const url = URL.createObjectURL(response.data)
+    const link = document.createElement('a')
+    link.href = url
+    link.download = attachment.name
+    link.click()
+    URL.revokeObjectURL(url)
   },
 }

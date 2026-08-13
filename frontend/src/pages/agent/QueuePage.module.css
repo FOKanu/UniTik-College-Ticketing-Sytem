@@ -72,6 +72,119 @@
   color: var(--brand-800);
 }
 
+.clearSelection {
+  margin-left: auto;
+  border: none;
+  background: none;
+  padding: 0;
+  font: inherit;
+  font-size: 0.82rem;
+  font-weight: 600;
+  color: var(--brand-700);
+  text-decoration: underline;
+  cursor: pointer;
+}
+
+.assignWrap {
+  position: relative;
+}
+
+.assignMenu {
+  position: absolute;
+  top: calc(100% + 0.35rem);
+  left: 0;
+  z-index: 30;
+  min-width: 240px;
+  max-height: 320px;
+  overflow-y: auto;
+  padding: 0.35rem;
+  background: #fff;
+  border: 1px solid var(--color-border);
+  border-radius: var(--radius-md);
+  box-shadow: var(--shadow-overlay);
+}
+
+.assignHint {
+  margin: 0;
+  padding: 0.4rem 0.55rem;
+  font-size: 0.72rem;
+  font-weight: 600;
+  text-transform: uppercase;
+  letter-spacing: 0.04em;
+  color: var(--color-text-muted);
+}
+
+.assignItem {
+  display: flex;
+  flex-direction: column;
+  align-items: flex-start;
+  gap: 0.1rem;
+  width: 100%;
+  padding: 0.45rem 0.55rem;
+  border: none;
+  border-radius: var(--radius-sm);
+  background: none;
+  font: inherit;
+  font-size: 0.85rem;
+  font-weight: 600;
+  color: var(--color-text);
+  text-align: left;
+  cursor: pointer;
+}
+
+.assignItem:hover {
+  background: var(--brand-50);
+  color: var(--brand-800);
+}
+
+.assignItem small {
+  font-weight: 400;
+  font-size: 0.72rem;
+  color: var(--color-text-muted);
+}
+
+.bulkNote {
+  margin: 0;
+  font-size: 0.85rem;
+  color: var(--color-text-muted);
+}
+
+.confirm {
+  position: fixed;
+  inset: 0;
+  z-index: 80;
+  display: grid;
+  place-items: center;
+  background: rgb(15 49 69 / 45%);
+  padding: 1rem;
+}
+
+.confirmBox {
+  width: min(420px, 100%);
+  padding: 1.25rem;
+  background: #fff;
+  border-radius: var(--radius-lg);
+  box-shadow: var(--shadow-overlay);
+}
+
+.confirmBox h2 {
+  margin: 0 0 0.5rem;
+  font-size: 1.1rem;
+}
+
+.confirmBox p {
+  margin: 0 0 1.1rem;
+  font-size: 0.88rem;
+  line-height: 1.5;
+  color: var(--color-text-muted);
+}
+
+.confirmActions {
+  display: flex;
+  justify-content: flex-end;
+  gap: 0.5rem;
+}
+
 .tableWrap {
   background: var(--color-surface);
   border: 1px solid var(--color-border);
@@ -110,6 +223,19 @@
 
 .table a:hover {
   color: var(--color-primary);
+}
+
+.reassignLink {
+  font-size: 0.8rem;
+  font-weight: 700;
+  color: var(--color-primary);
+  text-decoration: none;
+  white-space: nowrap;
+}
+
+.reassignLink:hover {
+  text-decoration: underline;
+  text-underline-offset: 2px;
 }
 
 .loading,

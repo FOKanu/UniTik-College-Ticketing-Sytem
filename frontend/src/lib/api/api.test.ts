@@ -10,6 +10,7 @@ import {
   usesMockNotifications,
 } from './client'
 import { ticketsApi } from './tickets'
+import { usersApi } from './users'
 
 describe('toApiError', () => {
   it('passes through existing ApiError instances', () => {
@@ -64,14 +65,14 @@ describe('data source modes', () => {
     expect(usesMockKnowledge()).toBe(true)
   })
 
-  it('treats hybrid as live auth/chat with fixture notifications', () => {
+  it('treats hybrid as live auth/chat/knowledge/notifications', () => {
     vi.stubEnv('VITE_DATA_SOURCE', 'hybrid')
     expect(getDataSourceMode()).toBe('hybrid')
     expect(isMockDataSource()).toBe(false)
     expect(usesLiveAuth()).toBe(true)
     expect(usesLiveChat()).toBe(true)
-    expect(usesMockNotifications()).toBe(true)
-    expect(usesMockKnowledge()).toBe(true)
+    expect(usesMockNotifications()).toBe(false)
+    expect(usesMockKnowledge()).toBe(false)
     vi.stubEnv('VITE_DATA_SOURCE', 'mock')
   })
 })
@@ -89,5 +90,40 @@ describe('mock tickets API', () => {
       code: 'NOT_FOUND',
       status: 404,
     })
+  })
+})
+
+describe('mock staff directory', () => {
+  it('returns agent/admin accounts for assignee dropdowns', async () => {
+    const staff = await usersApi.listStaff()
+    expect(staff.length).toBeGreaterThan(0)
+    expect(
+      staff.every((m) => m.role === 'agent' || m.role === 'admin'),
+    ).toBe(true)
+  })
+
+  it('filters mock staff by department substring', async () => {
+    const itStaff = await usersApi.listStaff('IT')
+    expect(itStaff.every((m) => (m.department ?? '').includes('IT'))).toBe(
+      true,
+    )
+  })
+})
+
+describe('mock attachments API', () => {
+  it('uploads and lists attachments on a mock ticket', async () => {
+    const file = new File(['png-bytes'], 'screenshot.png', {
+      type: 'image/png',
+    })
+    const uploaded = await ticketsApi.uploadAttachment('TCK-1042', file)
+    expect(uploaded.name).toBe('screenshot.png')
+    expect(uploaded.sizeLabel).toBeTruthy()
+
+    const listed = await ticketsApi.listAttachments('TCK-1042')
+    expect(listed.some((item) => item.id === uploaded.id)).toBe(true)
+
+    await ticketsApi.deleteAttachment('TCK-1042', uploaded.id)
+    const after = await ticketsApi.listAttachments('TCK-1042')
+    expect(after.some((item) => item.id === uploaded.id)).toBe(false)
   })
 })

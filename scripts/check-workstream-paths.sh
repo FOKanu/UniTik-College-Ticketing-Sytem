@@ -31,8 +31,12 @@ COMMON_ALLOWED=(
 
 resolve_area() {
   local b="$1"
-  if [[ "$b" =~ ^feature/(frontend|backend|database|ai-rag|tooling-devops|testing)- ]]; then
-    echo "${BASH_REMATCH[1]}"
+  if [[ "$b" =~ ^(feature|fix)/(frontend|backend|database|ai-rag|tooling-devops|testing)- ]]; then
+    echo "${BASH_REMATCH[2]}"
+    return
+  fi
+  if [[ "$b" =~ ^fix/analytics- ]]; then
+    echo "frontend"
     return
   fi
   case "$b" in
@@ -63,16 +67,29 @@ case "$AREA" in
     ;;
   database)
     ALLOWED+=('^backend/alembic/')
+    ALLOWED+=('^backend/alembic\.ini$')
     ALLOWED+=('^backend/app/models/')
+    # SQLAlchemy declarative Base and the schema-level enums (Role, TicketStatus,
+    # FaqVisibility, …) live here. They are schema, not API, so the database
+    # workstream owns them.
+    ALLOWED+=('^backend/app/db/')
     ALLOWED+=('^backend/scripts/')
     ;;
   ai-rag)
+    ALLOWED+=('^backend/app/ai/')
     ALLOWED+=('^backend/app/api/v1/chat\.py$')
     ALLOWED+=('^backend/app/api/v1/kb\.py$')
     ALLOWED+=('^backend/app/services/chat\.py$')
     ALLOWED+=('^backend/app/services/kb\.py$')
+    ALLOWED+=('^backend/app/services/kb_')
     ALLOWED+=('^backend/app/schemas/chat\.py$')
     ALLOWED+=('^backend/app/schemas/kb\.py$')
+    ALLOWED+=('^backend/app/models/')
+    ALLOWED+=('^backend/alembic/')
+    ALLOWED+=('^backend/scripts/ingest_kb\.py$')
+    ALLOWED+=('^backend/tests/test_kb')
+    ALLOWED+=('^backend/\.env\.example$')
+    ALLOWED+=('^scripts/check-workstream-paths\.sh$')
     ALLOWED+=('^frontend/src/modules/chat/')
     ALLOWED+=('^frontend/src/modules/faq/')
     ;;
@@ -124,6 +141,16 @@ if [[ ${#FILES[@]} -eq 0 || -z "${FILES[0]:-}" ]]; then
   echo "No changed files in range $RANGE — OK."
   exit 0
 fi
+
+for f in "${FILES[@]}"; do
+  [[ -z "$f" ]] && continue
+  if [[ -f "$f" ]] && grep -nE '^(<<<<<<<|=======|>>>>>>>)' "$f" >/dev/null; then
+    echo ""
+    echo "Merge conflict markers detected in '$f'."
+    echo "Resolve all conflict markers before pushing this branch."
+    exit 1
+  fi
+done
 
 echo "Checking ${#FILES[@]} file(s) on branch '$BRANCH' (area: $AREA) against allowlist…"
 VIOLATIONS=()

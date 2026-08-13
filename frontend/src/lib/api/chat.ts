@@ -27,6 +27,15 @@ export interface EscalatedTicket {
   category: string | null
 }
 
+/** A knowledge-base article the assistant grounded its answer in. */
+export interface Citation {
+  id: string
+  question: string
+  category: string | null
+  /** Cosine similarity, roughly 0–1. */
+  score: number
+}
+
 export interface EscalateResult {
   conversation: ChatConversation
   ticketId: string
@@ -69,7 +78,15 @@ function authHeaders(): Record<string, string> {
 export interface StreamHandlers {
   onStart?: (userMessage: ChatMessage) => void
   onToken?: (delta: string) => void
+  /** Fired as soon as retrieval metadata arrives (start / citations events). */
+  onCitations?: (citations: Citation[], retrievalWeak: boolean) => void
   onError?: (message: string) => void
+}
+
+export interface StreamResult {
+  botMessage: ChatMessage | null
+  citations: Citation[]
+  retrievalWeak: boolean
 }
 
 interface SseEvent {
@@ -159,9 +176,10 @@ export const chatApi = {
     conversationId: string,
     content: string,
     mode: ChatMode,
+    language: 'en' | 'de',
     handlers: StreamHandlers = {},
     signal?: AbortSignal,
-  ): Promise<ChatMessage | null> {
+  ): Promise<StreamResult> {
     const response = await fetch(
       `${apiBaseUrl}/chat/conversations/${conversationId}/messages/stream`,
       {
@@ -171,7 +189,7 @@ export const chatApi = {
           Accept: 'text/event-stream',
           ...authHeaders(),
         },
-        body: JSON.stringify({ content, mode }),
+        body: JSON.stringify({ content, mode, language }),
         signal,
       },
     )
@@ -191,11 +209,24 @@ export const chatApi = {
     }
 
     let botMessage: ChatMessage | null = null
+    let citations: Citation[] = []
+    let retrievalWeak = false
+
+    /** start / citations / done all carry the same retrieval fields. */
+    const applyRetrieval = (payload: Record<string, unknown>) => {
+      if (!Array.isArray(payload.citations)) return
+      citations = payload.citations as Citation[]
+      retrievalWeak = Boolean(payload.retrievalWeak)
+      handlers.onCitations?.(citations, retrievalWeak)
+    }
 
     for await (const { event, data } of readSse(response.body)) {
       const payload = data as Record<string, unknown>
       if (event === 'start') {
         handlers.onStart?.(payload.userMessage as ChatMessage)
+        applyRetrieval(payload)
+      } else if (event === 'citations') {
+        applyRetrieval(payload)
       } else if (event === 'token') {
         handlers.onToken?.(String(payload.delta ?? ''))
       } else if (event === 'error') {
@@ -204,9 +235,10 @@ export const chatApi = {
         )
       } else if (event === 'done') {
         botMessage = payload.botMessage as ChatMessage
+        applyRetrieval(payload)
       }
     }
 
-    return botMessage
+    return { botMessage, citations, retrievalWeak }
   },
 }

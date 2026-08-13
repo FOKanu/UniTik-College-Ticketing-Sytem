@@ -70,8 +70,7 @@ apiClient.interceptors.response.use(
 /**
  * Data-source modes:
  * - `mock`   — full fixture UI (no FastAPI). Safe default for design work.
- * - `hybrid` — live auth + chat + tickets (LLM path); mock notifications /
- *              knowledge fixtures for slices the backend does not own yet.
+ * - `hybrid` — live auth + chat + tickets + knowledge/FAQ + notifications.
  * - `api`    — everything talks to FastAPI; unfinished slices degrade empty.
  */
 export type DataSourceMode = 'mock' | 'hybrid' | 'api'
@@ -101,14 +100,14 @@ export function usesLiveTickets(): boolean {
   return getDataSourceMode() !== 'mock'
 }
 
-/** Notifications have no backend slice — prefer fixtures outside pure api. */
+/** Notifications are live whenever auth is live (inbox API exists). */
 export function usesMockNotifications(): boolean {
-  return getDataSourceMode() !== 'api'
+  return getDataSourceMode() === 'mock'
 }
 
-/** Knowledge/FAQ keeps rich fixtures outside pure api mode. */
+/** Knowledge/FAQ is live whenever auth is live (corpus is ingested on the backend). */
 export function usesMockKnowledge(): boolean {
-  return getDataSourceMode() !== 'api'
+  return getDataSourceMode() === 'mock'
 }
 
 /** Small delay so fixture-backed calls feel async like a real API. */
@@ -134,6 +133,20 @@ export function get<T>(url: string, config?: AxiosRequestConfig) {
 
 export function post<T>(url: string, data?: unknown, config?: AxiosRequestConfig) {
   return apiRequest<T>({ ...config, method: 'POST', url, data })
+}
+
+/** Multipart POST — lets the browser/axios set the boundary (do not force JSON). */
+export function postForm<T>(url: string, form: FormData, config?: AxiosRequestConfig) {
+  return apiRequest<T>({
+    ...config,
+    method: 'POST',
+    url,
+    data: form,
+    headers: {
+      ...config?.headers,
+      'Content-Type': 'multipart/form-data',
+    },
+  })
 }
 
 export function patch<T>(url: string, data?: unknown, config?: AxiosRequestConfig) {

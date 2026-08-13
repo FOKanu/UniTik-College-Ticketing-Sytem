@@ -26,6 +26,7 @@ const ROLE_PERMISSIONS: Record<UserRole, readonly Permission[]> = {
     'tickets:comment:own',
     'tickets:read:assigned',
     'tickets:update:assigned',
+    'tickets:assign',
     'reports:view',
   ],
   admin: [

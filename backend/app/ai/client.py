@@ -4,19 +4,21 @@ The browser never reaches a model provider directly — every call goes through
 this module, which owns credentials, timeouts, and reasoning-token stripping.
 """
 
+import json
 import logging
-import time
 from collections.abc import AsyncIterator, Iterable
 
 import httpx
 from openai import APIConnectionError, APIStatusError, AsyncOpenAI, OpenAIError
 
-from app.ai.llm_config import ResolvedLLMConfig, get_llm_config
+from app.ai.llm_config import LLMProvider, ResolvedLLMConfig, get_llm_config
 from app.ai.prompts import ChatMode, mode_settings, system_prompt
+from app.core.cache import cache_delete, cache_get, cache_set
 
 logger = logging.getLogger(__name__)
 
 HEALTH_CACHE_TTL_SECONDS = 10.0
+HEALTH_CACHE_KEY = "llm:health"
 # Funnel/proxy round-trips are slower than local Ollama; keep this above a few seconds.
 HEALTH_TIMEOUT_SECONDS = 15.0
 
@@ -104,9 +106,17 @@ def _get_client(config: ResolvedLLMConfig) -> AsyncOpenAI:
 def build_messages(
     history: Iterable[tuple[str, str]],
     mode: ChatMode = ChatMode.QUICK,
+    *,
+    kb_context: str | None = None,
 ) -> list[dict[str, str]]:
-    """Turn ``(sender, content)`` rows into OpenAI-shaped messages."""
+    """Turn ``(sender, content)`` rows into OpenAI-shaped messages.
+
+    Optional ``kb_context`` is injected as a second system message so the model
+    grounds answers in retrieved FAQ excerpts (or is told none were found).
+    """
     messages: list[dict[str, str]] = [{"role": "system", "content": system_prompt(mode)}]
+    if kb_context is not None:
+        messages.append({"role": "system", "content": kb_context})
     for sender, content in history:
         role = "assistant" if sender == "bot" else "user"
         messages.append({"role": role, "content": content})
@@ -196,23 +206,58 @@ async def stream_chat_completion(
         yield tail
 
 
-_health_cache: tuple[float, dict] | None = None
+async def create_embedding(text: str) -> list[float]:
+    """Return a single embedding vector via the OpenAI-compatible ``/v1/embeddings`` API.
+
+    Uses the same provider base URL and API key as chat. The vector length must equal
+    ``config.embedding_dimensions`` (768 for ``FaqEntry.embedding`` / nomic-embed-text).
+    """
+    config = get_llm_config()
+    if not config.embeddings_configured:
+        raise LLMUnavailableError(
+            "No embedding model configured. Set EMBEDDING_MODEL "
+            "(or OPENAI_EMBEDDING_MODEL / OLLAMA_EMBEDDING_MODEL)."
+        )
+
+    client = _get_client(config)
+    kwargs: dict = {"model": config.embedding_model, "input": text}
+    # text-embedding-3-* accepts an explicit size; pin it to the pgvector column width.
+    if config.provider is LLMProvider.OPENAI and config.embedding_model.startswith(
+        "text-embedding-3"
+    ):
+        kwargs["dimensions"] = config.embedding_dimensions
+
+    try:
+        response = await client.embeddings.create(**kwargs)
+    except OpenAIError as exc:
+        logger.warning("Embedding request failed: %s", exc)
+        raise _wrap_error(exc, config) from exc
+
+    if not response.data:
+        raise LLMUnavailableError("Embedding provider returned no vectors")
+    return list(response.data[0].embedding)
 
 
 async def check_llm_health(force: bool = False) -> dict:
-    """Report provider reachability. Cached briefly so health polling stays cheap."""
-    global _health_cache
+    """Report provider reachability. Cached briefly so health polling stays cheap.
 
-    now = time.monotonic()
-    if not force and _health_cache and now - _health_cache[0] < HEALTH_CACHE_TTL_SECONDS:
-        return _health_cache[1]
+    Uses Redis when ``REDIS_URL`` is set so multi-worker processes share the
+    result; otherwise falls back to in-process memory via ``app.core.cache``.
+    """
+    if not force:
+        cached = await cache_get(HEALTH_CACHE_KEY)
+        if cached:
+            try:
+                return json.loads(cached)
+            except json.JSONDecodeError:
+                await cache_delete(HEALTH_CACHE_KEY)
 
     config = get_llm_config()
     result = config.public_summary()
 
     if not config.is_configured:
         result |= {"status": "unconfigured", "error": "Missing base URL, API key, or model"}
-        _health_cache = (now, result)
+        await cache_set(HEALTH_CACHE_KEY, json.dumps(result), HEALTH_CACHE_TTL_SECONDS)
         return result
 
     try:
@@ -227,5 +272,5 @@ async def check_llm_health(force: bool = False) -> dict:
         logger.warning("LLM health check failed: %s: %s", type(exc).__name__, exc)
         result |= {"status": "offline", "error": str(_wrap_error(exc, config))}
 
-    _health_cache = (now, result)
+    await cache_set(HEALTH_CACHE_KEY, json.dumps(result), HEALTH_CACHE_TTL_SECONDS)
     return result

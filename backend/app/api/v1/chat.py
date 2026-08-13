@@ -33,6 +33,13 @@ def _sse(event: str, data: Any) -> str:
     return f"event: {event}\ndata: {json.dumps(jsonable_encoder(data))}\n\n"
 
 
+def _retrieval_payload(retrieval: chat_service.RetrievalBundle) -> dict:
+    return {
+        "citations": [c.model_dump() for c in retrieval.citations],
+        "retrievalWeak": retrieval.retrieval_weak,
+    }
+
+
 @router.post("/conversations")
 async def create_conversation(db: DbSession, user: CurrentUser):
     conversation = await chat_service.create_conversation(db, user)
@@ -52,20 +59,17 @@ async def list_conversations(db: DbSession, user: CurrentUser):
 @router.get("/conversations/{conversation_id}/messages")
 async def list_messages(db: DbSession, user: CurrentUser, conversation_id: str):
     messages = await chat_service.list_messages(db, conversation_id, user)
-    return success_response(
-        [MessageResponse.model_validate(m).model_dump() for m in messages]
-    )
+    return success_response([MessageResponse.model_validate(m).model_dump() for m in messages])
 
 
 @router.post("/conversations/{conversation_id}/messages")
-async def send_message(
-    db: DbSession, user: CurrentUser, conversation_id: str, body: MessageCreate
-):
-    user_msg, bot_msg = await chat_service.send_message(db, conversation_id, user, body)
+async def send_message(db: DbSession, user: CurrentUser, conversation_id: str, body: MessageCreate):
+    user_msg, bot_msg, retrieval = await chat_service.send_message(db, conversation_id, user, body)
     return success_response(
         {
             "userMessage": MessageResponse.model_validate(user_msg).model_dump(),
             "botMessage": MessageResponse.model_validate(bot_msg).model_dump(),
+            **_retrieval_payload(retrieval),
         },
         status_code=201,
     )
@@ -76,29 +80,35 @@ async def stream_message(
     db: DbSession, user: CurrentUser, conversation_id: str, body: MessageCreate
 ):
     """Token-by-token reply over SSE. Auth and ownership are checked up front."""
-    user_msg, prompt = await chat_service.start_user_turn(db, conversation_id, user, body)
+    user_msg, prompt, retrieval = await chat_service.start_user_turn(
+        db, conversation_id, user, body
+    )
     user_payload = MessageResponse.model_validate(user_msg).model_dump()
+    retrieval_payload = _retrieval_payload(retrieval)
 
     async def event_stream() -> AsyncIterator[str]:
-        yield _sse("start", {"userMessage": user_payload})
+        yield _sse("start", {"userMessage": user_payload, **retrieval_payload})
+        yield _sse("citations", retrieval_payload)
 
         parts: list[str] = []
+        offline = False
         try:
             async for delta in stream_chat_completion(prompt, body.mode):
                 parts.append(delta)
                 yield _sse("token", {"delta": delta})
         except LLMUnavailableError as exc:
+            offline = True
             yield _sse("error", {"message": str(exc)})
+
+        reply = chat_service.offline_reply(body.language) if offline else "".join(parts).strip()
 
         # The request-scoped session is already closed by the time the body
         # streams, so the reply is persisted on a session this generator owns.
         async with async_session_factory() as session:
-            bot_msg = await chat_service.finish_bot_turn(
-                session, conversation_id, "".join(parts).strip()
-            )
+            bot_msg = await chat_service.finish_bot_turn(session, conversation_id, reply)
             bot_payload = MessageResponse.model_validate(bot_msg).model_dump()
 
-        yield _sse("done", {"botMessage": bot_payload})
+        yield _sse("done", {"botMessage": bot_payload, **retrieval_payload})
 
     return StreamingResponse(event_stream(), media_type="text/event-stream", headers=SSE_HEADERS)
 

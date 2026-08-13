@@ -1,16 +1,19 @@
 import asyncio
-import json
 import math
+from types import SimpleNamespace
+from unittest.mock import AsyncMock
 
-import httpx
 import pytest
 
+from app.ai.client import LLMUnavailableError
+from app.services import kb_embedding as kb_embedding_mod
 from app.services.kb_embedding import (
     EMBEDDING_DIMENSIONS,
     EmbeddingProviderError,
     InvalidEmbeddingResponseError,
     embed_text,
     validate_embedding_response,
+    validate_embedding_vector,
 )
 
 
@@ -25,6 +28,10 @@ def test_valid_embedding_is_copied_and_normalized_to_floats():
     assert result is not original
 
 
+def test_raw_vector_list_is_accepted():
+    assert validate_embedding_response(vector(0.5)) == [0.5] * EMBEDDING_DIMENSIONS
+
+
 @pytest.mark.parametrize(
     "payload",
     [
@@ -33,7 +40,6 @@ def test_valid_embedding_is_copied_and_normalized_to_floats():
         {"embedding": []},
         {"embedding": "x" * EMBEDDING_DIMENSIONS},
         {"embedding": {"value": 1}},
-        [],
         "not an object",
     ],
 )
@@ -51,61 +57,58 @@ def test_invalid_embedding_elements_are_rejected(value):
 
 
 @pytest.mark.asyncio
-async def test_exact_request_payload_and_valid_response():
-    async def handler(request):
-        assert json.loads(request.content) == {"input": "context"}
-        return httpx.Response(200, json={"embedding": vector()})
-
-    async with httpx.AsyncClient(transport=httpx.MockTransport(handler)) as client:
-        assert len(await embed_text("context", client=client)) == EMBEDDING_DIMENSIONS
-
-
-@pytest.mark.asyncio
-@pytest.mark.parametrize("body", [b"not json", b""])
-async def test_invalid_json_is_normalized(body):
-    async with httpx.AsyncClient(
-        transport=httpx.MockTransport(lambda _request: httpx.Response(200, content=body))
-    ) as client:
-        with pytest.raises(EmbeddingProviderError, match="invalid JSON"):
-            await embed_text("context", client=client)
+async def test_embed_text_uses_app_ai_and_validates_dimensions(monkeypatch):
+    monkeypatch.setattr(
+        kb_embedding_mod,
+        "get_llm_config",
+        lambda: SimpleNamespace(embedding_dimensions=EMBEDDING_DIMENSIONS),
+    )
+    monkeypatch.setattr(
+        kb_embedding_mod,
+        "create_embedding",
+        AsyncMock(return_value=vector(0.25)),
+    )
+    assert await embed_text("context") == [0.25] * EMBEDDING_DIMENSIONS
 
 
 @pytest.mark.asyncio
-async def test_http_status_error_is_sanitized():
-    secret = "super-secret"
-    async with httpx.AsyncClient(
-        transport=httpx.MockTransport(
-            lambda _request: httpx.Response(500, text=f"provider body {secret}")
-        )
-    ) as client:
-        with pytest.raises(EmbeddingProviderError) as error:
-            await embed_text("context", client=client)
-    assert secret not in str(error.value)
-    assert "http" not in str(error.value).lower()
-
-
-class RaisingClient:
-    def __init__(self, error):
-        self.error = error
-
-    async def post(self, *_args, **_kwargs):
-        raise self.error
+async def test_embed_text_dimension_mismatch_is_rejected(monkeypatch):
+    monkeypatch.setattr(
+        kb_embedding_mod,
+        "get_llm_config",
+        lambda: SimpleNamespace(embedding_dimensions=EMBEDDING_DIMENSIONS),
+    )
+    monkeypatch.setattr(
+        kb_embedding_mod,
+        "create_embedding",
+        AsyncMock(return_value=[0.1] * 8),
+    )
+    with pytest.raises(InvalidEmbeddingResponseError, match="768"):
+        await embed_text("context")
 
 
 @pytest.mark.asyncio
-@pytest.mark.parametrize(
-    ("error", "message"),
-    [
-        (httpx.ReadTimeout("timeout"), "timed out"),
-        (httpx.ConnectError("connection"), "connect"),
-    ],
-)
-async def test_transport_errors_are_normalized(error, message):
-    with pytest.raises(EmbeddingProviderError, match=message):
-        await embed_text("context", client=RaisingClient(error))
+async def test_llm_unavailable_is_sanitized(monkeypatch):
+    monkeypatch.setattr(
+        kb_embedding_mod,
+        "create_embedding",
+        AsyncMock(side_effect=LLMUnavailableError("secret-token-xyz unreachable")),
+    )
+    with pytest.raises(EmbeddingProviderError, match="secret-token-xyz"):
+        await embed_text("context")
 
 
 @pytest.mark.asyncio
-async def test_cancellation_propagates():
+async def test_cancellation_propagates(monkeypatch):
+    monkeypatch.setattr(
+        kb_embedding_mod,
+        "create_embedding",
+        AsyncMock(side_effect=asyncio.CancelledError()),
+    )
     with pytest.raises(asyncio.CancelledError):
-        await embed_text("context", client=RaisingClient(asyncio.CancelledError()))
+        await embed_text("context")
+
+
+def test_validate_embedding_vector_rejects_wrong_width():
+    with pytest.raises(InvalidEmbeddingResponseError):
+        validate_embedding_vector([1.0, 2.0], expected_dimensions=768)

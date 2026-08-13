@@ -1,5 +1,6 @@
 import { useCallback, useEffect, useId, useRef, useState } from 'react'
 import { Link, useNavigate } from 'react-router-dom'
+import { useTranslation } from 'react-i18next'
 import { ROUTES, ticketDetailPath } from '@/app/routes'
 import { Button } from '@/components/ui'
 import {
@@ -11,9 +12,12 @@ import {
 } from '@/components/ui/icons'
 import { useAssistantChat } from '@/hooks/useAssistantChat'
 import { useDialogFocus } from '@/hooks/useDialogFocus'
+import { CitationBlock } from '@/components/chat/CitationBlock'
+import { TicketActionCard } from '@/components/chat/TicketActionCard'
 import styles from './ChatbotFab.module.css'
 
 export function ChatbotFab() {
+  const { t } = useTranslation()
   const [open, setOpen] = useState(false)
   const [draft, setDraft] = useState('')
   const {
@@ -22,11 +26,16 @@ export function ChatbotFab() {
     isStreaming,
     health,
     llmOffline,
-    escalate,
+    proposeCreate,
+    beginEditAction,
+    saveEditAction,
+    cancelEditAction,
+    cancelAction,
+    confirmAction,
     isEscalating,
     ticket,
-    canEscalate,
-  } = useAssistantChat({ greeting: 'Hi — how can I help?' })
+    canProposeCreate,
+  } = useAssistantChat({ greeting: t('chatbot.greetingShort') })
   const panelId = useId()
   const panelRef = useRef<HTMLDivElement>(null)
   const buttonRef = useRef<HTMLButtonElement>(null)
@@ -75,17 +84,17 @@ export function ChatbotFab() {
           className={styles.panel}
           role="dialog"
           aria-modal="true"
-          aria-label="AI Assistant"
+          aria-label={t('nav.assistant')}
         >
           <header className={styles.header}>
             <div className={styles.headerLeft}>
               <IconChat width={18} height={18} />
               <div>
-                <strong>AI Assistant</strong>
+                <strong>{t('nav.assistant')}</strong>
                 <span>
                   {llmOffline
-                    ? 'LLM server offline'
-                    : (health?.model ?? 'Ready')}
+                    ? t('chatbot.offline')
+                    : (health?.model ?? t('chatbot.ready'))}
                 </span>
               </div>
             </div>
@@ -93,7 +102,7 @@ export function ChatbotFab() {
               <button
                 type="button"
                 className={styles.iconBtn}
-                aria-label="Open full assistant"
+                aria-label={t('chatbot.openFull')}
                 onClick={() => {
                   closePanel()
                   void navigate(ROUTES.assistant)
@@ -104,7 +113,7 @@ export function ChatbotFab() {
               <button
                 type="button"
                 className={styles.iconBtn}
-                aria-label="Close AI assistant"
+                aria-label={t('common.close')}
                 onClick={closePanel}
               >
                 <IconClose width={16} height={16} />
@@ -124,11 +133,38 @@ export function ChatbotFab() {
                 className={msg.role === 'user' ? styles.mine : styles.theirs}
               >
                 <p>{msg.body}</p>
-                <small>{msg.role === 'user' ? 'You' : 'Assistant'}</small>
+                {msg.role === 'assistant' &&
+                (msg.citations?.length || msg.retrievalWeak) ? (
+                  <div className={styles.citations}>
+                    <CitationBlock
+                      compact
+                      citations={msg.citations ?? []}
+                      retrievalWeak={msg.retrievalWeak}
+                      canEscalate={canProposeCreate}
+                      isEscalating={isEscalating}
+                      onEscalate={() => proposeCreate()}
+                      escalateLabel={t('chatbot.createTicket')}
+                    />
+                  </div>
+                ) : null}
+                {msg.role === 'assistant' && msg.action ? (
+                  <div className={styles.citations}>
+                    <TicketActionCard
+                      compact
+                      action={msg.action}
+                      onConfirm={() => void confirmAction(msg.action!.id)}
+                      onCancel={() => cancelAction(msg.action!.id)}
+                      onBeginEdit={() => beginEditAction(msg.action!.id)}
+                      onSaveEdit={saveEditAction}
+                      onCancelEdit={() => cancelEditAction(msg.action!.id)}
+                    />
+                  </div>
+                ) : null}
+                <small>{msg.role === 'user' ? t('chatbot.you') : t('chatbot.assistant')}</small>
               </div>
             ))}
             {isStreaming ? (
-              <div className={styles.typing} aria-label="Assistant is typing">
+              <div className={styles.typing} aria-label={t('chatbot.typing')}>
                 <span />
                 <span />
                 <span />
@@ -144,16 +180,16 @@ export function ChatbotFab() {
             }}
           >
             <label className={styles.inputWrap}>
-              <span className="sr-only">Ask a question</span>
+              <span className="sr-only">{t('chatbot.question')}</span>
               <input
                 value={draft}
                 onChange={(e) => setDraft(e.target.value)}
-                placeholder="Ask a question..."
+                placeholder={t('chatbot.askPlaceholder')}
               />
               <button
                 type="button"
                 className={styles.attach}
-                aria-label="Attach file"
+                aria-label={t('chatbot.attach')}
                 disabled
               >
                 <IconPaperclip width={16} height={16} />
@@ -162,7 +198,7 @@ export function ChatbotFab() {
             <Button
               type="submit"
               size="sm"
-              aria-label="Send"
+              aria-label={t('chatbot.send')}
               disabled={isStreaming}
             >
               <IconSend width={16} height={16} />
@@ -174,25 +210,25 @@ export function ChatbotFab() {
                 to={ticketDetailPath(ticket.id)}
                 onClick={() => setOpen(false)}
               >
-                View ticket: {ticket.subject}
+                {t('chatbot.viewTicketNamed', { subject: ticket.subject })}
               </Link>
             ) : (
               <>
-                {canEscalate ? (
+                {canProposeCreate ? (
                   <button
                     type="button"
                     className={styles.hintBtn}
                     disabled={isEscalating}
-                    onClick={() => void escalate()}
+                    onClick={() => proposeCreate()}
                   >
-                    {isEscalating ? 'Creating ticket…' : 'Create ticket'}
+                    {t('chatbot.proposeTicket')}
                   </button>
                 ) : (
-                  'Escape closes'
+                  t('chatbot.escape')
                 )}
                 {' · '}
                 <Link to={ROUTES.assistant} onClick={() => setOpen(false)}>
-                  Open full chat
+                  {t('chatbot.openFullChat')}
                 </Link>
               </>
             )}
@@ -204,7 +240,7 @@ export function ChatbotFab() {
         ref={buttonRef}
         type="button"
         className={styles.fab}
-        aria-label={open ? 'Close AI assistant' : 'Open AI assistant'}
+        aria-label={t(open ? 'chatbot.closeAssistant' : 'chatbot.openAssistant')}
         aria-haspopup="dialog"
         aria-expanded={open}
         aria-controls={open ? panelId : undefined}

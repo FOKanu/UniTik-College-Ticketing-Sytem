@@ -1,56 +1,27 @@
 import { useMemo, useState } from 'react'
 import { useNavigate } from 'react-router-dom'
+import { useTranslation } from 'react-i18next'
 import { RouteTitle } from '@/app/RouteTitle'
 import { ROUTES } from '@/app/routes'
 import { LanguageSelector } from '@/components/layout/LanguageSelector'
 import { IconCheck, IconChevronRight, IconSearch } from '@/components/ui/icons'
+import { INSTITUTIONS } from '@/lib/institutions'
+import { useInstitutionStore } from '@/stores'
 import styles from './InstitutionPage.module.css'
 
 const FEATURES = [
-  'Department-based routing',
-  'AI assistant with knowledge base',
-  'SLA tracking and reporting',
-] as const
-
-const INSTITUTIONS = [
-  {
-    id: 'mdh',
-    name: 'MediaDesign Hochschule',
-    short: 'MDH',
-    color: '#2574A9',
-    domains: 'mdh.de',
-    locations: 'Berlin, Munich, Düsseldorf',
-  },
-  {
-    id: 'tum',
-    name: 'Technische Universität München',
-    short: 'TUM',
-    color: '#1B6E3C',
-    domains: 'tum.de',
-    locations: 'Munich',
-  },
-  {
-    id: 'uhh',
-    name: 'Universität Hamburg',
-    short: 'UHH',
-    color: '#8B5A2B',
-    domains: 'uni-hamburg.de',
-    locations: 'Hamburg',
-  },
-  {
-    id: 'rwth',
-    name: 'RWTH Aachen',
-    short: 'RWTH',
-    color: '#A22633',
-    domains: 'rwth-aachen.de',
-    locations: 'Aachen',
-  },
+  'institution.featureRouting',
+  'institution.featureAssistant',
+  'institution.featureSla',
 ] as const
 
 export function InstitutionPage() {
+  const { t } = useTranslation()
   const navigate = useNavigate()
+  const institutionId = useInstitutionStore((s) => s.institutionId)
+  const setInstitutionId = useInstitutionStore((s) => s.setInstitutionId)
   const [query, setQuery] = useState('')
-  const [activeId, setActiveId] = useState<string | null>('mdh')
+  const [activeId, setActiveId] = useState<string | null>(institutionId)
 
   const filtered = useMemo(() => {
     const q = query.trim().toLowerCase()
@@ -60,12 +31,14 @@ export function InstitutionPage() {
         item.name.toLowerCase().includes(q) ||
         item.domains.toLowerCase().includes(q) ||
         item.short.toLowerCase().includes(q) ||
-        item.locations.toLowerCase().includes(q),
+        item.locations.toLowerCase().includes(q) ||
+        item.emailDomains.some((d) => d.toLowerCase().includes(q)),
     )
   }, [query])
 
   function selectInstitution(id: string) {
     setActiveId(id)
+    setInstitutionId(id)
     void navigate(ROUTES.login)
   }
 
@@ -73,47 +46,44 @@ export function InstitutionPage() {
     <div className={styles.shell}>
       <RouteTitle />
       <a href="#institution-content" className={styles.skipLink}>
-        Skip to institution list
+        {t('institution.skip')}
       </a>
 
-      <aside className={styles.brandPanel} aria-label="About TicketHub">
+      <aside className={styles.brandPanel} aria-label={t('institution.about')}>
         <div className={styles.brandTop}>
           <span className={styles.brandMark}>TH</span>
           <span className={styles.brandName}>TicketHub</span>
         </div>
 
         <div className={styles.brandBody}>
-          <h1>Support platform for higher education</h1>
-          <p>
-            TicketHub connects students and staff with campus IT, facilities,
-            and academic support — routed to the right department every time.
-          </p>
+          <h1>{t('institution.title')}</h1>
+          <p>{t('institution.description')}</p>
           <ul className={styles.features}>
             {FEATURES.map((feature) => (
               <li key={feature}>
                 <IconCheck width={16} height={16} aria-hidden />
-                <span>{feature}</span>
+                <span>{t(feature)}</span>
               </li>
             ))}
           </ul>
         </div>
 
         <p className={styles.brandFooter}>
-          Trusted by institutions across Europe
+          {t('institution.trusted')}
         </p>
       </aside>
 
       <main id="institution-content" className={styles.main}>
         <div className={styles.langRow}>
           <LanguageSelector
-            menuNote="More languages are enabled per institution."
+            menuNote={t('language.more')}
           />
         </div>
 
         <div className={styles.content}>
           <header className={styles.header}>
-            <h2>Find your institution</h2>
-            <p>Select the university or college you belong to.</p>
+            <h2>{t('institution.find')}</h2>
+            <p>{t('institution.select')}</p>
           </header>
 
           <label className={styles.search} htmlFor="institution-search">
@@ -121,17 +91,17 @@ export function InstitutionPage() {
             <input
               id="institution-search"
               type="search"
-              placeholder="Search by name or email domain..."
+              placeholder={t('institution.searchPlaceholder')}
               value={query}
               onChange={(e) => setQuery(e.target.value)}
               autoComplete="off"
             />
           </label>
 
-          <section className={styles.listSection} aria-label="Institutions">
-            <h3 className={styles.listLabel}>All institutions</h3>
+          <section className={styles.listSection} aria-label={t('institution.all')}>
+            <h3 className={styles.listLabel}>{t('institution.all')}</h3>
             {filtered.length === 0 ? (
-              <p className={styles.empty}>No institutions match “{query}”.</p>
+              <p className={styles.empty}>{t('institution.none', { query })}</p>
             ) : (
               <ul className={styles.list}>
                 {filtered.map((item) => {
@@ -175,8 +145,7 @@ export function InstitutionPage() {
           </section>
 
           <p className={styles.help}>
-            Can&apos;t find your institution? Ask your IT department whether
-            TicketHub is enabled.
+            {t('institution.missing')}
           </p>
         </div>
       </main>

@@ -51,7 +51,12 @@ export interface Ticket {
   assignedName?: string
   createdAt: string
   updatedAt: string
+  /** First-response due timestamp from the API (ISO). */
+  slaDueAt?: string | null
+  /** Set once when the open ticket passed slaDueAt. */
+  slaBreachedAt?: string | null
   slaHoursRemaining?: number
+  slaBreached?: boolean
   comments: TicketComment[]
   attachments?: TicketAttachment[]
 }
@@ -68,6 +73,8 @@ export interface NotificationItem {
 export interface KnowledgeArticle {
   id: string
   title: string
+  /** Canonical FAQ / knowledge-base answer body (exact wording). */
+  body: string
   category: Department
   status: 'published' | 'draft'
   views: number

@@ -1,4 +1,5 @@
 import logging
+import re
 from dataclasses import dataclass
 
 from sqlalchemy import select
@@ -10,7 +11,11 @@ from app.ai.triage import fallback_subject, suggest_ticket_fields
 from app.core.exceptions import BadRequestError, ForbiddenError, NotFoundError
 from app.db.base import TicketStatus
 from app.models import ChatConversation, ChatMessage, Ticket, User
-from app.schemas.chat import MessageCreate
+from app.schemas.chat import Citation, MessageCreate
+from app.schemas.kb import FaqSearchResult
+from app.services import departments as departments_service
+from app.services import kb as kb_service
+from app.services.kb_embedding import EmbeddingProviderError, embed_text
 
 logger = logging.getLogger(__name__)
 
@@ -20,10 +25,94 @@ HISTORY_LIMIT = 20
 # Ticket descriptions embed the transcript, so cap what one chat can write.
 TRANSCRIPT_MAX_CHARS = 20_000
 
+RAG_TOP_K = 5
+# Cosine similarity (1 - distance). Below this we treat retrieval as weak.
+RAG_MIN_SCORE = 0.55
+
 LLM_OFFLINE_REPLY = (
     "I can't reach the AI assistant right now. A support agent can help if you "
     "escalate this conversation to a ticket."
 )
+
+LLM_EMPTY_REPLY = (
+    "I could not produce an answer for that turn. Please try again, or propose "
+    "a support ticket from this conversation."
+)
+LLM_OFFLINE_REPLY_DE = (
+    "Ich kann den KI-Assistenten derzeit nicht erreichen. Ein Supportmitarbeiter kann helfen, "
+    "wenn Sie dieses Gespräch als Ticket weiterleiten."
+)
+
+
+def offline_reply(language: str) -> str:
+    return LLM_OFFLINE_REPLY_DE if language == "de" else LLM_OFFLINE_REPLY
+
+# Soft prompts — avoid forcing "escalate" / FAQ chrome on greetings.
+CHITCHAT_KB_CONTEXT = (
+    "The user sent a greeting or small-talk message. Reply briefly and warmly. "
+    "Do not mention the knowledge base, tickets, or escalation unless they ask."
+)
+
+NO_KB_CONTEXT = (
+    "No matching knowledge-base excerpts were found for this question. "
+    "Answer briefly without inventing specific university policy, deadlines, "
+    "fees, or contact details. If this is a concrete support issue, offer to "
+    "escalate to a ticket; otherwise just help as best you can."
+)
+
+_GREETING_RE = re.compile(
+    r"^(hi|hello|hey|howdy|greetings|good\s+(morning|afternoon|evening)|"
+    r"thanks|thank\s+you|thx|ty|ok|okay|cool|great|bye|goodbye|cheers|"
+    r"hello there|hi there|hey there)[\s!.?]*$",
+    re.IGNORECASE,
+)
+
+_GERMAN_GREETING_RE = re.compile(
+    r"^(hallo|hi|hey|guten\s+(morgen|tag|abend)|danke|vielen\s+dank|tschüss|auf\s+wiedersehen)[\s!.?]*$",
+    re.IGNORECASE,
+)
+
+_SUPPORT_HINT_RE = re.compile(
+    r"\b(help|problem|issue|broken|error|bug|can't|cannot|unable|won't|dont|"
+    r"don't|how\s+(do|to|can)|where|when|why|ticket|login|password|vpn|"
+    r"wifi|grade|exam|pay|tuition|refund|register|appeal)\b",
+    re.IGNORECASE,
+)
+
+_GERMAN_SUPPORT_HINT_RE = re.compile(
+    r"\b(hilfe|problem|fehler|kaputt|kann nicht|wie|wo|wann|warum|ticket|anmeldung|"
+    r"passwort|vergessen|vpn|wlan|note|prüfung|zahlen|gebühr|erstattung|einschreiben)\b",
+    re.IGNORECASE,
+)
+
+
+def is_chitchat_query(query: str) -> bool:
+    """True for greetings / tiny non-questions that should skip FAQ retrieval."""
+    text = " ".join(query.strip().split())
+    if not text:
+        return True
+    if _GREETING_RE.match(text) or _GERMAN_GREETING_RE.match(text):
+        return True
+    words = text.split()
+    # Short utterances without a question mark and without support keywords.
+    if (
+        len(words) <= 3
+        and "?" not in text
+        and not _SUPPORT_HINT_RE.search(text)
+        and not _GERMAN_SUPPORT_HINT_RE.search(text)
+    ):
+        return True
+    return False
+
+
+def looks_like_support_issue(query: str) -> bool:
+    """True when a weak/no-hit reply should still surface escalate affordances."""
+    text = query.strip()
+    if not text or is_chitchat_query(text):
+        return False
+    if "?" in text:
+        return True
+    return bool(_SUPPORT_HINT_RE.search(text) or _GERMAN_SUPPORT_HINT_RE.search(text))
 
 
 @dataclass
@@ -32,6 +121,13 @@ class EscalationResult:
     ticket: Ticket
     already_escalated: bool
     bot_message: ChatMessage | None
+
+
+@dataclass
+class RetrievalBundle:
+    citations: list[Citation]
+    kb_context: str
+    retrieval_weak: bool
 
 
 async def create_conversation(db: AsyncSession, user: User) -> ChatConversation:
@@ -47,9 +143,7 @@ async def list_conversations(db: AsyncSession, user: User) -> list[ChatConversat
     return list(result.scalars().all())
 
 
-async def get_conversation(
-    db: AsyncSession, conversation_id: str, user: User
-) -> ChatConversation:
+async def get_conversation(db: AsyncSession, conversation_id: str, user: User) -> ChatConversation:
     result = await db.execute(
         select(ChatConversation).where(ChatConversation.id == conversation_id)
     )
@@ -61,9 +155,7 @@ async def get_conversation(
     return conversation
 
 
-async def list_messages(
-    db: AsyncSession, conversation_id: str, user: User
-) -> list[ChatMessage]:
+async def list_messages(db: AsyncSession, conversation_id: str, user: User) -> list[ChatMessage]:
     await get_conversation(db, conversation_id, user)
     result = await db.execute(
         select(ChatMessage)
@@ -85,10 +177,73 @@ async def _recent_history(db: AsyncSession, conversation_id: str) -> list[tuple[
     return [(m.sender, m.content) for m in rows]
 
 
+def _citations_from_hits(hits: list[FaqSearchResult]) -> list[Citation]:
+    return [
+        Citation(
+            id=hit.id,
+            question=hit.question,
+            category=hit.category,
+            score=float(hit.score),
+        )
+        for hit in hits
+    ]
+
+
+def _format_kb_context(hits: list[FaqSearchResult], language: str = "en") -> str:
+    blocks = [
+        f"[{index}] id={hit.id} category={hit.category or 'General'}\n"
+        f"Q: {hit.question}\nA: {hit.answer}"
+        for index, hit in enumerate(hits, start=1)
+    ]
+    return (
+        "Knowledge-base excerpts (use these; cite FAQ ids when you rely on them):\n\n"
+        + "\n\n".join(blocks)
+        + ("\n\nRespond in German." if language == "de" else "\n\nRespond in English.")
+    )
+
+
+async def retrieve_for_query(db: AsyncSession, query: str, language: str = "en") -> RetrievalBundle:
+    """Vector search with text fallback. Skips RAG chrome for chitchat.
+
+    Weak hits no longer surface "closest articles" — empty citations keep the
+    UI clean while the model still gets a soft no-match instruction.
+    """
+    if is_chitchat_query(query):
+        return RetrievalBundle(
+            citations=[],
+            kb_context=CHITCHAT_KB_CONTEXT,
+            retrieval_weak=False,
+        )
+
+    hits: list[FaqSearchResult] = []
+    try:
+        vector = await embed_text(query)
+        hits = await kb_service.search_faq_vector(db, vector, limit=RAG_TOP_K, language=language)
+    except EmbeddingProviderError as exc:
+        logger.warning("Embedding retrieval failed; falling back to text search: %s", exc)
+        hits = await kb_service.search_faq(db, query, limit=RAG_TOP_K, language=language)
+
+    strong = [hit for hit in hits if hit.score >= RAG_MIN_SCORE]
+    if strong:
+        return RetrievalBundle(
+            citations=_citations_from_hits(strong),
+            kb_context=_format_kb_context(strong, language),
+            retrieval_weak=False,
+        )
+
+    # Low scores: do not pass noisy nearest-neighbour FAQs to the UI.
+    supportish = looks_like_support_issue(query)
+    return RetrievalBundle(
+        citations=[],
+        kb_context=NO_KB_CONTEXT if supportish else CHITCHAT_KB_CONTEXT,
+        retrieval_weak=supportish,
+    )
+
+
 async def start_user_turn(
     db: AsyncSession, conversation_id: str, user: User, data: MessageCreate
-) -> tuple[ChatMessage, list[dict[str, str]]]:
-    """Persist the user's message and build the prompt the model will answer."""
+) -> tuple[ChatMessage, list[dict[str, str]], RetrievalBundle]:
+    """Persist the user's message, retrieve KB context, and build the LLM prompt."""
     conversation = await get_conversation(db, conversation_id, user)
     user_message = ChatMessage(
         conversationId=conversation.id,
@@ -99,15 +254,17 @@ async def start_user_turn(
     await db.commit()
     await db.refresh(user_message)
 
+    retrieval = await retrieve_for_query(db, data.content, data.language)
     history = await _recent_history(db, conversation.id)
-    return user_message, build_messages(history, data.mode)
+    prompt = build_messages(history, data.mode, kb_context=retrieval.kb_context)
+    return user_message, prompt, retrieval
 
 
 async def finish_bot_turn(db: AsyncSession, conversation_id: str, content: str) -> ChatMessage:
     bot_message = ChatMessage(
         conversationId=conversation_id,
         sender="bot",
-        content=content or LLM_OFFLINE_REPLY,
+        content=content or LLM_EMPTY_REPLY,
     )
     db.add(bot_message)
     await db.commit()
@@ -117,18 +274,18 @@ async def finish_bot_turn(db: AsyncSession, conversation_id: str, content: str) 
 
 async def send_message(
     db: AsyncSession, conversation_id: str, user: User, data: MessageCreate
-) -> tuple[ChatMessage, ChatMessage]:
-    user_message, prompt = await start_user_turn(db, conversation_id, user, data)
+) -> tuple[ChatMessage, ChatMessage, RetrievalBundle]:
+    user_message, prompt, retrieval = await start_user_turn(db, conversation_id, user, data)
 
     try:
         reply = await chat_completion(prompt, data.mode)
     except LLMUnavailableError as exc:
         # A dead model server must not lose the user's message or 500 the request.
         logger.warning("Falling back to offline reply: %s", exc)
-        reply = LLM_OFFLINE_REPLY
+        reply = offline_reply(data.language)
 
     bot_message = await finish_bot_turn(db, conversation_id, reply)
-    return user_message, bot_message
+    return user_message, bot_message, retrieval
 
 
 def _format_transcript(messages: list[ChatMessage], user: User) -> str:
@@ -162,14 +319,19 @@ async def escalate_to_ticket(
     transcript = _format_transcript(messages, user)
     suggestion = await suggest_ticket_fields(transcript)
 
+    dept = await departments_service.department_for_user(db, user)
     ticket = Ticket(
-        subject=suggestion.subject if suggestion else fallback_subject(
-            [(m.sender, m.content) for m in messages]
+        tenantId=user.tenantId,
+        subject=(
+            suggestion.subject
+            if suggestion
+            else fallback_subject([(m.sender, m.content) for m in messages])
         ),
         description=f"Escalated from the AI assistant chat.\n\n{transcript}",
         status=TicketStatus.OPEN,
         category=suggestion.category if suggestion else None,
-        department=user.department,
+        departmentId=dept.id if dept else None,
+        classificationSource="manual" if dept else None,
         createdById=user.id,
     )
     db.add(ticket)

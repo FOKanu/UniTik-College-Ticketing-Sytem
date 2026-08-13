@@ -35,6 +35,50 @@
   font-weight: 700;
 }
 
+.createForm {
+  display: grid;
+  gap: 0.85rem;
+  padding: 1rem;
+  background: var(--color-surface);
+  border: 1px solid var(--color-border);
+  border-radius: var(--radius-lg);
+  box-shadow: var(--shadow-card);
+}
+
+.createForm h2 {
+  margin: 0;
+  font-size: 1.05rem;
+}
+
+.formRow {
+  display: flex;
+  align-items: center;
+  gap: 0.65rem;
+}
+
+.formError {
+  margin: 0;
+  color: var(--color-error, #b3261e);
+  font-size: 0.85rem;
+}
+
+.stateBox {
+  display: grid;
+  justify-items: start;
+  gap: 0.65rem;
+  padding: 1rem;
+  border: 1px dashed var(--color-border);
+  border-radius: var(--radius-md);
+  background: var(--color-surface-muted);
+}
+
+.stateBox p {
+  margin: 0;
+  color: var(--color-text-muted);
+  font-size: 0.88rem;
+  line-height: 1.5;
+}
+
 .toolbar {
   display: grid;
   grid-template-columns: 160px 160px 1fr;
@@ -80,6 +124,76 @@
 .empty {
   color: var(--color-text-muted);
   font-weight: 500;
+}
+
+.row:hover,
+.rowOpen {
+  background: var(--brand-50);
+}
+
+.titleBtn {
+  border: none;
+  background: none;
+  padding: 0;
+  margin: 0;
+  font: inherit;
+  font-weight: 650;
+  color: var(--neutral-900);
+  text-align: left;
+  cursor: pointer;
+}
+
+.titleBtn:hover {
+  color: var(--brand-700);
+  text-decoration: underline;
+  text-underline-offset: 2px;
+}
+
+.faqId {
+  font-size: 0.75rem;
+  color: var(--neutral-500);
+  background: var(--neutral-50);
+  border: 1px solid var(--neutral-200);
+  border-radius: 6px;
+  padding: 0.15rem 0.4rem;
+}
+
+.answerRow td {
+  background: var(--neutral-50);
+  padding: 0;
+  border-bottom: 1px solid var(--color-border);
+}
+
+.answer {
+  margin: 0;
+  max-width: none;
+  padding: 0.9rem 0.9rem 1rem;
+  border: none;
+  border-radius: 0;
+  background: var(--neutral-50);
+  text-align: left;
+}
+
+.answer h3 {
+  margin: 0 0 0.45rem;
+  font-size: 0.75rem;
+  text-transform: uppercase;
+  letter-spacing: 0.04em;
+  color: var(--neutral-500);
+  text-align: left;
+}
+
+.answer p {
+  margin: 0;
+  color: var(--neutral-800);
+  line-height: 1.55;
+  font-size: 0.9rem;
+}
+
+.answer a {
+  color: var(--brand-700);
+  font-weight: 600;
+  word-break: break-word;
 }
 
 @media (max-width: 900px) {

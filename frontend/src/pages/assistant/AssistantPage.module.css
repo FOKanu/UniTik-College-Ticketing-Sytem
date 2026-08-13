@@ -5,8 +5,8 @@
 
 .page header h1 {
   margin: 0;
-  font-size: var(--text-h1);
-  letter-spacing: -0.02em;
+  font-size: 1.75rem;
+  letter-spacing: -0.03em;
 }
 
 .page header p {
@@ -228,6 +228,12 @@
   opacity: 0.92;
   font-size: var(--text-small);
   line-height: 1.45;
+}
+
+.escalateActions {
+  display: flex;
+  flex-wrap: wrap;
+  gap: var(--space-2);
 }
 
 .escalate :global(a),
