@@ -7,14 +7,14 @@
   "scripts": {
     "dev": "vite",
     "build": "tsc -b && vite build",
-    "typecheck": "tsc -b --pretty false",
+    "preview": "vite preview",
+    "typecheck": "tsc --noEmit",
     "lint": "eslint .",
     "lint:fix": "eslint . --fix",
     "format": "prettier --write .",
     "format:check": "prettier --check .",
     "test": "vitest run",
-    "test:watch": "vitest",
-    "preview": "vite preview"
+    "test:watch": "vitest"
   },
   "dependencies": {
     "@hookform/resolvers": "^5.4.0",

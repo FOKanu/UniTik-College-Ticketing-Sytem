@@ -138,6 +138,16 @@ if [[ ${#FILES[@]} -eq 0 || -z "${FILES[0]:-}" ]]; then
   exit 0
 fi
 
+for f in "${FILES[@]}"; do
+  [[ -z "$f" ]] && continue
+  if [[ -f "$f" ]] && grep -nE '^(<<<<<<<|=======|>>>>>>>)' "$f" >/dev/null; then
+    echo ""
+    echo "Merge conflict markers detected in '$f'."
+    echo "Resolve all conflict markers before pushing this branch."
+    exit 1
+  fi
+done
+
 echo "Checking ${#FILES[@]} file(s) on branch '$BRANCH' (area: $AREA) against allowlist…"
 VIOLATIONS=()
 for f in "${FILES[@]}"; do
