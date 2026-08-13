@@ -30,6 +30,9 @@ export function ProfilePage() {
   const [avatarColor, setAvatarColor] = useState(
     user?.avatarColor ?? DEFAULT_COLOR,
   )
+  // Snapshot of the profile as it was when this page first loaded, so
+  // "Reset" always returns to that baseline — not to whatever was most
+  // recently saved during this session.
   const initialProfile = useRef({
     displayName: user?.displayName ?? '',
     avatarColor: user?.avatarColor ?? DEFAULT_COLOR,
