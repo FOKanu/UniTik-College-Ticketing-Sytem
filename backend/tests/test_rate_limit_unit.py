@@ -2,7 +2,7 @@ import pytest
 from fastapi import FastAPI, Request
 from fastapi.testclient import TestClient
 
-from app.core.rate_limit import clear_memory_store, default_key_func, rate_limit
+from app.core.rate_limit import clear_memory_store, rate_limit
 
 
 @pytest.fixture(autouse=True)

@@ -14,7 +14,7 @@ import logging
 import os
 import time
 from collections import defaultdict
-from typing import Callable, Optional
+from collections.abc import Callable
 
 from fastapi import Depends, HTTPException, Request, Response
 
@@ -127,8 +127,8 @@ def rate_limit(
     max_requests: int,
     window_seconds: int,
     *,
-    key_func: Optional[Callable[[Request], str]] = None,
-    clock_func: Optional[Callable[[], float]] = None,
+    key_func: Callable[[Request], str] | None = None,
+    clock_func: Callable[[], float] | None = None,
     fail_open: bool = True,
 ):
     """FastAPI dependency factory: limits requests per client/key.

@@ -14,19 +14,20 @@ def reset_store():
 
 
 class DummyBrokenRedis:
-    """Mock Redis client that throws ConnectionError on all script evaluations."""
+    """Mock Redis client that throws ConnectionError on script calls."""
+
     def register_script(self, script):
         async def broken_call(*args, **kwargs):
             raise Exception("Redis connection refused (simulated outage)")
+
         return broken_call
 
 
 @pytest.mark.asyncio
 async def test_failure_mode_fail_open_policy(monkeypatch):
-    """Simulate Redis store crash with fail_open=True. Limiter should log warning and allow request."""
+    """Simulate Redis store crash with fail_open=True.
+    Limiter should log warning and allow request."""
     monkeypatch.delenv("PYTEST_CURRENT_TEST", raising=False)
-
-    # Force rate_limit to use dummy broken Redis client
     monkeypatch.setattr(rate_limit_module, "_get_redis", lambda: DummyBrokenRedis())
 
     app = FastAPI()
@@ -39,7 +40,9 @@ async def test_failure_mode_fail_open_policy(monkeypatch):
         return {"status": "success"}
 
     transport = ASGITransport(app=app)
-    async with AsyncClient(transport=transport, base_url="http://testserver") as client:
+    async with AsyncClient(
+        transport=transport, base_url="http://testserver"
+    ) as client:
         res1 = await client.get("/fail-open")
         assert res1.status_code == 200
         assert res1.json() == {"status": "success"}
@@ -50,9 +53,9 @@ async def test_failure_mode_fail_open_policy(monkeypatch):
 
 @pytest.mark.asyncio
 async def test_failure_mode_fail_closed_policy(monkeypatch):
-    """Simulate Redis store crash with fail_open=False. Limiter should reject request with 429 error."""
+    """Simulate Redis store crash with fail_open=False.
+    Limiter should reject request with 429 error."""
     monkeypatch.delenv("PYTEST_CURRENT_TEST", raising=False)
-
     monkeypatch.setattr(rate_limit_module, "_get_redis", lambda: DummyBrokenRedis())
 
     app = FastAPI()
@@ -65,7 +68,9 @@ async def test_failure_mode_fail_closed_policy(monkeypatch):
         return {"status": "success"}
 
     transport = ASGITransport(app=app)
-    async with AsyncClient(transport=transport, base_url="http://testserver") as client:
+    async with AsyncClient(
+        transport=transport, base_url="http://testserver"
+    ) as client:
         res = await client.get("/fail-closed")
         assert res.status_code == 429
         assert res.json() == {"detail": "Rate limiter service unavailable"}
