@@ -1,4 +1,4 @@
-"""Alembic baseline — reproduces archived Prisma schema (see archive/scaffold-v1/backend/prisma/)."""
+"""Alembic baseline — reproduces archived Prisma schema."""
 
 from alembic import op
 
@@ -143,6 +143,7 @@ def upgrade() -> None:
             "body" TEXT NOT NULL,
             "isInternal" BOOLEAN NOT NULL DEFAULT false,
             "createdAt" TIMESTAMP(3) NOT NULL DEFAULT CURRENT_TIMESTAMP,
+            "requestedAt" TIMESTAMP(3),
             CONSTRAINT "TicketComment_pkey" PRIMARY KEY ("id")
         )
         """)
@@ -181,11 +182,13 @@ def upgrade() -> None:
     )
     op.execute(
         'ALTER TABLE "ChatConversation" ADD CONSTRAINT "ChatConversation_escalatedTicketId_fkey" '
-        'FOREIGN KEY ("escalatedTicketId") REFERENCES "Ticket"("id") ON DELETE SET NULL ON UPDATE CASCADE'
+        'FOREIGN KEY ("escalatedTicketId") REFERENCES "Ticket"("id") '
+        'ON DELETE SET NULL ON UPDATE CASCADE'
     )
     op.execute(
         'ALTER TABLE "ChatMessage" ADD CONSTRAINT "ChatMessage_conversationId_fkey" '
-        'FOREIGN KEY ("conversationId") REFERENCES "ChatConversation"("id") ON DELETE RESTRICT ON UPDATE CASCADE'
+        'FOREIGN KEY ("conversationId") REFERENCES "ChatConversation"("id") '
+        'ON DELETE RESTRICT ON UPDATE CASCADE'
     )
     op.execute(
         'ALTER TABLE "TicketComment" ADD CONSTRAINT "TicketComment_ticketId_fkey" '
