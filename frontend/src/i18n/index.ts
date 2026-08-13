@@ -14,7 +14,7 @@ function initialLanguage(): SupportedLanguage {
   } catch {
     // Storage can be unavailable in privacy modes; continue with browser locale.
   }
-  const browser = navigator.language.toLowerCase()
+  const browser = typeof navigator !== 'undefined' ? navigator.language.toLowerCase() : 'en'
   return browser === 'de' || browser.startsWith('de-') ? 'de' : 'en'
 }
 
@@ -23,13 +23,16 @@ void i18n.use(initReactI18next).init({
   lng: initialLanguage(),
   fallbackLng: 'en',
   supportedLngs: [...supportedLanguages],
+  compatibilityJSON: 'v3',
   interpolation: { escapeValue: false },
   returnNull: false,
 })
 
 function applyLanguage(language: string) {
   const normalized: SupportedLanguage = language.startsWith('de') ? 'de' : 'en'
-  document.documentElement.lang = normalized
+  if (typeof document !== 'undefined' && document.documentElement) {
+    document.documentElement.lang = normalized
+  }
   try {
     localStorage.setItem(LANGUAGE_STORAGE_KEY, normalized)
   } catch {
