@@ -31,8 +31,12 @@ COMMON_ALLOWED=(
 
 resolve_area() {
   local b="$1"
-  if [[ "$b" =~ ^feature/(frontend|backend|database|ai-rag|tooling-devops|testing)- ]]; then
-    echo "${BASH_REMATCH[1]}"
+  if [[ "$b" =~ ^(feature|fix)/(frontend|backend|database|ai-rag|tooling-devops|testing)- ]]; then
+    echo "${BASH_REMATCH[2]}"
+    return
+  fi
+  if [[ "$b" =~ ^fix/analytics- ]]; then
+    echo "frontend"
     return
   fi
   case "$b" in
