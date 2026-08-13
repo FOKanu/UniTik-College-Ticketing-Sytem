@@ -14,7 +14,7 @@ fi
 
 # Integration / release gates may receive any paths.
 case "$BRANCH" in
-  main|debugging|project-manager|develop)
+  main|debugging|project-manager|develop|ai-rag)
     echo "Branch '$BRANCH' is a gate/integration branch — path guard skipped."
     exit 0
     ;;
