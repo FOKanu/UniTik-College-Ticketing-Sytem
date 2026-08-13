@@ -1,4 +1,4 @@
-import { useState } from 'react'
+import { useRef, useState } from 'react'
 import { Button, Avatar, Input } from '@/components/ui'
 import { IconCheck, IconLogout, IconUser } from '@/components/ui/icons'
 import { signOut } from '@/lib/api'
@@ -33,6 +33,10 @@ export function ProfilePage() {
   const [avatarColor, setAvatarColor] = useState(
     user?.avatarColor ?? DEFAULT_COLOR,
   )
+  const initialProfile = useRef({
+    displayName: user?.displayName ?? '',
+    avatarColor: user?.avatarColor ?? DEFAULT_COLOR,
+  })
 
   if (!user) {
     return (
@@ -160,14 +164,6 @@ export function ProfilePage() {
               )
             })}
           </div>
-          <div className={styles.preview}>
-            <Avatar
-              name={displayName || user.displayName}
-              size="lg"
-              color={avatarColor}
-            />
-            <span>Preview</span>
-          </div>
         </section>
       </div>
 
@@ -178,8 +174,8 @@ export function ProfilePage() {
         <Button
           variant="secondary"
           onClick={() => {
-            setDisplayName(user.displayName)
-            setAvatarColor(user.avatarColor ?? DEFAULT_COLOR)
+            setDisplayName(initialProfile.current.displayName)
+            setAvatarColor(initialProfile.current.avatarColor)
           }}
           disabled={!dirty}
         >
