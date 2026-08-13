@@ -1,5 +1,5 @@
 import { describe, expect, it } from 'vitest'
-import { ticketService } from '../../modules/ticket/services/ticket.service'
+import { ticketsApi } from './tickets'
 // @ts-ignore
 import * as fs from 'fs'
 // @ts-ignore
@@ -20,10 +20,11 @@ function collectTextFiles(dir: string, extensions: string[]): string[] {
   return files
 }
 
-describe('ticketService contract', () => {
-  it('exposes list and getById methods', () => {
-    expect(typeof ticketService.list).toBe('function')
-    expect(typeof ticketService.getById).toBe('function')
+describe('ticketsApi contract', () => {
+  it('exposes list, listMine, and getById methods', () => {
+    expect(typeof ticketsApi.list).toBe('function')
+    expect(typeof ticketsApi.listMine).toBe('function')
+    expect(typeof ticketsApi.getById).toBe('function')
   })
 })
 
