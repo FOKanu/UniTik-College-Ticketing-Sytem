@@ -155,7 +155,7 @@ VIOLATIONS=()
 for f in "${FILES[@]}"; do
   [[ -z "$f" ]] && continue
   if [[ "$f" =~ ^archive/ ]]; then
-    if [[ "$AREA" != "tooling-devops" ]]; then
+    if [[ "$AREA" != "tooling-devops" && "$AREA" != "database" ]]; then
       VIOLATIONS+=("$f")
     fi
     continue
