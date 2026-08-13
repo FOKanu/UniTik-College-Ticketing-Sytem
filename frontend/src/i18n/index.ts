@@ -23,7 +23,7 @@ void i18n.use(initReactI18next).init({
   lng: initialLanguage(),
   fallbackLng: 'en',
   supportedLngs: [...supportedLanguages],
-  compatibilityJSON: 'v3',
+  compatibilityJSON: 'v4',
   interpolation: { escapeValue: false },
   returnNull: false,
 })

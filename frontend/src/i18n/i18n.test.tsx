@@ -91,11 +91,26 @@ describe('application language & i18n German localization', () => {
     expect(i18n.t('dashboard.welcome', { name: 'Alex' })).toBe('Willkommen zurück, Alex')
     expect(i18n.t('queue.assignedTo', { name: 'Dr. Mueller' })).toBe('Dr. Mueller zugewiesen')
 
-    // Pluralization
+    // Pluralization (v4 CLDR: count === 1 -> "one" category, everything else -> "other")
     expect(i18n.t('queue.closeTitle', { count: 1 })).toBe('1 Ticket schließen?')
+    expect(i18n.t('queue.closeTitle', { count: 0 })).toBe('0 Tickets schließen?')
     expect(i18n.t('queue.closeTitle', { count: 5 })).toBe('5 Tickets schließen?')
     expect(i18n.t('agentDashboard.atRisk', { count: 1 })).toBe('1 Ticket innerhalb von 8 Stunden vor SLA.')
     expect(i18n.t('agentDashboard.atRisk', { count: 3 })).toBe('3 Tickets innerhalb von 8 Stunden vor SLA.')
+    expect(i18n.t('queue.bulkSuccess', { action: 'Closed', count: 1 })).toBe('Closed: 1 Ticket.')
+    expect(i18n.t('queue.bulkSuccess', { action: 'Closed', count: 4 })).toBe('Closed: 4 Tickets.')
+  })
+
+  it('handles pluralization correctly in English (v4 CLDR format)', async () => {
+    await i18n.changeLanguage('en')
+
+    expect(i18n.t('queue.closeTitle', { count: 1 })).toBe('Close 1 ticket?')
+    expect(i18n.t('queue.closeTitle', { count: 0 })).toBe('Close 0 tickets?')
+    expect(i18n.t('queue.closeTitle', { count: 5 })).toBe('Close 5 tickets?')
+    expect(i18n.t('agentDashboard.atRisk', { count: 1 })).toBe('1 ticket within 8 hours of SLA.')
+    expect(i18n.t('agentDashboard.atRisk', { count: 2 })).toBe('2 tickets within 8 hours of SLA.')
+    expect(i18n.t('queue.bulkSuccess', { action: 'Closed', count: 1 })).toBe('Closed 1 ticket.')
+    expect(i18n.t('queue.bulkSuccess', { action: 'Closed', count: 4 })).toBe('Closed 4 tickets.')
   })
 
   it('falls back to English when a missing key is requested in German', async () => {

@@ -24,6 +24,7 @@ async def test_enqueue_coalesces_active_jobs():
             FaqEntry(
                 tenantId=DEFAULT_TENANT_ID,
                 id=faq_id,
+                documentId=f"doc-{uuid.uuid4().hex[:8]}",
                 question="Q",
                 answer="A",
                 language="en",
@@ -58,6 +59,7 @@ async def test_fail_job_retries_then_marks_failed():
             FaqEntry(
                 tenantId=DEFAULT_TENANT_ID,
                 id=faq_id,
+                documentId=f"doc-{uuid.uuid4().hex[:8]}",
                 question="Q",
                 answer="A",
                 language="en",
@@ -95,6 +97,7 @@ async def test_worker_once_embeds_pending_job():
             FaqEntry(
                 tenantId=DEFAULT_TENANT_ID,
                 id=faq_id,
+                documentId=f"doc-{uuid.uuid4().hex[:8]}",
                 question="Reset password",
                 answer="Use the portal",
                 language="en",
@@ -158,6 +161,7 @@ async def test_reembed_requires_admin_and_enqueues(client):
             FaqEntry(
                 tenantId=DEFAULT_TENANT_ID,
                 id=faq_id,
+                documentId=f"doc-{uuid.uuid4().hex[:8]}",
                 question="Q",
                 answer="A",
                 language="en",
