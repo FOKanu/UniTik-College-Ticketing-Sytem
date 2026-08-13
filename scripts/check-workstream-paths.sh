@@ -123,14 +123,12 @@ case "$AREA" in
 esac
 
 if [[ -n "${BASE_REF}" ]]; then
-  RANGE="${BASE_REF}...HEAD"
+  RANGE="${BASE_REF}..HEAD"
 elif [[ -n "${GITHUB_EVENT_NAME:-}" && "${GITHUB_EVENT_NAME}" == "pull_request" ]]; then
-  RANGE="origin/${GITHUB_BASE_REF}...HEAD"
-elif [[ -n "${GITHUB_EVENT_BEFORE:-}" && "${GITHUB_EVENT_BEFORE}" != "0000000000000000000000000000000000000000" ]]; then
-  RANGE="${GITHUB_EVENT_BEFORE}...HEAD"
+  RANGE="origin/${GITHUB_BASE_REF}..HEAD"
 else
   git fetch origin main --depth=50 2>/dev/null || true
-  RANGE="origin/main...HEAD"
+  RANGE="origin/main..HEAD"
 fi
 
 FILES=()
