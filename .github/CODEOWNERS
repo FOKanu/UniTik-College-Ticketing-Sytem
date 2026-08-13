@@ -1,29 +1,26 @@
 # Workstream path ownership for PR reviews.
-# GitHub usernames should be updated as teammates link their accounts.
 # Path *push* enforcement is also handled by scripts/check-workstream-paths.sh (CI).
 # See docs/BRANCHING_STRATEGY.md and docs/CONTRIBUTORS.md.
 
-# Default fallback — Project Manager
 * @FOKanu
 
-# Frontend workstream
 /frontend/ @FOKanu
-/shared/ @FOKanu
 
-# Backend application code (not Prisma)
-/backend/src/ @FOKanu
-/backend/tests/ @FOKanu
+# FastAPI application code (not Alembic/models)
+/backend/app/ @FOKanu
 
-# Database workstream
-/backend/prisma/ @FOKanu
-/database/ @FOKanu
+# Database workstream — Laurynas (lead)
+/backend/alembic/ @Laurynas36
+/backend/app/models/ @Laurynas36
+/backend/scripts/ @Laurynas36
 
-# AI / RAG-oriented modules
-/backend/src/app/modules/ai/ @FOKanu
-/backend/src/app/modules/chatbot/ @FOKanu
-/backend/src/app/modules/knowledge-base/ @FOKanu
-/frontend/src/modules/chatbot/ @FOKanu
-/frontend/src/modules/faq/ @FOKanu
+# AI / RAG — chat + KB API slices
+/backend/app/api/v1/chat.py @rzaest @GariazhaYegor @FOKanu
+/backend/app/api/v1/kb.py @rzaest @GariazhaYegor @FOKanu
+/backend/app/services/chat.py @rzaest @GariazhaYegor @FOKanu
+/backend/app/services/kb.py @rzaest @GariazhaYegor @FOKanu
+/frontend/src/modules/chat/ @rzaest @FOKanu
+/frontend/src/modules/faq/ @rzaest @FOKanu
 
 # Tooling / DevOps
 /.github/ @FOKanu
@@ -35,3 +32,6 @@
 /docs/ @FOKanu
 /CONTRIBUTING.md @FOKanu
 /CLAUDE.md @FOKanu
+
+# Archive is read-only — changes require tooling-devops + PM approval
+/archive/ @FOKanu

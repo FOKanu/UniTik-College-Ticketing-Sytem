@@ -1,0 +1,38 @@
+.page {
+  min-height: 100vh;
+  display: grid;
+  place-items: center;
+  padding: 2rem;
+  text-align: center;
+}
+
+.card {
+  width: min(480px, 100%);
+}
+
+.code {
+  margin: 0;
+  color: var(--color-primary);
+  font-weight: 800;
+  letter-spacing: 0.08em;
+}
+
+.card h1 {
+  margin: 0.35rem 0 0;
+}
+
+.copy {
+  color: var(--color-text-muted);
+  line-height: 1.55;
+}
+
+.alt {
+  margin-top: 1rem;
+  color: var(--color-text-muted);
+}
+
+.alt a {
+  color: var(--color-primary);
+  font-weight: 700;
+  text-decoration: underline;
+}

@@ -1,54 +1,47 @@
 # University Support Ticketing System
 
+> **v2 — FastAPI implementation.** The original Express + Prisma scaffold is frozen in
+> [`archive/scaffold-v1/`](archive/scaffold-v1/) (tag: `scaffold-v1-final`). Do not import from the archive
+> into active code.
+
 A self-hosted, privacy-compliant support ticketing platform for universities, with a chatbot front door,
 role-based access (Student / Staff / Admin), AI-assisted classification, and an FAQ knowledge base.
 
-This repository is a **scaffold**. Directory structure, interfaces, and placeholder endpoints are in place so
-that six-plus contributors can build out one module each with minimal merge conflicts. Business logic is
-intentionally left as `TODO` — see `CONTRIBUTING.md` before you start.
+## Stack
 
-## Why this structure
-
-Instead of one shared `controllers/ services/ models/` tree (where every feature touches the same files and
-every PR collides), the backend and frontend are both organized **by business domain**. Each module
-(`authentication`, `tickets`, `chatbot`, `ai`, `knowledge-base`, `notifications`, `dashboard`, `admin`,
-`analytics`, `users`) owns its own controller, service, repository, routes, DTOs, schemas, validators, tests,
-and README. Nobody needs to touch another module's files to ship their feature.
-
-See `docs/architecture/README.md` for the full rationale and the requirements-to-component mapping.
+| Layer | Technology |
+| --- | --- |
+| Backend | FastAPI, SQLAlchemy 2 (async), Alembic, PostgreSQL + pgvector |
+| Frontend | React, TypeScript, Vite, Tailwind |
+| Process | Gated git flow — see [`docs/BRANCHING_STRATEGY.md`](docs/BRANCHING_STRATEGY.md) |
 
 ## Repository layout
 
 ```
 university-ticketing-system/
-├── docs/                  # architecture, branching, coding standards, setup
-├── backend/               # Node.js + Express + TypeScript API (modular by domain)
-├── frontend/               # React + TypeScript + Vite + Tailwind SPA (mirrors backend modules)
-├── shared/                # cross-cutting TS types/constants shared conceptually by both apps
-├── database/              # Prisma migrations, seed data, reference SQL schemas per domain
+├── backend/               # FastAPI API (vertical slices: auth → tickets → chat → kb)
+├── frontend/              # React SPA
+├── docs/                  # architecture, branching, design tokens, refactor roadmap
+├── archive/scaffold-v1/   # READ-ONLY frozen Express/Prisma scaffold
 ├── docker/                # Dockerfiles + Postgres init scripts
-├── .github/               # CI workflows, PR/issue templates
-└── scripts/               # setup / seed helper scripts
+├── .github/               # CI workflows, CODEOWNERS
+└── scripts/               # setup, path guards, seed helpers
 ```
 
 ## Quick start
 
 ```bash
-cp backend/.env.example backend/.env
-cp frontend/.env.example frontend/.env
+./scripts/setup.sh
 docker compose up --build
 ```
 
-Backend API: http://localhost:4000
+Backend API: http://localhost:4000 (OpenAPI docs at `/docs`)
 Frontend: http://localhost:5173
 
-See `docs/SETUP_INSTRUCTIONS.md` for local (non-Docker) setup, `CONTRIBUTING.md` for how to pick up a
-module, `docs/CONTRIBUTORS.md` for team ownership, and `docs/BRANCHING_STRATEGY.md` for the gated
-git flow (`debugging` → `project-manager` → `main`).
+See [`docs/SETUP_INSTRUCTIONS.md`](docs/SETUP_INSTRUCTIONS.md) for local setup,
+[`docs/REFACTOR.md`](docs/REFACTOR.md) for the implementation roadmap,
+[`docs/CONTRIBUTORS.md`](docs/CONTRIBUTORS.md) for team ownership.
 
 ## Status
 
-Scaffold only. Every endpoint returns a mock response. Every module has `TODO` markers where real business
-logic, validation, and persistence need to be implemented. Authentication is wired up structurally
-(JWT + role guard) but LDAP/SSO integration is stubbed pending confirmation from university IT (see
-`docs/architecture/README.md`, Open Issue OI-01).
+Foundation refactor complete. Scarfolding and legacy codebase archived. New Vertical feature slice approach adobted for incremental build — see `docs/REFACTOR.md`.

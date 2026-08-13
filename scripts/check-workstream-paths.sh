@@ -56,27 +56,37 @@ case "$AREA" in
     ALLOWED+=('^shared/')
     ;;
   backend)
-    # Prisma + database/ SQL belong to the database workstream.
-    ALLOWED+=('^backend/src/')
+    ALLOWED+=('^backend/app/')
     ALLOWED+=('^backend/tests/')
-    ALLOWED+=('^backend/package\.json$')
-    ALLOWED+=('^backend/package-lock\.json$')
-    ALLOWED+=('^backend/tsconfig\.json$')
-    ALLOWED+=('^backend/jest\.config\.')
-    ALLOWED+=('^backend/nodemon\.json$')
-    ALLOWED+=('^backend/\.eslintrc')
-    ALLOWED+=('^backend/\.prettierrc')
+    ALLOWED+=('^backend/pyproject\.toml$')
     ALLOWED+=('^backend/\.env\.example$')
     ;;
   database)
-    ALLOWED+=('^backend/prisma/')
-    ALLOWED+=('^database/')
+    ALLOWED+=('^backend/alembic/')
+    ALLOWED+=('^backend/alembic\.ini$')
+    ALLOWED+=('^backend/app/models/')
+    # SQLAlchemy declarative Base and the schema-level enums (Role, TicketStatus,
+    # FaqVisibility, …) live here. They are schema, not API, so the database
+    # workstream owns them.
+    ALLOWED+=('^backend/app/db/')
+    ALLOWED+=('^backend/scripts/')
     ;;
   ai-rag)
-    ALLOWED+=('^backend/src/app/modules/ai/')
-    ALLOWED+=('^backend/src/app/modules/chatbot/')
-    ALLOWED+=('^backend/src/app/modules/knowledge-base/')
-    ALLOWED+=('^frontend/src/modules/chatbot/')
+    ALLOWED+=('^backend/app/ai/')
+    ALLOWED+=('^backend/app/api/v1/chat\.py$')
+    ALLOWED+=('^backend/app/api/v1/kb\.py$')
+    ALLOWED+=('^backend/app/services/chat\.py$')
+    ALLOWED+=('^backend/app/services/kb\.py$')
+    ALLOWED+=('^backend/app/services/kb_')
+    ALLOWED+=('^backend/app/schemas/chat\.py$')
+    ALLOWED+=('^backend/app/schemas/kb\.py$')
+    ALLOWED+=('^backend/app/models/')
+    ALLOWED+=('^backend/alembic/')
+    ALLOWED+=('^backend/scripts/ingest_kb\.py$')
+    ALLOWED+=('^backend/tests/test_kb')
+    ALLOWED+=('^backend/\.env\.example$')
+    ALLOWED+=('^scripts/check-workstream-paths\.sh$')
+    ALLOWED+=('^frontend/src/modules/chat/')
     ALLOWED+=('^frontend/src/modules/faq/')
     ;;
   tooling-devops)
@@ -89,14 +99,17 @@ case "$AREA" in
     ALLOWED+=('^\.editorconfig$')
     ALLOWED+=('^\.prettier')
     ALLOWED+=('^\.prettierignore$')
+    ALLOWED+=('^archive/')
+    ALLOWED+=('^backend/')
+    ALLOWED+=('^frontend/')
     ;;
   testing)
     ALLOWED+=('\.test\.ts$')
     ALLOWED+=('\.test\.tsx$')
+    ALLOWED+=('\.test\.py$')
     ALLOWED+=('/tests/')
     ALLOWED+=('^backend/tests/')
     ALLOWED+=('^frontend/src/test-setup\.ts$')
-    ALLOWED+=('^backend/jest\.config\.')
     ALLOWED+=('^frontend/.*vitest')
     ;;
   *)
@@ -139,6 +152,12 @@ echo "Checking ${#FILES[@]} file(s) on branch '$BRANCH' (area: $AREA) against al
 VIOLATIONS=()
 for f in "${FILES[@]}"; do
   [[ -z "$f" ]] && continue
+  if [[ "$f" =~ ^archive/ ]]; then
+    if [[ "$AREA" != "tooling-devops" ]]; then
+      VIOLATIONS+=("$f")
+    fi
+    continue
+  fi
   ok=0
   for pat in "${ALLOWED[@]}"; do
     if [[ "$f" =~ $pat ]]; then

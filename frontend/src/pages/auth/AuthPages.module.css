@@ -1,0 +1,146 @@
+.title {
+  margin: 0 0 1.15rem;
+  text-align: center;
+  font-size: var(--text-h3);
+  font-weight: 500;
+  color: var(--neutral-500);
+}
+
+.form {
+  display: flex;
+  flex-direction: column;
+  gap: 0.9rem;
+}
+
+.passwordField {
+  position: relative;
+}
+
+.passwordField .forgot {
+  position: absolute;
+  top: 0;
+  right: 0;
+}
+
+.forgot {
+  border: none;
+  background: none;
+  color: var(--neutral-500);
+  font: inherit;
+  font-size: var(--text-caption);
+  font-weight: 500;
+  cursor: not-allowed;
+  padding: 0;
+}
+
+.hint {
+  margin: 0 0 1rem;
+  font-size: var(--text-caption);
+  color: var(--neutral-500);
+  line-height: 1.45;
+  text-align: center;
+}
+
+.hint a {
+  color: var(--brand-600);
+  font-weight: 700;
+  text-decoration: none;
+}
+
+.hint a:hover {
+  text-decoration: underline;
+  text-underline-offset: 2px;
+}
+
+.hint strong {
+  color: var(--neutral-700);
+  font-weight: 650;
+}
+
+.error {
+  margin: 0;
+  color: #a22633;
+  font-size: var(--text-small);
+  font-weight: 600;
+}
+
+.divider {
+  display: grid;
+  grid-template-columns: 1fr auto 1fr;
+  align-items: center;
+  gap: 0.75rem;
+  margin: 1.1rem 0;
+  color: var(--neutral-400);
+  font-size: var(--text-small);
+}
+
+.divider::before,
+.divider::after {
+  content: '';
+  height: 1px;
+  background: var(--neutral-200);
+}
+
+.footer {
+  margin: 1.25rem 0 0;
+  text-align: center;
+  font-size: var(--text-small);
+  color: var(--neutral-500);
+}
+
+.footer a {
+  color: var(--brand-600);
+  font-weight: 700;
+  text-decoration: none;
+}
+
+.demos {
+  margin-top: 1.15rem;
+  padding-top: 1rem;
+  border-top: 1px solid var(--neutral-200);
+}
+
+.demos > p {
+  margin: 0 0 0.5rem;
+  font-size: var(--text-overline);
+  font-weight: 700;
+  color: var(--neutral-500);
+  text-transform: uppercase;
+  letter-spacing: 0.04em;
+}
+
+.demos ul {
+  list-style: none;
+  margin: 0;
+  padding: 0;
+  display: grid;
+  gap: 0.35rem;
+}
+
+.demos button {
+  width: 100%;
+  display: flex;
+  justify-content: space-between;
+  gap: 0.75rem;
+  border: 1px solid var(--neutral-200);
+  background: var(--neutral-50);
+  border-radius: var(--radius-md);
+  padding: 0.55rem 0.75rem;
+  cursor: pointer;
+  font: inherit;
+}
+
+.demos button:hover {
+  border-color: var(--brand-300);
+}
+
+.demos strong {
+  text-transform: capitalize;
+  color: var(--brand-700);
+  font-size: var(--text-small);
+}
+
+.demos span {
+  color: var(--neutral-500);
+  font-size: var(--text-caption);
+}
