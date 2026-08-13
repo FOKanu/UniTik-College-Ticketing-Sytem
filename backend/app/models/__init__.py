@@ -218,6 +218,7 @@ class FaqEntry(Base):
     __tablename__ = "FaqEntry"
 
     id: Mapped[str] = mapped_column(String, primary_key=True, default=lambda: str(uuid.uuid4()))
+    documentId: Mapped[str] = mapped_column(String, nullable=False)
     tenantId: Mapped[str] = mapped_column(String, ForeignKey("Tenant.id"), nullable=False)
     question: Mapped[str] = mapped_column(Text, nullable=False)
     answer: Mapped[str] = mapped_column(Text, nullable=False)

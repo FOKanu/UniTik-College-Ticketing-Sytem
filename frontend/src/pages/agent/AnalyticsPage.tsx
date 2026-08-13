@@ -1,4 +1,5 @@
 import { useState } from 'react'
+import { useTranslation } from 'react-i18next'
 import { Select } from '@/components/ui'
 import styles from './AnalyticsPage.module.css'
 
@@ -17,6 +18,7 @@ const departments = [
 ]
 
 export function AnalyticsPage() {
+  const { t } = useTranslation()
   const [range, setRange] = useState('month')
   const max = Math.max(...volume.map((v) => v.value))
   const chartSummary = volume
@@ -27,48 +29,46 @@ export function AnalyticsPage() {
     <div className={styles.page}>
       <header className={styles.header}>
         <div>
-          <h1>Reports & Analytics</h1>
+          <h1>{t('analytics.title')}</h1>
           <p className={styles.soon}>
-            Full analytics dashboards — <strong>Soon</strong>
+            {t('analytics.fullSoon')} <strong>{t('common.soon')}</strong>
           </p>
         </div>
         <Select
           id="range"
-          label="Date range"
+          label={t('analytics.dateRange')}
           value={range}
           onChange={(e) => setRange(e.target.value)}
           options={[
-            { value: 'month', label: 'This Month' },
-            { value: 'quarter', label: 'This Quarter' },
-            { value: 'year', label: 'This Year' },
+            { value: 'month', label: t('analytics.month') }, { value: 'quarter', label: t('analytics.quarter') }, { value: 'year', label: t('analytics.year') },
           ]}
         />
       </header>
 
-      <section className={styles.stats} aria-label="Key metrics">
+      <section className={styles.stats} aria-label={t('analytics.metrics')}>
         <article>
-          <span>Avg Resolution Time</span>
+          <span>{t('analytics.avgResolution')}</span>
           <strong>4.2h</strong>
         </article>
         <article>
-          <span>Tickets Resolved</span>
+          <span>{t('analytics.ticketsResolved')}</span>
           <strong>214</strong>
         </article>
         <article>
-          <span>CSAT Score</span>
+          <span>{t('analytics.csat')}</span>
           <strong>4.6 / 5</strong>
         </article>
         <article>
-          <span>Recurring Issues</span>
-          <strong>3 flagged</strong>
+          <span>{t('analytics.recurring')}</span>
+          <strong>{t('analytics.flagged', { count: 3 })}</strong>
         </article>
       </section>
 
       <div className={styles.mid}>
         <section className={styles.panel}>
-          <h2>Ticket Volume Trend</h2>
+          <h2>{t('analytics.trend')}</h2>
           <p className="sr-only" id="volume-chart-summary">
-            Weekly ticket volume: {chartSummary}
+            {t('analytics.weekly', { summary: chartSummary })}
           </p>
           <ul
             className={styles.bars}
@@ -90,43 +90,36 @@ export function AnalyticsPage() {
         </section>
 
         <section className={styles.recurring}>
-          <h2>Recurring Issues</h2>
+          <h2>{t('analytics.recurring')}</h2>
           <ul>
             <li>
-              <strong>VPN certificate expiration</strong>
-              <span>12 tickets this month</span>
+              <strong>{t('analytics.vpn')}</strong><span>{t('analytics.thisMonth', { count: 12 })}</span>
             </li>
             <li>
-              <strong>Printer jams in Library</strong>
-              <span>8 tickets this month</span>
+              <strong>{t('analytics.printer')}</strong><span>{t('analytics.thisMonth', { count: 8 })}</span>
             </li>
             <li>
-              <strong>Tuition portal timeout</strong>
-              <span>6 tickets this month</span>
+              <strong>{t('analytics.tuition')}</strong><span>{t('analytics.thisMonth', { count: 6 })}</span>
             </li>
           </ul>
         </section>
       </div>
 
       <section className={styles.panel}>
-        <h2>Department Breakdown</h2>
+        <h2>{t('analytics.breakdown')}</h2>
         <table className={styles.table}>
           <caption className="sr-only">
-            Department ticket metrics by open count, resolved count, and average
-            resolution time
+            {t('analytics.caption')}
           </caption>
           <thead>
             <tr>
-              <th scope="col">Department</th>
-              <th scope="col">Open</th>
-              <th scope="col">Resolved</th>
-              <th scope="col">Avg Resolution Time</th>
+              <th scope="col">{t('tickets.department')}</th><th scope="col">{t('common.open')}</th><th scope="col">{t('common.resolved')}</th><th scope="col">{t('analytics.avgResolution')}</th>
             </tr>
           </thead>
           <tbody>
             {departments.map((row) => (
               <tr key={row.name}>
-                <td>{row.name}</td>
+                <td>{t(`departments.${row.name === 'IT' ? 'it' : row.name.toLowerCase()}`)}</td>
                 <td>{row.open}</td>
                 <td>{row.resolved}</td>
                 <td>{row.avg}</td>

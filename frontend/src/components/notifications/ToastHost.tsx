@@ -1,10 +1,12 @@
 import { useEffect } from 'react'
+import { useTranslation } from 'react-i18next'
 import { useUiStore, type ToastMessage } from '@/stores/uiStore'
 import styles from './ToastHost.module.css'
 
 const AUTO_DISMISS_MS = 5000
 
 function ToastItem({ toast }: { toast: ToastMessage }) {
+  const { t } = useTranslation()
   const dismissToast = useUiStore((s) => s.dismissToast)
 
   useEffect(() => {
@@ -31,7 +33,7 @@ function ToastItem({ toast }: { toast: ToastMessage }) {
         type="button"
         className={styles.dismiss}
         onClick={() => dismissToast(toast.id)}
-        aria-label={`Dismiss ${toast.title}`}
+        aria-label={t('common.dismiss', { title: toast.title })}
       >
         ×
       </button>
@@ -40,12 +42,13 @@ function ToastItem({ toast }: { toast: ToastMessage }) {
 }
 
 export function ToastHost() {
+  const { t } = useTranslation()
   const toasts = useUiStore((s) => s.toasts)
 
   if (!toasts.length) return null
 
   return (
-    <div className={styles.host} aria-label="Toast notifications">
+    <div className={styles.host} aria-label={t('notifications.toast')}>
       {toasts.map((toast) => (
         <ToastItem key={toast.id} toast={toast} />
       ))}

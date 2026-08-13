@@ -1,4 +1,5 @@
 import { useEffect, useState } from 'react'
+import { useTranslation } from 'react-i18next'
 import {
   Button,
   Input,
@@ -33,6 +34,7 @@ export function TicketActionEditForm({
   onSave,
   onCancel,
 }: TicketActionEditFormProps) {
+  const { t } = useTranslation()
   const needsPicker = action.kind === 'update' || action.kind === 'comment'
   const [tickets, setTickets] = useState<Ticket[]>([])
   const [loadingTickets, setLoadingTickets] = useState(needsPicker)
@@ -69,7 +71,7 @@ export function TicketActionEditForm({
       } catch (err) {
         if (cancelled) return
         setTicketError(
-          err instanceof Error ? err.message : 'Could not load tickets.',
+          err instanceof Error ? err.message : t('actions.loadTicketsError'),
         )
       } finally {
         if (!cancelled) setLoadingTickets(false)
@@ -78,7 +80,7 @@ export function TicketActionEditForm({
     return () => {
       cancelled = true
     }
-  }, [needsPicker, action.id])
+  }, [needsPicker, action.id, t])
 
   function selectedLabel(id: string): string {
     const hit = tickets.find((t) => t.id === id)
@@ -132,16 +134,16 @@ export function TicketActionEditForm({
     <div className={styles.form}>
       {needsPicker ? (
         <label className={styles.fieldLabel}>
-          Ticket
+          {t('actions.ticket')}
           <Select
             id={`action-ticket-${action.id}`}
-            aria-label="Select ticket"
+            aria-label={t('actions.selectTicket')}
             value={ticketId}
             disabled={loadingTickets || tickets.length === 0}
             onChange={(e) => setTicketId(e.target.value)}
             options={
               tickets.length === 0
-                ? [{ value: '', label: loadingTickets ? 'Loading…' : 'No tickets' }]
+                ? [{ value: '', label: loadingTickets ? t('common.loading') : t('tickets.noTickets') }]
                 : tickets.map((t) => ({
                     value: t.id,
                     label: `${t.id} · ${t.subject}`,
@@ -153,7 +155,7 @@ export function TicketActionEditForm({
               {ticketError}
             </p>
           ) : (
-            <p className={styles.pickerHint}>Your recent tickets</p>
+            <p className={styles.pickerHint}>{t('actions.recent')}</p>
           )}
         </label>
       ) : null}
@@ -162,13 +164,13 @@ export function TicketActionEditForm({
         <>
           <Input
             id={`action-subject-${action.id}`}
-            label="Subject"
+            label={t('tickets.subject')}
             value={subject}
             onChange={(e) => setSubject(e.target.value)}
           />
           <Textarea
             id={`action-desc-${action.id}`}
-            label="Description"
+            label={t('tickets.description')}
             value={description}
             rows={compact ? 3 : 5}
             onChange={(e) => setDescription(e.target.value)}
@@ -179,7 +181,7 @@ export function TicketActionEditForm({
       {action.kind === 'comment' ? (
         <Textarea
           id={`action-comment-${action.id}`}
-          label="Comment"
+          label={t('actions.commentLabel')}
           value={commentBody}
           rows={compact ? 3 : 4}
           onChange={(e) => setCommentBody(e.target.value)}
@@ -191,21 +193,21 @@ export function TicketActionEditForm({
           <div>
             <PillRadioGroup
               name={`action-dept-${action.id}`}
-              legend="Department"
+              legend={t('tickets.department')}
               value={category}
               onChange={(v) => setCategory(v as Department)}
-              options={CATEGORIES.map((c) => ({ value: c, label: c }))}
+              options={CATEGORIES.map((c) => ({ value: c, label: t(`departments.${c === 'IT' ? 'it' : c.toLowerCase()}`) }))}
             />
           </div>
           <div>
             <PillRadioGroup
               name={`action-pri-${action.id}`}
-              legend="Priority"
+              legend={t('tickets.priority')}
               value={priority}
               onChange={(v) => setPriority(v as TicketPriority)}
               options={PRIORITIES.map((p) => ({
                 value: p,
-                label: p.charAt(0).toUpperCase() + p.slice(1),
+                label: t(`common.${p}`),
               }))}
             />
           </div>
@@ -214,15 +216,15 @@ export function TicketActionEditForm({
 
       {action.kind === 'update' ? (
         <label className={styles.fieldLabel}>
-          Status
+          {t('common.status')}
           <Select
             id={`action-status-${action.id}`}
-            aria-label="Status"
+            aria-label={t('common.status')}
             value={status}
             onChange={(e) => setStatus(e.target.value as TicketStatus)}
             options={STATUSES.map((s) => ({
               value: s,
-              label: s.replace('_', ' '),
+              label: t(s === 'in_progress' ? 'common.inProgress' : `common.${s}`),
             }))}
           />
         </label>
@@ -230,10 +232,10 @@ export function TicketActionEditForm({
 
       <div className={styles.formActions}>
         <Button type="button" variant="secondary" size="sm" onClick={onCancel}>
-          Back
+          {t('common.back')}
         </Button>
         <Button type="button" size="sm" onClick={handleSave}>
-          Save details
+          {t('actions.saveDetails')}
         </Button>
       </div>
     </div>

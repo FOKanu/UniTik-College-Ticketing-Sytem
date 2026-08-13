@@ -1,5 +1,6 @@
 import styles from './Badge.module.css'
 import type { TicketPriority, TicketStatus } from '@/types'
+import { useTranslation } from 'react-i18next'
 
 type Tone =
   | 'open'
@@ -18,11 +19,11 @@ type Tone =
   | 'danger'
 
 const statusLabel: Record<TicketStatus, string> = {
-  open: 'Open',
-  in_progress: 'In Progress',
-  waiting_on_student: 'Waiting',
-  resolved: 'Resolved',
-  closed: 'Closed',
+  open: 'common.open',
+  in_progress: 'common.inProgress',
+  waiting_on_student: 'common.waiting',
+  resolved: 'common.resolved',
+  closed: 'common.closed',
 }
 
 const statusTone: Record<TicketStatus, Tone> = {
@@ -50,12 +51,13 @@ export function Badge({ children, tone = 'info' }: BadgeProps) {
 }
 
 export function StatusBadge({ status }: { status: TicketStatus }) {
-  return <Badge tone={statusTone[status]}>{statusLabel[status]}</Badge>
+  const { t } = useTranslation()
+  return <Badge tone={statusTone[status]}>{t(statusLabel[status])}</Badge>
 }
 
 export function PriorityBadge({ priority }: { priority: TicketPriority }) {
-  const label = priority.charAt(0).toUpperCase() + priority.slice(1)
-  return <Badge tone={priorityTone[priority]}>{label}</Badge>
+  const { t } = useTranslation()
+  return <Badge tone={priorityTone[priority]}>{t(`common.${priority}`)}</Badge>
 }
 
 /** First-response SLA cue for queue / dashboard cells. */
@@ -68,8 +70,9 @@ export function SlaBadge({
   breached?: boolean
   atRiskHours?: number
 }) {
+  const { t } = useTranslation()
   if (breached) {
-    return <Badge tone="danger">Breached</Badge>
+    return <Badge tone="danger">{t('common.breached')}</Badge>
   }
   if (hoursRemaining == null) {
     return <Badge tone="neutral">—</Badge>
@@ -81,5 +84,7 @@ export function SlaBadge({
 }
 
 export function DepartmentBadge({ department }: { department: string }) {
-  return <Badge tone="department">{department}</Badge>
+  const { t } = useTranslation()
+  const key = department === 'IT' ? 'it' : department.toLowerCase().replace(' ', '-')
+  return <Badge tone="department">{t(`departments.${key}`, { defaultValue: department })}</Badge>
 }

@@ -2,6 +2,7 @@ import { zodResolver } from '@hookform/resolvers/zod'
 import { useState } from 'react'
 import { useForm } from 'react-hook-form'
 import { Link } from 'react-router-dom'
+import { useTranslation } from 'react-i18next'
 import { ROUTES } from '@/app/routes'
 import { Button, Input } from '@/components/ui'
 import {
@@ -25,6 +26,7 @@ const initial: DeptRule[] = [
 ]
 
 export function DepartmentsPage() {
+  const { t } = useTranslation()
   const [rows, setRows] = useState(initial)
 
   const {
@@ -61,14 +63,13 @@ export function DepartmentsPage() {
     <div className={styles.page}>
       <header className={styles.header}>
         <div>
-          <h1>Department Management</h1>
-          <p>CRUD for departments and routing rules.</p>
+          <h1>{t('departmentAdmin.title')}</h1><p>{t('departmentAdmin.description')}</p>
         </div>
       </header>
 
       <div className={styles.banner} role="note">
-        Prefer the new Settings experience? Manage departments under{' '}
-        <Link to={ROUTES.settingsDepartments}>Settings → Departments</Link>.
+        {t('departmentAdmin.banner')}{' '}
+        <Link to={ROUTES.settingsDepartments}>{t('admin.settings')} → {t('nav.departments')}</Link>.
       </div>
 
       <form
@@ -78,29 +79,27 @@ export function DepartmentsPage() {
       >
         <Input
           id="dept-name"
-          label="Department name"
-          error={errors.name?.message}
+          label={t('departmentAdmin.name')}
+          error={errors.name?.message ? t(errors.name.message) : undefined}
           {...register('name')}
         />
         <Input
           id="dept-routing"
-          label="Routing rule"
-          placeholder="Route to … queue"
-          error={errors.routing?.message}
+          label={t('departmentAdmin.routing')} placeholder={t('departmentAdmin.routingPlaceholder')}
+          error={errors.routing?.message ? t(errors.routing.message) : undefined}
           {...register('routing')}
         />
-        <Button type="submit">Add department</Button>
+        <Button type="submit">{t('departmentAdmin.add')}</Button>
       </form>
 
       <div className={styles.tableWrap}>
         <table className={styles.table}>
-          <caption className="sr-only">Departments and routing rules</caption>
+          <caption className="sr-only">{t('departmentAdmin.caption')}</caption>
           <thead>
             <tr>
-              <th scope="col">Department</th>
-              <th scope="col">Routing rule</th>
+              <th scope="col">{t('tickets.department')}</th><th scope="col">{t('departmentAdmin.routing')}</th>
               <th scope="col">
-                <span className="sr-only">Actions</span>
+                <span className="sr-only">{t('common.actions')}</span>
               </th>
             </tr>
           </thead>
@@ -113,10 +112,10 @@ export function DepartmentsPage() {
                   <Button
                     size="sm"
                     variant="secondary"
-                    aria-label={`Delete ${row.name} department`}
+                    aria-label={t('departmentAdmin.deleteLabel', { name: row.name })}
                     onClick={() => remove(row.id)}
                   >
-                    Delete
+                    {t('common.delete')}
                   </Button>
                 </td>
               </tr>

@@ -1,5 +1,6 @@
 import { useMemo, useState } from 'react'
 import { Link, NavLink, useLocation } from 'react-router-dom'
+import { useTranslation } from 'react-i18next'
 import { ROUTES } from '@/app/routes'
 import {
   Badge,
@@ -17,17 +18,17 @@ import styles from './SettingsPage.module.css'
 
 type SettingsTab = 'institution' | 'departments' | 'people' | 'knowledge'
 
-const TABS: { id: SettingsTab; label: string; to: string }[] = [
-  { id: 'institution', label: 'Institution', to: ROUTES.settings },
+const TABS: { id: SettingsTab; labelKey: string; to: string }[] = [
+  { id: 'institution', labelKey: 'admin.institution', to: ROUTES.settings },
   {
     id: 'departments',
-    label: 'Departments',
+    labelKey: 'nav.departments',
     to: ROUTES.settingsDepartments,
   },
-  { id: 'people', label: 'People', to: ROUTES.settingsPeople },
+  { id: 'people', labelKey: 'nav.people', to: ROUTES.settingsPeople },
   {
     id: 'knowledge',
-    label: 'Knowledge Base',
+    labelKey: 'nav.knowledge',
     to: ROUTES.settingsKnowledge,
   },
 ]
@@ -78,6 +79,7 @@ function tabFromPath(pathname: string): SettingsTab {
 }
 
 export function SettingsPage() {
+  const { t } = useTranslation()
   const location = useLocation()
   const tab = tabFromPath(location.pathname)
   const pushToast = useUiStore((s) => s.pushToast)
@@ -115,7 +117,7 @@ export function SettingsPage() {
     const member = staff.find((item) => item.id === id)
     if (!member) return
     pushToast({
-      title: 'Staff updated',
+      title: t('admin.staffUpdated'),
       body: `${member.name} → ${member.role}, ${member.department}.`,
       tone: 'success',
     })
@@ -124,11 +126,11 @@ export function SettingsPage() {
   return (
     <div className={styles.page}>
       <header className={styles.header}>
-        <h1>Settings</h1>
-        <p>Configure institution, departments, staff, and knowledge base.</p>
+        <h1>{t('admin.settings')}</h1>
+        <p>{t('admin.settingsDescription')}</p>
       </header>
 
-      <nav className={styles.tabs} aria-label="Settings sections">
+      <nav className={styles.tabs} aria-label={t('admin.settings')}>
         {TABS.map((item) => (
           <NavLink
             key={item.id}
@@ -138,36 +140,36 @@ export function SettingsPage() {
               isActive ? styles.tabActive : styles.tab
             }
           >
-            {item.label}
+            {t(item.labelKey)}
           </NavLink>
         ))}
       </nav>
 
       {tab === 'institution' ? (
         <section className={styles.panel} aria-labelledby="institution-heading">
-          <h2 id="institution-heading">Institution</h2>
+          <h2 id="institution-heading">{t('admin.institution')}</h2>
           <div className={styles.form}>
             <Input
               id="inst-name"
-              label="Display name"
+              label={t('admin.displayName')}
               value={displayName}
               onChange={(e) => setDisplayName(e.target.value)}
             />
             <Input
               id="inst-code"
-              label="Short code"
+              label={t('admin.shortCode')}
               value={shortCode}
               onChange={(e) => setShortCode(e.target.value)}
             />
             <Input
               id="inst-domains"
-              label="Allowed email domains"
+              label={t('admin.emailDomains')}
               value={emailDomains}
               onChange={(e) => setEmailDomains(e.target.value)}
               hint="Comma-separated domains for student self-registration."
             />
             <div className={styles.logoField}>
-              <span className={styles.label}>Institution logo</span>
+              <span className={styles.label}>{t('admin.logo')}</span>
               <FileDropzone
                 fileName={logoName}
                 onChange={(file) => setLogoName(file?.name ?? null)}
@@ -176,13 +178,13 @@ export function SettingsPage() {
             <div className={styles.toggles}>
               <Toggle
                 id="lang-de"
-                label="German (DE)"
+                label={t('admin.german')}
                 checked={langDe}
                 onChange={setLangDe}
               />
               <Toggle
                 id="lang-en"
-                label="English (EN)"
+                label={t('admin.english')}
                 checked={langEn}
                 onChange={setLangEn}
               />
@@ -191,13 +193,13 @@ export function SettingsPage() {
               <Button
                 onClick={() =>
                   pushToast({
-                    title: 'Institution saved',
-                    body: 'Settings were updated for this demo session.',
+                    title: t('admin.saved'),
+                    body: t('admin.savedBody'),
                     tone: 'success',
                   })
                 }
               >
-                Save changes
+                {t('common.save')}
               </Button>
             </div>
           </div>
@@ -207,8 +209,8 @@ export function SettingsPage() {
       {tab === 'departments' ? (
         <section className={styles.panel} aria-labelledby="depts-heading">
           <div className={styles.panelHead}>
-            <h2 id="depts-heading">Departments</h2>
-            <Button size="sm">+ Add department</Button>
+            <h2 id="depts-heading">{t('nav.departments')}</h2>
+            <Button size="sm">{t('admin.addDepartment')}</Button>
           </div>
           <div className={styles.banner} role="note">
             Keywords help the AI Assistant and auto-routing assign tickets to
@@ -216,13 +218,13 @@ export function SettingsPage() {
           </div>
           <div className={styles.tableWrap}>
             <table className={styles.table}>
-              <caption className="sr-only">Institution departments</caption>
+              <caption className="sr-only">{t('nav.departments')}</caption>
               <thead>
                 <tr>
-                  <th scope="col">Department</th>
-                  <th scope="col">Agents</th>
-                  <th scope="col">Open tickets</th>
-                  <th scope="col">Keywords</th>
+                  <th scope="col">{t('tickets.department')}</th>
+                  <th scope="col">{t('common.agent')}</th>
+                  <th scope="col">{t('adminDashboard.openTickets')}</th>
+                  <th scope="col">{t('common.keywords')}</th>
                 </tr>
               </thead>
               <tbody>
@@ -243,7 +245,7 @@ export function SettingsPage() {
       {tab === 'people' ? (
         <section className={styles.panel} aria-labelledby="people-heading">
           <div className={styles.panelHead}>
-            <h2 id="people-heading">People</h2>
+            <h2 id="people-heading">{t('nav.people')}</h2>
             <Button size="sm">+ Invite staff</Button>
           </div>
           <div className={styles.banner} role="note">
@@ -252,15 +254,10 @@ export function SettingsPage() {
           </div>
           <div className={styles.tableWrap}>
             <table className={styles.table}>
-              <caption className="sr-only">Staff members</caption>
+              <caption className="sr-only">{t('nav.people')}</caption>
               <thead>
                 <tr>
-                  <th scope="col">Name</th>
-                  <th scope="col">Email</th>
-                  <th scope="col">Role</th>
-                  <th scope="col">Department</th>
-                  <th scope="col">Status</th>
-                  <th scope="col">Actions</th>
+                  <th scope="col">{t('common.name')}</th><th scope="col">{t('common.email')}</th><th scope="col">{t('common.role')}</th><th scope="col">{t('tickets.department')}</th><th scope="col">{t('common.status')}</th><th scope="col">{t('common.actions')}</th>
                 </tr>
               </thead>
               <tbody>
@@ -279,8 +276,7 @@ export function SettingsPage() {
                           })
                         }
                       >
-                        <option value="Agent">Agent</option>
-                        <option value="Admin">Admin</option>
+                        <option value="Agent">{t('common.agent')}</option><option value="Admin">{t('common.admin')}</option>
                       </select>
                     </td>
                     <td>
@@ -328,7 +324,7 @@ export function SettingsPage() {
       {tab === 'knowledge' ? (
         <section className={styles.panel} aria-labelledby="kb-heading">
           <div className={styles.panelHead}>
-            <h2 id="kb-heading">Knowledge Base</h2>
+            <h2 id="kb-heading">{t('nav.knowledge')}</h2>
             <ButtonLink to={ROUTES.knowledge} size="sm">
               Open full knowledge base
             </ButtonLink>
@@ -339,12 +335,10 @@ export function SettingsPage() {
           </p>
           <div className={styles.tableWrap}>
             <table className={styles.table}>
-              <caption className="sr-only">Knowledge articles overview</caption>
+              <caption className="sr-only">{t('nav.knowledge')}</caption>
               <thead>
                 <tr>
-                  <th scope="col">Title</th>
-                  <th scope="col">Category</th>
-                  <th scope="col">Status</th>
+                  <th scope="col">{t('tickets.titleLabel')}</th><th scope="col">{t('common.category')}</th><th scope="col">{t('common.status')}</th>
                 </tr>
               </thead>
               <tbody>
@@ -368,7 +362,7 @@ export function SettingsPage() {
           </div>
           <p className={styles.mutedNote}>
             Prefer the dedicated editor?{' '}
-            <Link to={ROUTES.knowledge}>Go to Knowledge Base</Link>
+            <Link to={ROUTES.knowledge}>{t('nav.knowledge')}</Link>
           </p>
         </section>
       ) : null}

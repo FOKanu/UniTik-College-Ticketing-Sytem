@@ -1,4 +1,5 @@
 import type { InputHTMLAttributes } from 'react'
+import { useTranslation } from 'react-i18next'
 import styles from './SearchField.module.css'
 
 interface SearchFieldProps extends Omit<
@@ -9,14 +10,16 @@ interface SearchFieldProps extends Omit<
 }
 
 export function SearchField({
-  label = 'Search',
+  label,
   id = 'search',
   className,
   ...rest
 }: SearchFieldProps) {
+  const { t } = useTranslation()
+  const accessibleLabel = label ?? t('common.search')
   return (
     <label className={`${styles.wrap} ${className ?? ''}`} htmlFor={id}>
-      <span className={styles.srOnly}>{label}</span>
+      <span className={styles.srOnly}>{accessibleLabel}</span>
       <span className={styles.icon} aria-hidden>
         <svg width="18" height="18" viewBox="0 0 24 24" fill="none">
           <circle cx="11" cy="11" r="7" stroke="currentColor" strokeWidth="2" />

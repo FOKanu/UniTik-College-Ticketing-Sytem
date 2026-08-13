@@ -1,20 +1,25 @@
-import { useEffect } from 'react'
+import { useEffect, useState } from 'react'
 import { Link } from 'react-router-dom'
+import { useTranslation } from 'react-i18next'
 import { ROUTES, ticketDetailPath } from '@/app/routes'
 import { ButtonLink, DepartmentBadge, StatusBadge } from '@/components/ui'
 import { IconPlus } from '@/components/ui/icons'
 import { useAuthStore, useTicketStore } from '@/stores'
+import { knowledgeApi } from '@/lib/api'
+import type { KnowledgeArticle } from '@/types'
 import styles from './DashboardPage.module.css'
 
-function relativeTime(iso: string): string {
+function relativeTime(iso: string, t: (key: string, options: { count: number }) => string): string {
   const mins = Math.round((Date.now() - new Date(iso).getTime()) / 60000)
-  if (mins < 60) return `${Math.max(mins, 1)}m ago`
+  if (mins < 60) return t('time.minute', { count: Math.max(mins, 1) })
   const hours = Math.round(mins / 60)
-  if (hours < 24) return `${hours}h ago`
-  return `${Math.round(hours / 24)}d ago`
+  if (hours < 24) return t('time.hour', { count: hours })
+  return t('time.day', { count: Math.round(hours / 24) })
 }
 
 export function DashboardPage() {
+  const { t, i18n } = useTranslation()
+  const [articles, setArticles] = useState<KnowledgeArticle[]>([])
   const user = useAuthStore((s) => s.user)
   const items = useTicketStore((s) => s.items)
   const setScope = useTicketStore((s) => s.setScope)
@@ -33,10 +38,20 @@ export function DashboardPage() {
     void fetchList({ page: 1, pageSize: 20 })
   }, [setScope, setFilters, fetchList])
 
+  useEffect(() => {
+    let cancelled = false
+    void knowledgeApi.list({ status: 'published' }).then((items) => {
+      if (!cancelled) setArticles(items.slice(0, 3))
+    }).catch(() => {
+      if (!cancelled) setArticles([])
+    })
+    return () => { cancelled = true }
+  }, [i18n.resolvedLanguage])
+
   const open = items.filter((t) => t.status === 'open').length
   const inProgress = items.filter((t) => t.status === 'in_progress').length
   const resolved = items.filter((t) => t.status === 'resolved').length
-  const firstName = user?.displayName?.split(' ')[0] ?? 'Student'
+  const firstName = user?.displayName?.split(' ')[0] ?? t('dashboard.student')
   const active = items.filter(
     (t) => t.status === 'open' || t.status === 'in_progress',
   )
@@ -45,26 +60,26 @@ export function DashboardPage() {
     <div className={styles.page}>
       <header className={styles.header}>
         <div>
-          <h1>Welcome back, {firstName}</h1>
-          <p>Here&apos;s an overview of your campus support requests.</p>
+          <h1>{t('dashboard.welcome', { name: firstName })}</h1>
+          <p>{t('dashboard.description')}</p>
         </div>
         <ButtonLink to={ROUTES.ticketNew}>
           <IconPlus width={18} height={18} />
-          New Ticket
+          {t('tickets.new')}
         </ButtonLink>
       </header>
 
-      <section className={styles.stats} aria-label="Ticket summary">
+      <section className={styles.stats} aria-label={t('dashboard.summary')}>
         <article className={styles.statOpen}>
-          <span>Open</span>
+          <span>{t('common.open')}</span>
           <strong>{loading ? '…' : open}</strong>
         </article>
         <article className={styles.statProgress}>
-          <span>In progress</span>
+          <span>{t('common.inProgress')}</span>
           <strong>{loading ? '…' : inProgress}</strong>
         </article>
         <article className={styles.statResolved}>
-          <span>Resolved</span>
+          <span>{t('common.resolved')}</span>
           <strong>{loading ? '…' : resolved}</strong>
         </article>
       </section>
@@ -72,11 +87,11 @@ export function DashboardPage() {
       <div className={styles.grid}>
         <section className={styles.panel}>
           <div className={styles.panelHead}>
-            <h2>Active tickets</h2>
-            <Link to={ROUTES.tickets}>View all</Link>
+            <h2>{t('dashboard.active')}</h2>
+            <Link to={ROUTES.tickets}>{t('dashboard.viewAll')}</Link>
           </div>
           {active.length === 0 && !loading ? (
-            <p className={styles.empty}>No active tickets right now.</p>
+            <p className={styles.empty}>{t('dashboard.noActive')}</p>
           ) : (
             <ul className={styles.list}>
               {(active.length ? active : items).slice(0, 5).map((ticket) => (
@@ -85,7 +100,7 @@ export function DashboardPage() {
                     <div className={styles.itemTop}>
                       <strong>{ticket.subject}</strong>
                       <time dateTime={ticket.updatedAt}>
-                        {relativeTime(ticket.updatedAt)}
+                        {relativeTime(ticket.updatedAt, t)}
                       </time>
                     </div>
                     <div className={styles.badges}>
@@ -101,34 +116,19 @@ export function DashboardPage() {
 
         <aside className={styles.aside}>
           <section className={styles.panel}>
-            <h2>Suggested articles</h2>
+            <h2>{t('dashboard.suggested')}</h2>
             <ul className={styles.articles}>
-              <li>
-                <Link to={ROUTES.faq}>
-                  I forgot my university password.
-                  <span aria-hidden="true">›</span>
-                </Link>
-              </li>
-              <li>
-                <Link to={ROUTES.faq}>
-                  How do I connect to the campus Wi-Fi?
-                  <span aria-hidden="true">›</span>
-                </Link>
-              </li>
-              <li>
-                <Link to={ROUTES.faq}>
-                  When is the tuition fee payment deadline?
-                  <span aria-hidden="true">›</span>
-                </Link>
-              </li>
+              {(articles.length ? articles.map((article) => article.title) : [t('chatbot.topics.password'), t('chatbot.topics.wifi'), t('chatbot.topics.tuition')]).map((title) => (
+                <li key={title}><Link to={ROUTES.faq}>{title}<span aria-hidden="true">›</span></Link></li>
+              ))}
             </ul>
           </section>
 
           <section className={styles.aiCard}>
-            <h2>Need a quick answer?</h2>
-            <p>Ask our AI Assistant, available 24/7 for common campus questions.</p>
+            <h2>{t('dashboard.quick')}</h2>
+            <p>{t('dashboard.quickBody')}</p>
             <ButtonLink to={ROUTES.assistant} variant="secondary">
-              Open Chat
+              {t('dashboard.openChat')}
             </ButtonLink>
           </section>
         </aside>
