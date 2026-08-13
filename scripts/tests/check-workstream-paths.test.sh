@@ -58,6 +58,7 @@ git commit -qm "disallowed backend change"
 assert_fail "tooling disallowed files fail" bash "$SCRIPT" feature/tooling-devops-black-mypy-setup main
 
 cd "$repo"
+mkdir -p scripts
 printf '%s\n' '<<<<<<< HEAD' > scripts/merge-conflict-demo.txt
 printf '%s\n' 'keep me' >> scripts/merge-conflict-demo.txt
 printf '%s\n' '=======' >> scripts/merge-conflict-demo.txt
@@ -73,7 +74,7 @@ git init -q
 git config user.name "Test User"
 git config user.email "test@example.com"
 git checkout -qb main
-mkdir -p README.md backend/src docs
+mkdir -p backend/src docs
 printf '%s\n' '# backend auth repo' > README.md
 git add README.md
 git commit -qm "init backend repo"

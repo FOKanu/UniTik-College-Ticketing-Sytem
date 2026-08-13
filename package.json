@@ -21,7 +21,7 @@
       "npm --prefix frontend run lint -- --fix"
     ],
     "**/*.{md,json,yml,yaml}": [
-      "prettier --write"
+      "npx prettier --write"
     ]
   }
 }
