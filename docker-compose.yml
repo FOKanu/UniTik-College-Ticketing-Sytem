@@ -10,7 +10,8 @@ services:
       POSTGRES_PASSWORD: ${POSTGRES_PASSWORD:-uts_password}
       POSTGRES_DB: ${POSTGRES_DB:-university_ticketing}
     ports:
-      - "127.0.0.1:5432:5432"
+      # Host port is overridable: some machines already run Postgres on 5432.
+      - "127.0.0.1:${POSTGRES_HOST_PORT:-5432}:5432"
     volumes:
       - postgres_data:/var/lib/postgresql/data
       - ./docker/postgres/init:/docker-entrypoint-initdb.d
@@ -18,6 +19,21 @@ services:
       test: ["CMD-SHELL", "pg_isready -U ${POSTGRES_USER:-uts_user}"]
       interval: 10s
       timeout: 5s
+      retries: 5
+
+  # Optional shared cache (LLM health). Backend does not depend_on this —
+  # leave REDIS_URL empty for in-process memory fallback.
+  redis:
+    image: redis:7-alpine
+    container_name: uts-redis
+    restart: unless-stopped
+    ports:
+      # Host port overridable when 6379 is already taken on the machine.
+      - "127.0.0.1:${REDIS_HOST_PORT:-6379}:6379"
+    healthcheck:
+      test: ["CMD", "redis-cli", "ping"]
+      interval: 10s
+      timeout: 3s
       retries: 5
 
   backend:
@@ -29,7 +45,14 @@ services:
     env_file:
       - ./backend/.env
     environment:
-      DATABASE_URL: postgresql://${POSTGRES_USER:-uts_user}:${POSTGRES_PASSWORD:-uts_password}@postgres:5432/${POSTGRES_DB:-university_ticketing}
+      DATABASE_URL: postgresql+asyncpg://${POSTGRES_USER:-uts_user}:${POSTGRES_PASSWORD:-uts_password}@postgres:5432/${POSTGRES_DB:-university_ticketing}
+      # Team default: public Tailscale Funnel → Caddy Bearer → Ollama.
+      # Override in backend/.env for on-box loopback development.
+      OLLAMA_OPENAI_BASE_URL: ${OLLAMA_OPENAI_BASE_URL:-https://muc-a-3099.tail129a23.ts.net/v1}
+      # Set in backend/.env to share LLM health cache across workers:
+      # REDIS_URL: redis://redis:6379/0
+    extra_hosts:
+      - "host.docker.internal:host-gateway"
     ports:
       - "127.0.0.1:4000:4000"
     depends_on:
@@ -37,12 +60,13 @@ services:
         condition: service_healthy
     volumes:
       - ./backend:/app
-      - /app/node_modules
+      - ./docs/knowledge-base:/docs/knowledge-base:ro
 
   frontend:
     build:
-      context: ./frontend
-      dockerfile: ../docker/frontend.Dockerfile
+      context: .
+      dockerfile: docker/frontend.Dockerfile
+      target: development
     container_name: uts-frontend
     restart: unless-stopped
     env_file:
@@ -54,6 +78,21 @@ services:
     volumes:
       - ./frontend:/app
       - /app/node_modules
+
+  # Production-style static SPA (nginx + long-cache hashed assets).
+  # Usage: docker compose --profile prod-frontend up --build frontend-prod
+  frontend-prod:
+    profiles: ["prod-frontend"]
+    build:
+      context: .
+      dockerfile: docker/frontend.Dockerfile
+      target: production
+    container_name: uts-frontend-prod
+    restart: unless-stopped
+    ports:
+      - "127.0.0.1:8080:80"
+    depends_on:
+      - backend
 
 volumes:
   postgres_data:

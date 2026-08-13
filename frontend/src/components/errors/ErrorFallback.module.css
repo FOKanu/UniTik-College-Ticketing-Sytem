@@ -1,0 +1,62 @@
+.page {
+  min-height: 60vh;
+  display: grid;
+  place-items: center;
+  padding: 1rem 0;
+}
+
+.compact {
+  min-height: 40vh;
+}
+
+.card {
+  width: min(520px, 100%);
+  background: #fff;
+  border: 1px solid var(--color-border);
+  border-radius: 16px;
+  padding: 1.75rem 1.5rem;
+  box-shadow: var(--shadow-md);
+  text-align: center;
+}
+
+.code {
+  margin: 0;
+  color: var(--color-danger);
+  font-weight: 800;
+  font-size: 0.85rem;
+  letter-spacing: 0.08em;
+  text-transform: uppercase;
+}
+
+.card h1 {
+  margin: 0.35rem 0 0;
+  font-size: 1.45rem;
+  letter-spacing: -0.02em;
+}
+
+.copy {
+  margin: 0.75rem 0 0;
+  color: var(--color-text-muted);
+  line-height: 1.55;
+}
+
+.details {
+  margin: 1rem 0 0;
+  padding: 0.75rem;
+  border-radius: 10px;
+  background: var(--color-surface-muted);
+  color: var(--color-text);
+  font-size: 0.78rem;
+  text-align: left;
+  overflow-x: auto;
+  white-space: pre-wrap;
+  word-break: break-word;
+}
+
+.actions {
+  margin-top: 1.25rem;
+  display: flex;
+  justify-content: center;
+  gap: 0.65rem;
+  flex-wrap: wrap;
+}

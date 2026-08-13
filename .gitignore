@@ -28,6 +28,13 @@ Thumbs.db
 !.vscode/extensions.json
 .idea/
 
+# Cursor / MCP local config (machine-specific; do not commit)
+.cursor/mcp.json
+.cursor/**/mcp.json
+mcp.json
+.mcp.json
+.mcp/
+
 # prisma
 backend/prisma/dev.db
 
@@ -39,3 +46,22 @@ coverage/
 *.tsbuildinfo
 .eslintcache
 .venv/
+__pycache__/
+**/__pycache__/
+*.pyc
+*.py[cod]
+*.egg-info/
+
+# local ticket attachment uploads (see UPLOAD_DIR)
+backend/uploads/
+uploads/
+
+# TS project-reference build cache (see frontend/tsconfig.node.json)
+.tsc-cache/
+**/.tsc-cache/
+# defensive: older tsconfig.node.json emitted these next to vite.config.ts
+frontend/vite.config.js
+frontend/vite.config.d.ts
+
+# WIP docs (local only for now)
+docs/Figma_To_Code_Guide.md

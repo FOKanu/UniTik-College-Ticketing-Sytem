@@ -1,12 +1,12 @@
 {
   "name": "university-ticketing-system",
   "private": true,
-  "version": "0.1.0",
-  "description": "Root project — orchestrates git hooks; backend and frontend are independent apps.",
+  "version": "0.2.0",
+  "description": "Root project — orchestrates git hooks; backend (FastAPI) and frontend are independent apps.",
   "scripts": {
     "prepare": "husky",
     "setup": "bash scripts/setup.sh",
-    "dev:backend": "npm --prefix backend run dev",
+    "dev:backend": "cd backend && . .venv/bin/activate 2>/dev/null || true; uvicorn app.main:app --reload --port 4000",
     "dev:frontend": "npm --prefix frontend run dev"
   },
   "devDependencies": {
@@ -14,14 +14,15 @@
     "lint-staged": "^15.2.7"
   },
   "lint-staged": {
-    "backend/**/*.{ts,js}": [
-      "npm --prefix backend run lint -- --fix"
+    "backend/**/*.py": [
+      "bash -c 'cd backend && black .'",
+      "bash -c 'cd backend && ruff check --fix'"
     ],
     "frontend/**/*.{ts,tsx,js,jsx}": [
       "npm --prefix frontend run lint -- --fix"
     ],
     "**/*.{md,json,yml,yaml}": [
-      "prettier --write"
+      "npx prettier --write"
     ]
   }
 }

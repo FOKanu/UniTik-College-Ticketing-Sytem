@@ -1,0 +1,81 @@
+.badge {
+  display: inline-flex;
+  align-items: center;
+  gap: 0.25rem;
+  padding: 0.2rem 0.55rem;
+  border-radius: var(--radius-pill);
+  font-size: var(--text-caption);
+  font-weight: 600;
+  line-height: 1.3;
+  white-space: nowrap;
+}
+
+.open {
+  color: #a22633;
+  background: #fdebec;
+}
+
+.inProgress {
+  color: #8a5a08;
+  background: #fdf3e2;
+}
+
+.resolved {
+  color: #1b6e3c;
+  background: #e7f5ec;
+}
+
+.closed {
+  color: var(--neutral-600);
+  background: var(--neutral-100);
+}
+
+.department {
+  color: var(--brand-700);
+  background: #eaf3fb;
+}
+
+.high {
+  color: #a22633;
+  background: #fdebec;
+}
+
+.medium {
+  color: #8a5a08;
+  background: #fdf3e2;
+}
+
+.low {
+  color: var(--neutral-600);
+  background: var(--neutral-100);
+}
+
+.urgent {
+  color: #a22633;
+  background: #fdebec;
+}
+
+.info {
+  color: var(--brand-700);
+  background: #eaf3fb;
+}
+
+.warn {
+  color: #8a5a08;
+  background: #fdf3e2;
+}
+
+.success {
+  color: #1b6e3c;
+  background: #e7f5ec;
+}
+
+.neutral {
+  color: var(--neutral-600);
+  background: var(--neutral-100);
+}
+
+.danger {
+  color: #a22633;
+  background: #fdebec;
+}

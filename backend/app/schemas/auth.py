@@ -1,0 +1,48 @@
+from datetime import datetime
+
+from pydantic import BaseModel, EmailStr, Field, field_validator
+
+from app.db.base import Role
+
+
+class LoginRequest(BaseModel):
+    email: EmailStr
+    password: str
+
+
+class RegisterRequest(BaseModel):
+    email: EmailStr
+    password: str = Field(min_length=8)
+    displayName: str
+    role: Role = Role.STUDENT
+    department: str | None = None
+
+
+class UserResponse(BaseModel):
+    id: str
+    email: str
+    displayName: str
+    role: Role
+    department: str | None
+    createdAt: datetime
+
+    model_config = {"from_attributes": True}
+
+    @field_validator("department", mode="before")
+    @classmethod
+    def _resolve_department(cls, value):
+        if value is None or isinstance(value, str):
+            return value
+        return getattr(value, "name", None)
+
+
+class AuthTokenResponse(BaseModel):
+    token: str
+    user: UserResponse
+
+class RefreshRequest(BaseModel):
+    token: str
+
+
+class SsoLoginRequest(BaseModel):
+    provider: str = "microsoft"

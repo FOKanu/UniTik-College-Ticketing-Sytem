@@ -24,6 +24,7 @@ on:
       - tooling-devops
       - testing
       - 'feature/**'
+      - 'fix/**'
 
 jobs:
   path-guard:

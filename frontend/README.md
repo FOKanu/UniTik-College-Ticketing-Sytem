@@ -1,45 +1,58 @@
-# Frontend — University Support Ticketing System
+# TicketHub · MediaDesign Hochschule (Frontend)
 
-React + TypeScript + Vite + Tailwind CSS. Structure mirrors the backend 1:1 so a contributor working on
-"tickets" touches `backend/.../modules/tickets` and `frontend/.../modules/ticket` and nothing else.
+Multi-tenant campus ticketing & support portal — student, staff, and admin experiences.
 
-## Structure
+## Stack
 
-```
-src/
-├── app/            router.tsx, providers.tsx — composition root only
-├── components/     shared UI primitives (Button, Input, Card, Spinner)
-├── layouts/         MainLayout (nav shell), AuthLayout (centered auth pages)
-├── services/        api-client.ts — the only place raw fetch() is used
-├── hooks/            cross-module hooks (useAuth)
-├── store/            auth session state (React Context — see store/auth.store.ts)
-└── modules/
-    ├── login/         NFR-1.2
-    ├── dashboard/      NFR-1.6
-    ├── ticket/         NFR-1.2.1, NFR-1.1.2/1.1.3
-    ├── chatbot/        NFR-1.1, NFR-1.1.1, NFR-1.1.2, NFR-1.1.4
-    ├── faq/            NFR-1.1.4
-    ├── admin/          NFR-2.6
-    ├── notifications/  NFR-1.2.2
-    └── profile/        NFR-1.4
-```
+- Vite + React 19 + TypeScript
+- React Router (student / agent / admin guards)
+- Zustand (auth, tickets, notifications, UI toasts)
+- Axios API client (mock data until backend is ready)
+- React Hook Form + Zod validation
+- ESLint + Prettier + Vitest
 
-Each module owns `components/`, `pages/`, `hooks/`, `services/`, `types/`, `tests/`, `README.md`.
+## Design system
 
-## Scaffold status
+MDH foundations: Inter, brand steel `#2574A9`, neutral scale, status chips, 6/8/12/16 radii.
 
-Every module currently renders a generic JSON dump of whatever its backend endpoint returns (login and
-chatbot have real forms/chat UI since those flows needed more than a list view). Replace
-`components/<Module>List.tsx` in each module with real UI as that module's backend counterpart gains real
-data.
+Responsive breakpoints:
+- **Mobile** ≤767px — drawer + bottom nav + chatbot above nav
+- **Tablet** 768–1023px — collapsed icon rail
+- **Desktop** ≥1024px — full sidebar (collapsible, persisted in `localStorage`)
 
-## Commands
+## Quick start
 
 ```bash
 npm install
-npm run dev         # http://localhost:5173
-npm run build
-npm run lint
-npm run typecheck
-npm test
+cp .env.example .env   # optional — mock mode works out of the box
+npm run dev
 ```
+
+Open [http://localhost:5173](http://localhost:5173).
+
+## Demo accounts
+
+Password for all accounts: `password`
+
+| Email | Role |
+| ----- | ---- |
+| `amara.k@stud.university.edu` | student |
+| `agent@campus.edu` | agent |
+| `admin@campus.edu` | admin |
+
+## Main routes
+
+- Institution picker: `/institution`
+- Student: `/dashboard`, `/tickets`, `/tickets/new`, `/assistant`, `/faq`
+- Staff: `/agent`, `/agent/queue`, `/agent/tickets/:id`, `/agent/knowledge`
+- Admin: `/admin`, `/admin/settings` (Institution / Departments / People / Knowledge)
+
+Floating **AI Assistant** chatbot is on every authenticated page.
+
+## Task status
+
+| Task | Status |
+| ---- | ------ |
+| 1–5, 7–19 | Done |
+| 6 WebSocket | Pending backend |
+| 20 Mobile responsive | Done (MDH breakpoints) |
