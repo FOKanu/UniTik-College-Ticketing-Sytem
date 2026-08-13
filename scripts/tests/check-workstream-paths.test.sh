@@ -51,10 +51,10 @@ git commit -qm "allowed tooling change"
 assert_ok "tooling allowed files pass" bash "$SCRIPT" feature/tooling-devops-black-mypy-setup main
 
 cd "$repo"
-mkdir -p backend/src
-printf '%s\n' 'export function app() { return true; }' > backend/src/app.ts
-git add backend/src/app.ts
-git commit -qm "disallowed backend change"
+mkdir -p database/migrations
+printf '%s\n' 'CREATE TABLE test (id INT);' > database/migrations/000_test.sql
+git add database/migrations/000_test.sql
+git commit -qm "disallowed database change"
 assert_fail "tooling disallowed files fail" bash "$SCRIPT" feature/tooling-devops-black-mypy-setup main
 
 cd "$repo"
@@ -79,9 +79,9 @@ printf '%s\n' '# backend auth repo' > README.md
 git add README.md
 git commit -qm "init backend repo"
 git checkout -qb feature/backend-auth-and-sso
-mkdir -p backend/src/auth
-printf '%s\n' 'export const auth = true;' > backend/src/auth/index.ts
-git add backend/src/auth/index.ts
+mkdir -p backend/app/auth
+printf '%s\n' 'export const auth = true;' > backend/app/auth/index.ts
+git add backend/app/auth/index.ts
 git commit -qm "allowed backend auth change"
 assert_ok "backend auth allowed files pass" bash "$SCRIPT" feature/backend-auth-and-sso main
 
@@ -94,12 +94,12 @@ git commit -qm "disallowed frontend change"
 assert_fail "backend auth disallowed frontend files fail" bash "$SCRIPT" feature/backend-auth-and-sso main
 
 cd "$backend_repo"
-printf '%s\n' '<<<<<<< HEAD' > backend/src/auth/conflict.txt
-printf '%s\n' 'keep me' >> backend/src/auth/conflict.txt
-printf '%s\n' '=======' >> backend/src/auth/conflict.txt
-printf '%s\n' 'other side' >> backend/src/auth/conflict.txt
-printf '%s\n' '>>>>>>> feature/backend-auth-and-sso' >> backend/src/auth/conflict.txt
-git add backend/src/auth/conflict.txt
+printf '%s\n' '<<<<<<< HEAD' > backend/app/auth/conflict.txt
+printf '%s\n' 'keep me' >> backend/app/auth/conflict.txt
+printf '%s\n' '=======' >> backend/app/auth/conflict.txt
+printf '%s\n' 'other side' >> backend/app/auth/conflict.txt
+printf '%s\n' '>>>>>>> feature/backend-auth-and-sso' >> backend/app/auth/conflict.txt
+git add backend/app/auth/conflict.txt
 git commit -qm "backend auth conflict marker"
 assert_fail "backend auth merge conflict markers are rejected" bash "$SCRIPT" feature/backend-auth-and-sso main
 
@@ -148,9 +148,9 @@ printf '%s\n' '# database repo' > README.md
 git add README.md
 git commit -qm "init database repo"
 git checkout -qb feature/database-department-and-classification-source
-mkdir -p database/migrations
-printf '%s\n' 'CREATE TABLE departments (id SERIAL PRIMARY KEY);' > database/migrations/001_departments.sql
-git add database/migrations/001_departments.sql
+mkdir -p backend/alembic/versions
+printf '%s\n' 'def upgrade(): pass' > backend/alembic/versions/001_departments.py
+git add backend/alembic/versions/001_departments.py
 git commit -qm "allowed database classification change"
 assert_ok "database classification allowed files pass" bash "$SCRIPT" feature/database-department-and-classification-source main
 
@@ -162,12 +162,12 @@ git commit -qm "disallowed frontend change"
 assert_fail "database classification disallowed frontend files fail" bash "$SCRIPT" feature/database-department-and-classification-source main
 
 cd "$database_repo"
-printf '%s\n' '<<<<<<< HEAD' > database/migrations/conflict.sql
-printf '%s\n' '-- keep me' >> database/migrations/conflict.sql
-printf '%s\n' '=======' >> database/migrations/conflict.sql
-printf '%s\n' '-- other side' >> database/migrations/conflict.sql
-printf '%s\n' '>>>>>>> feature/database-department-and-classification-source' >> database/migrations/conflict.sql
-git add database/migrations/conflict.sql
+printf '%s\n' '<<<<<<< HEAD' > backend/alembic/versions/conflict.py
+printf '%s\n' '# keep me' >> backend/alembic/versions/conflict.py
+printf '%s\n' '=======' >> backend/alembic/versions/conflict.py
+printf '%s\n' '# other side' >> backend/alembic/versions/conflict.py
+printf '%s\n' '>>>>>>> feature/database-department-and-classification-source' >> backend/alembic/versions/conflict.py
+git add backend/alembic/versions/conflict.py
 git commit -qm "database conflict marker"
 assert_fail "database classification merge conflict markers are rejected" bash "$SCRIPT" feature/database-department-and-classification-source main
 
