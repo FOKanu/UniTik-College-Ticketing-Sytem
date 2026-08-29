@@ -6,6 +6,8 @@ import pytest
 from jose import jwt
 
 from app.core.config import get_settings
+from app.core.rate_limit import clear_memory_store
+from app.services import auth as auth_service
 from tests.test_rbac import _register_and_login
 
 
@@ -62,7 +64,8 @@ async def test_sql_injection_attempt_in_login_fails_cleanly(client):
         json={"email": "' OR 1=1--", "password": "' OR 1=1--"},
     )
     assert response.status_code in (401, 422)
-    
+
+
 @pytest.mark.asyncio
 async def test_alg_none_attack_is_rejected(client):
     """Classic JWT vulnerability: crafting a token with alg=none and no
@@ -72,12 +75,53 @@ async def test_alg_none_attack_is_rejected(client):
         .rstrip(b"=")
         .decode()
     )
-    payload = base64.urlsafe_b64encode(
-        json.dumps({"sub": "some-fake-user-id", "role": "ADMIN"}).encode()
-    ).rstrip(b"=").decode()
+    payload = (
+        base64.urlsafe_b64encode(
+            json.dumps({"sub": "some-fake-user-id", "role": "ADMIN"}).encode()
+        )
+        .rstrip(b"=")
+        .decode()
+    )
     forged_token = f"{header}.{payload}."
 
     response = await client.get(
         "/api/v1/users/me", headers={"Authorization": f"Bearer {forged_token}"}
     )
     assert response.status_code == 401
+
+
+@pytest.mark.asyncio
+async def test_login_rate_limit_blocks_after_threshold(client, monkeypatch):
+    """Confirms /auth/login enforces its rate limit (5 req/min)."""
+    monkeypatch.delenv("PYTEST_CURRENT_TEST", raising=False)
+    monkeypatch.setenv("REDIS_URL", "")
+    get_settings.cache_clear()
+    clear_memory_store()
+
+    async def mock_login(db, body):
+        from fastapi import HTTPException
+
+        raise HTTPException(status_code=401, detail="Invalid email or password")
+
+    monkeypatch.setattr(auth_service, "login", mock_login)
+
+    statuses = []
+    for _ in range(7):
+        response = await client.post(
+            "/api/v1/auth/login",
+            json={
+                "email": "jordan.alvarez@student.university.edu",
+                "password": "wrong-password",
+            },
+        )
+        statuses.append(response.status_code)
+
+    assert statuses[:5] == [401] * 5
+    assert statuses[5] == 429
+    assert statuses[6] == 429
+
+    assert response.headers.get("Retry-After") is not None
+    assert response.headers.get("X-RateLimit-Limit") == "5"
+    assert response.headers.get("X-RateLimit-Remaining") == "0"
+    clear_memory_store()
+    get_settings.cache_clear()
