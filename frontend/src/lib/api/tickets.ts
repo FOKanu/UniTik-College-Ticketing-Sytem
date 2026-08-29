@@ -144,17 +144,24 @@ function paginate<T>(items: T[], page = 1, pageSize = 20): Paginated<T> {
 /**
  * The backend list endpoint accepts no query parameters, so filtering happens
  * client-side for both data sources. `self`/`agent` identify the current user;
- * in mock mode they are the fixtures' fixed ids.
+ * `departmentScope` limits staff to their support bucket (admins omit it).
  */
 function filterTickets(
   source: Ticket[],
   params: ListTicketsParams = {},
-  identity: { self?: string; agent?: string } = {},
+  identity: {
+    self?: string
+    agent?: string
+    departmentScope?: string
+  } = {},
 ): Ticket[] {
   let list = [...source]
 
   if (params.mine) {
     list = list.filter((t) => t.createdBy === identity.self)
+  }
+  if (identity.departmentScope) {
+    list = list.filter((t) => t.category === identity.departmentScope)
   }
   if (params.status && params.status !== 'all') {
     list = list.filter((t) => t.status === params.status)
@@ -187,26 +194,72 @@ function filterTickets(
   )
 }
 
+function listIdentity(): {
+  self?: string
+  agent?: string
+  departmentScope?: string
+} {
+  const user = useAuthStore.getState().user
+  if (!user) {
+    // Unit tests and pre-login tooling hit mock list without a session.
+    if (!usesLiveTickets()) {
+      return { self: 'user-1', agent: 'agent-1' }
+    }
+    return {}
+  }
+  const departmentScope =
+    user.role === 'agent' && user.department ? user.department : undefined
+  return {
+    self: user.id,
+    agent: user.id,
+    departmentScope,
+  }
+}
+
+function assertTicketVisible(ticket: Ticket): void {
+  const user = useAuthStore.getState().user
+  if (!user) {
+    // Mock fixtures remain readable in tests without a hydrated session.
+    if (!usesLiveTickets()) return
+    throw new ApiError('Not authenticated.', {
+      code: 'UNAUTHORIZED',
+      status: 401,
+    })
+  }
+  if (user.role === 'student' && ticket.createdBy !== user.id) {
+    throw new ApiError('You can only view your own tickets.', {
+      code: 'FORBIDDEN',
+      status: 403,
+    })
+  }
+  if (
+    user.role === 'agent' &&
+    user.department &&
+    ticket.category !== user.department
+  ) {
+    throw new ApiError('This ticket belongs to another department.', {
+      code: 'FORBIDDEN',
+      status: 403,
+    })
+  }
+}
+
 export const ticketsApi = {
   async list(params: ListTicketsParams = {}): Promise<Paginated<Ticket>> {
     if (!usesLiveTickets()) {
       await mockLatency()
       return paginate(
-        filterTickets(mockTickets, params, {
-          self: 'user-1',
-          agent: 'agent-1',
-        }),
+        filterTickets(mockTickets, params, listIdentity()),
         params.page ?? 1,
         params.pageSize ?? 20,
       )
     }
 
     const raw = unwrap(await get<Envelope<BackendTicket[]>>('/tickets'))
-    const self = currentUserId()
     const tickets = filterTickets(
       raw.map((t) => toTicket(t)),
       params,
-      { self, agent: self },
+      listIdentity(),
     )
     return paginate(tickets, params.page ?? 1, params.pageSize ?? 20)
   },
@@ -225,6 +278,7 @@ export const ticketsApi = {
           status: 404,
         })
       }
+      assertTicketVisible(ticket)
       return structuredClone(ticket)
     }
 
@@ -233,11 +287,13 @@ export const ticketsApi = {
       get<Envelope<BackendComment[]>>(`/tickets/${ticketId}/comments`),
       get<Envelope<BackendAttachment[]>>(`/tickets/${ticketId}/attachments`),
     ])
-    return toTicket(
+    const mapped = toTicket(
       unwrap(ticket),
       unwrap(comments).map(toComment),
       unwrap(attachments).map(toAttachment),
     )
+    assertTicketVisible(mapped)
+    return mapped
   },
 
   async create(payload: CreateTicketPayload): Promise<Ticket> {
@@ -250,7 +306,7 @@ export const ticketsApi = {
         category: payload.category,
         status: 'open',
         priority: payload.urgent ? 'urgent' : payload.priority,
-        createdBy: payload.requesterId ?? 'user-1',
+        createdBy: payload.requesterId ?? currentUserId() ?? 'user-1',
         assignedTo: payload.assignedTo,
         createdAt: new Date().toISOString(),
         updatedAt: new Date().toISOString(),

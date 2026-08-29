@@ -28,7 +28,7 @@
   width: 52px;
   height: 30px;
   border-radius: var(--radius-pill);
-  background: #dbe1ef;
+  background: var(--neutral-300);
   display: inline-flex;
   align-items: center;
   padding: 3px;
@@ -39,7 +39,7 @@
   width: 24px;
   height: 24px;
   border-radius: 50%;
-  background: #fff;
+  background: #ffffff;
   box-shadow: var(--shadow-sm);
   transition: transform 0.2s ease;
 }

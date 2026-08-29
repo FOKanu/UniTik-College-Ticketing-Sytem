@@ -1,5 +1,19 @@
 export const de = {
   language: { label: 'Sprache', english: 'Englisch', german: 'Deutsch', more: 'Weitere Sprachen werden je nach Hochschule freigeschaltet.' },
+  theme: {
+    label: 'Darstellung',
+    light: 'Hell',
+    dark: 'Dunkel',
+    system: 'System',
+    lightShort: 'Hell',
+    darkShort: 'Dunkel',
+    systemShort: 'Auto',
+  },
+  attach: {
+    addFile: 'Screenshot oder Datei hinzufügen',
+    hint: 'Max. 10 MB. Akzeptierte Formate: Bilder und Dokumente.',
+    uploadingShort: 'Wird hochgeladen…',
+  },
   common: {
     save: 'Änderungen speichern', cancel: 'Abbrechen', close: 'Schließen', search: 'Suchen', loading: 'Wird geladen…', retry: 'Erneut versuchen',
     all: 'Alle', open: 'Offen', resolved: 'Gelöst', inProgress: 'In Bearbeitung', unassigned: 'Nicht zugewiesen', soon: 'Bald',
@@ -40,6 +54,8 @@ export const de = {
     sso: 'Mit Hochschul-SSO fortfahren', demo: 'Demokonten (für jeden ausgewählten Campus)', confirmPassword: 'Passwort bestätigen',
     campusEmail: 'Verwenden Sie für diesen Campus eine E-Mail-Adresse mit @{{domains}}. Konten werden anhand der Hochschul-Domain verifiziert.',
     already: 'Sie haben bereits ein Konto?', fillDemo: 'Demo-Anmeldedaten für {{role}} einfügen',
+    stayLoggedIn: 'Angemeldet bleiben',
+    stayLoggedInHint: 'Auf diesem Gerät angemeldet bleiben',
   },
   chatbot: {
     greeting: 'Hallo! Fragen Sie mich zu Studium, IT, Finanzen oder Gebäudeservice.', quick: 'Kurze Antwort', detailed: 'Ausführlich',

@@ -5,6 +5,7 @@ import { RouteTitle } from '@/app/RouteTitle'
 import { ROUTES } from '@/app/routes'
 import { ChatbotFab } from '@/components/layout/ChatbotFab'
 import { LanguageSelector } from '@/components/layout/LanguageSelector'
+import { ThemeSelector } from '@/components/layout/ThemeSelector'
 import { RouteErrorBoundary } from '@/components/errors'
 import { NotificationCenter, ToastHost } from '@/components/notifications'
 import { Avatar } from '@/components/ui'
@@ -221,6 +222,7 @@ export function AppLayout({ children }: { children?: ReactNode }) {
         <div className={styles.sideFooter}>
           {!collapsed ? (
             <div className={styles.langInDrawer}>
+              <ThemeSelector />
               <LanguageSelector />
             </div>
           ) : null}
@@ -267,6 +269,7 @@ export function AppLayout({ children }: { children?: ReactNode }) {
           </div>
           <div className={styles.topRight}>
             <div className={styles.langDesktop}>
+              <ThemeSelector />
               <LanguageSelector />
             </div>
             <NotificationCenter />

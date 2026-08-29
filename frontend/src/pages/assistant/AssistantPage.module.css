@@ -238,7 +238,7 @@
 
 .escalate :global(a),
 .escalate :global(button) {
-  background: #fff;
+  background: var(--color-surface);
   color: #0f3145;
 }
 

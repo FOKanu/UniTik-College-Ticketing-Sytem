@@ -217,7 +217,7 @@
 }
 
 .aiSuggest :global(button[class*='secondary']) {
-  background: #fff;
+  background: var(--color-surface);
   color: #0f3145;
   border: none;
 }

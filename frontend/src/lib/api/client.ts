@@ -4,7 +4,7 @@ import { isJwtExpired } from '@/lib/auth'
 import { useAuthStore } from '@/stores/authStore'
 import { ApiError, toApiError } from './errors'
 
-const baseURL = import.meta.env.VITE_API_BASE_URL || '/api'
+const baseURL = import.meta.env.VITE_API_BASE_URL || '/api/v1'
 
 /** Exposed for callers that bypass axios, e.g. SSE streaming over fetch. */
 export const apiBaseUrl = baseURL
@@ -36,6 +36,7 @@ apiClient.interceptors.request.use((config) => {
   if (accessToken) {
     if (isJwtExpired(accessToken)) {
       clearSession()
+      redirectToLogin()
       return Promise.reject(
         new ApiError('Your session has expired. Please sign in.', {
           code: 'UNAUTHORIZED',
@@ -53,8 +54,20 @@ apiClient.interceptors.response.use(
   (response) => response,
   (error) => {
     const apiError = toApiError(error)
+    const config = error?.config as { url?: string; headers?: { Authorization?: string } } | undefined
+    const url = String(config?.url ?? '')
+    const isAuthEndpoint =
+      url.includes('/auth/login') || url.includes('/auth/register')
+    const hadBearer = Boolean(config?.headers?.Authorization)
 
-    if (apiError.code === 'UNAUTHORIZED' && !handlingUnauthorized) {
+    // Only tear down a stored session when a previously authenticated request
+    // was rejected. Failed login/register must not bounce the user away.
+    if (
+      apiError.code === 'UNAUTHORIZED' &&
+      !handlingUnauthorized &&
+      hadBearer &&
+      !isAuthEndpoint
+    ) {
       handlingUnauthorized = true
       useAuthStore.getState().clearSession()
       redirectToLogin()
