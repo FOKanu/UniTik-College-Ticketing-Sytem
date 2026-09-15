@@ -13,7 +13,7 @@ Statuses in the Miro plan are the live source of truth for task progress; this d
 
 | Name | GitHub | Primary focus | Also contributes to |
 | --- | --- | --- | --- |
-| **Francis Kanu** | [@FOKanu](https://github.com/FOKanu) | Project Manager; AI/RAG LLM + chatbot; Tooling/DevOps | Frontend design system / API client / chat UI; chat schema; git gates |
+| **Francis Kanu** | [@FOKanu](https://github.com/FOKanu) | Project Manager and Lead Engineer; AI/RAG LLM + chatbot; Tooling/DevOps | Frontend design system / API client / chat UI; chat schema; git gates |
 | **Milena** | *TBD* | Frontend (student portal, design system) | Auth pages; notifications UI; file storage (with Laurynas); FE lint tooling |
 | **Alen** | *TBD* | Frontend (student portal, design system) | Auth guard (with Kinga); state management; a11y / responsive |
 | **Shahnas** | *TBD* | Frontend (staff / admin); Backend tickets & SLA | Departments router; notifications; SLA breach views |
