@@ -8,12 +8,14 @@
 
 ## Executive Summary
 
-### Project Leadership (CONFIRMED)
+### Project Leadership (USER CONFIRMED)
 
-**Francis Kanu** (@FOKanu, multiple email identities in git: friyekekanu@stud.mediadesign.de, kanufavour.o@gmail.com, Francisokore15@gmail.com as "Sage Eye")
-- **Role:** Project Manager and Lead Engineer (confirmed across documentation)
-- **Commit count:** 90 commits (50 as "Francis Okorie", 26 as "FOKanu", 14 as "Francis Kanu", 11 as "Sage Eye")
-- **Evidence:** Explicitly named as PM in docs/CONTRIBUTORS.md line 15; author of AI/RAG architecture, LLM integration, git workflow tooling
+**Francis Kanu** — **Main Project Owner, Project Manager, and Lead Engineer Throughout Development**
+- **GitHub:** @FOKanu
+- **Git identities** (user-confirmed): Francis Okorie, FOKanu, Francis Kanu, Sage Eye
+- **Commit count:** 101 commits across confirmed identities
+- **Documentation:** Explicitly named as PM in docs/CONTRIBUTORS.md line 15
+- **User confirmation:** Main project owner; PM and Lead Engineer roles throughout development; co-authored project report with Hunain
 - **Key contributions:** 
   - AI/RAG chatbot system (backend/app/ai/, backend/app/services/chat.py)
   - LLM integration with Ollama/OpenAI/Gemini (docs/LLM_INTEGRATION.md authored)
@@ -253,14 +255,14 @@ Frontend pages (frontend/src/pages/):
 
 **IMPORTANT:** Do not infer real names from GitHub handles. Only use names from git commit author fields or documentation where explicitly stated.
 
-#### Francis Kanu / Francis Okorie (CONFIRMED - Project Owner, PM, Lead Engineer)
-**Git identities:**
+#### Francis Kanu (CONFIRMED - Main Project Owner, PM, Lead Engineer Throughout Development)
+**Git identities confirmed by user:**
 - Francis Okorie <friyekekanu@stud.mediadesign.de> - 50 commits
 - FOKanu <kanufavour.o@gmail.com> - 26 commits  
 - Francis Kanu <franciskanu@Franciss-MacBook-Pro.local> - 14 commits
 - Sage Eye <Francisokore15@gmail.com> - 11 commits
 
-**Total: 101 commits (highest contributor)**
+**Total: 101 commits** (user-confirmed these identities represent Francis Kanu)
 
 **GitHub:** @FOKanu (confirmed in docs/CONTRIBUTORS.md)
 
@@ -293,6 +295,8 @@ Frontend pages (frontend/src/pages/):
    - Git evidence: commits on frontend/src/pages/, frontend/src/lib/api/
 
 **Role confirmed:** docs/CONTRIBUTORS.md line 15: "**Francis Kanu** | [@FOKanu](https://github.com/FOKanu) | Project Manager and Lead Engineer; AI/RAG LLM + chatbot; Tooling/DevOps"
+
+**User confirmation:** Main project owner, Project Manager, and Lead Engineer throughout development. Co-authored project report with Hunain.
 
 ---
 
@@ -418,13 +422,13 @@ Frontend pages (frontend/src/pages/):
 
 ---
 
-#### minarichan (GitHub handle only, real name unknown)
+#### minarichan (GitHub handle - real name unknown)
 **Git identities:**
 - minarichan <minarichan@users.noreply.github.com> - 12 commits
 
 **Total: 12 commits**
 
-**Evidence-backed contributions:**
+**Git evidence:**
 1. **Dark Mode & Theming** (PRIMARY)
    - Theme selector component and store
    - Git evidence: "feat(frontend): expand DE i18n, add dark mode, fix Docker proxy" (large commit, 70+ files)
@@ -445,9 +449,15 @@ Frontend pages (frontend/src/pages/):
    - Vite proxy configuration
    - Git evidence: commit on docker-compose.yml, vite.config.ts
 
-**Role:** No real name available in git or docs. GitHub handle @minarichan. Docs/CONTRIBUTORS.md line 16 lists "**Milena**" for "Frontend (student portal, design system)" with "TBD" GitHub - possible match but NOT CONFIRMED.
+**Identity:** Real name unknown. GitHub handle @minarichan only.
 
-**UNCERTAINTY:** Cannot confirm real name. Do not assume minarichan = Milena without explicit evidence.
+**Possible linkage (UNCONFIRMED):** Docs/CONTRIBUTORS.md line 16 lists "**Milena**" for "Frontend (student portal, design system)" role - similar scope to minarichan's git work, but identity linkage NOT confirmed.
+
+**Report-documented "Milena" contributions** (project report, August 2026):
+- Frontend student portal work
+- Design system contributions
+
+**IMPORTANT:** Do not replace report-credited "Milena" with "minarichan" pending identity confirmation. Keep documented report contributions under "Milena" and git evidence under "minarichan" as separate until confirmed same person.
 
 ---
 
@@ -522,27 +532,32 @@ Frontend pages (frontend/src/pages/):
 
 **Total: 4 commits**
 
-**Evidence-backed contributions:**
-1. **Workstream Path Guard Enhancements** (PRIMARY)
+**Git evidence:**
+1. **Workstream Path Guard Enhancements**
    - Merge conflict detection
    - Database branch guards
    - Multi-university branch guards
-   - Git evidence: "fix(tooling): catch merge conflict markers in workstream guard", "fix(tooling): add database merge-conflict guard"
+   - Git: "fix(tooling): catch merge conflict markers in workstream guard", "fix(tooling): add database merge-conflict guard"
    - Files: scripts/check-workstream-paths.sh, scripts/tests/check-workstream-paths.test.sh (158 lines of tests)
 
-**Role confirmed:** docs/CONTRIBUTORS.md line 20: "**Arshdeep** | *TBD* | Frontend (staff / admin)" with "Staff queue, ticket actions, admin analytics UI" - but git evidence shows tooling work, not frontend. Role needs clarification.
+**Report-documented contributions** (project report, August 2026):
+- UI/UX prototyping
+- QA audit work
 
-**UNCERTAINTY:** Git shows only tooling contributions, but docs assign frontend role. User needs to confirm.
+**Planning docs role** (docs/CONTRIBUTORS.md line 20):
+- Primary: "Frontend (staff / admin)"
+- Listed responsibilities: "Staff queue, ticket actions, admin analytics UI"
+
+**Note:** Report credits UI/UX prototyping and QA audit in addition to git-evident tooling contributions. Frontend work may be in design/prototyping phase or un-merged branches.
 
 ---
 
-#### sunilkumar / SIRVK22 (sunilkumar387388@gmail.com, vivek@stud.mediadesign.de)
+#### sunilkumar (sunilkumar387388@gmail.com)
 **Git identities:**
 - sunilkumar <sunilkumar387388@gmail.com> - 6 commits
 - sunilkumar387388-rgb <sunilkumar387388@gmail.com> - 1 commit
-- SIRVK22 <vivek@stud.mediadesign.de> - 1 commit (merge)
 
-**Total: 8 commits** (possibly 2 different people with overlapping emails)
+**Total: 7 commits**
 
 **Evidence-backed contributions:**
 1. **Backend Testing**
@@ -555,22 +570,56 @@ Frontend pages (frontend/src/pages/):
    - Git evidence: "feat(backend): implement ticket routing engine service"
    - Files: backend/app/services/ticket_routing.py, backend/tests/test_ticket_routing.py
 
-**UNCERTAINTY:** Email overlap and SIRVK22 handle suggest possible identity confusion. Docs list "**Vivek**" (line 30) and "**Sunil**" (line 32) as separate people. Need user clarification.
+**Report-documented contributions** (project report, August 2026):
+- Debugging and monitoring work
+
+**Planning docs role** (docs/CONTRIBUTORS.md line 32):
+- Primary: "Debugging / monitoring"
+- Listed responsibilities: "Uptime checks; OpenTelemetry (with Adrian)"
+
+**Note:** Report documents debugging/monitoring contributions. Git shows backend testing and routing work; documented monitoring role may represent additional non-code work (uptime monitoring, observability setup).
 
 ---
 
-#### adrianandthetwelve (adrianughanze@gmail.com)
+#### Vivek (SIRVK22 - vivek@stud.mediadesign.de)
 **Git identities:**
-- adrianandthetwelve <adrianughanze@gmail.com> - 1 commit
+- SIRVK22 <vivek@stud.mediadesign.de> - 1 commit (merge PR #5)
 
 **Total: 1 commit**
 
-**Evidence-backed contributions:**
-1. **Branch Merges**
-   - Git evidence: "Merge pull request #34 from FOKanu/debugging"
-   - Limited direct code contribution evidence
+**Git evidence:**
+1. **PR Review/Merge**
+   - Git: "Merge pull request #5 from FOKanu/feature/backend-ticket-routing-engine"
 
-**Role:** docs/CONTRIBUTORS.md line 31 lists "**Adrian**" for "Debugging / observability" - but minimal git evidence. Possible PM/reviewer role or external account.
+**Report-documented contributions** (project report, August 2026):
+- Debugging and observability work
+
+**Planning docs role** (docs/CONTRIBUTORS.md line 30):
+- Primary: "Debugging / observability; logging"
+- Listed responsibilities: "Structured logs; Sentry; API contract tests; correlation IDs"
+
+**Note:** Report documents debugging/observability contributions. Git shows 1 merge; additional work may be on un-merged branches or non-code (monitoring setup, observability tooling).
+
+---
+
+#### Adrian (adrianandthetwelve - adrianughanze@gmail.com)
+**Git identities:**
+- adrianandthetwelve <adrianughanze@gmail.com> - 1 commit (merge)
+
+**Total: 1 commit**
+
+**Git evidence:**
+1. **PR Merge**
+   - Git: "Merge pull request #34 from FOKanu/debugging"
+
+**Report-documented contributions** (project report, August 2026):
+- Debugging and observability work
+
+**Planning docs role** (docs/CONTRIBUTORS.md line 31):
+- Primary: "Debugging / observability"
+- Listed responsibilities: "Tracing, health checks, LLM cost views, debug admin UIs; git control"
+
+**Note:** Report documents debugging/observability contributions. Git shows 1 merge; contributions may include coordination, observability tooling setup, or un-merged work.
 
 ---
 
@@ -588,26 +637,65 @@ Frontend pages (frontend/src/pages/):
 
 ---
 
-### Contributors with Minimal Git Evidence
+### Contributors with Documented Roles but No Git Evidence
 
-The following names appear in docs/CONTRIBUTORS.md but have **no commits** in the analyzed history:
+The following names appear in docs/CONTRIBUTORS.md with assigned roles but have **no attributable commits** in the analyzed git history. **Absence of commits is not evidence of no contribution.** Documented work preserved below:
 
-- **Shahnas** - Assigned: Frontend (staff/admin), Backend tickets & SLA
-- **Khan / Hunain** - Assigned: Testing & QA lead; **CONFIRMED: Co-authored project report with Francis Kanu, QA/documentation contributions**
-- **Shahriar** - Assigned: Testing (E2E, load)
-- **Anmol** - Assigned: Testing (API integration)
-- **Vivek** - Assigned: Debugging/observability (1 merge commit as SIRVK22, unclear if same person)
+#### Shahnas
+**Documented role** (docs/CONTRIBUTORS.md line 18):
+- Primary: Frontend (staff/admin), Backend tickets & SLA
+- Responsibilities: "Departments router; notifications; SLA breach views"
+- Git evidence: **None found**
 
-**Note on Khan/Hunain:** User confirmed "Hunain" co-authored the project report with Francis Kanu and contributed to QA/documentation. Git may show work under "Khan" handle or contributions may be non-code (testing coordination, documentation, report writing).
+#### Hunain Khan (listed as "Khan" in docs/CONTRIBUTORS.md)
+**Full name:** Hunain Khan
 
-**UNCERTAINTY for others:** These contributors may have:
-- Worked on branches not merged yet
-- Contributed via pair programming (commits under other names)
-- Joined after the analyzed commit window
-- Left before significant git activity
-- Contributed non-code work (design, planning, testing coordination)
+**USER CONFIRMED contributions:**
+- Co-authored project report with Francis Kanu
+- QA and documentation work throughout development
 
-**User must confirm** their actual contributions.
+**Documented role** (docs/CONTRIBUTORS.md line 26):
+- Primary: Testing & QA lead
+- Listed responsibilities: "E2E / integration / RAG quality tests; seed data; merge conflict support"
+
+**Git evidence:** None found under "Khan", "Hunain", or "Hunain Khan" handles
+
+**Note:** User-confirmed contributions are report co-authorship and QA/documentation. Additional listed responsibilities (E2E, RAG quality tests, merge conflict support) are from planning docs but not independently verified in this audit.
+
+#### Shahriar
+**Report-documented contributions** (project report, August 2026):
+- Regression testing (12 August 2026 regression phase)
+- Load testing
+
+**Planning docs role** (docs/CONTRIBUTORS.md line 27):
+- Primary: Testing (E2E, load)
+- Listed responsibilities: "Critical-path Playwright/Cypress; load tests"
+
+**Git evidence:** None found
+
+**Note:** Contributions documented in submitted report as regression and load testing work.
+
+---
+
+#### Anmol
+**Report-documented contributions** (project report, August 2026):
+- API integration testing
+
+**Planning docs role** (docs/CONTRIBUTORS.md line 28):
+- Primary: Testing (API integration)
+- Listed responsibilities: "Backend integration tests"
+
+**Git evidence:** None found
+
+**Note:** Contributions documented in submitted report as API integration testing.
+
+**Preservation Note:** These documented contributions reflect team assignments from planning docs (CONTRIBUTORS.md, Miro board references). Git absence may indicate:
+- Work on branches not yet merged to `main`
+- Pair programming (commits under other names)
+- Non-code contributions (test coordination, manual testing, documentation)
+- Contributions during periods outside this audit window
+
+**Do not replace or dismiss documented roles solely based on commit counts.** User should confirm actual contributions and update attribution accordingly.
 
 ---
 
@@ -733,23 +821,24 @@ The following names appear in docs/CONTRIBUTORS.md but have **no commits** in th
 - This is no longer an unresolved gap
 
 ### Identity Uncertainties
-1. **minarichan** - Real name unknown. Is this "Milena" from docs/CONTRIBUTORS.md? Need confirmation.
-2. **sunilkumar/SIRVK22** - Are these the same person? Docs list "Sunil" and "Vivek" separately.
-3. **adrianandthetwelve** - Minimal git evidence. Is "Adrian" a reviewer/PM or coder? What are specific contributions?
+1. **minarichan** - Git handle only, real name unknown. Docs list "Milena" for similar role (Frontend, design system) but no confirmation this is the same person. Need clarification.
+2. **adrianandthetwelve** - Minimal git evidence (1 merge). Documented as "Adrian" for debugging/observability role. Need clarification on specific contributions beyond PR merges.
 
-### Missing Contributors
-The following names in docs/CONTRIBUTORS.md have **no commits** in analyzed history:
-- Shahnas (Frontend staff/admin, Backend tickets & SLA)
-- **Hunain** (Testing & QA lead, listed as "Khan" in docs) - **CONFIRMED: Co-authored project report with Francis Kanu, QA and documentation contributions**
-- Shahriar (E2E, load testing)
-- Anmol (API integration testing)
-- Vivek (Debugging/observability) - possibly SIRVK22?
+### Contributors Needing Attribution Clarification
 
-**Questions for remaining contributors:**
-1. Did they contribute on un-merged branches?
-2. Pair programming (commits under other names)?
-3. Non-code contributions (design, coordination, testing)?
-4. When did they join/leave the project?
+**With documented roles but no git evidence:**
+- **Shahnas** - Documented: Frontend (staff/admin), Backend tickets & SLA
+- **Hunain** (listed as "Khan" in docs) - **USER CONFIRMED**: Testing & QA lead, co-authored project report with Francis Kanu
+- **Shahriar** - Documented: E2E, load testing
+- **Anmol** - Documented: API integration testing
+
+**With minimal git evidence vs. documented role:**
+- **Vivek** (SIRVK22) - 1 merge commit; Documented: Debugging/observability with structured logs, Sentry, correlation IDs
+- **Adrian** (adrianandthetwelve) - 1 merge commit; Documented: Debugging/observability
+
+**User should clarify:**
+1. Scope of contributions for those with no git evidence (non-code work, coordination, un-merged branches, pair programming)
+2. Whether documented roles reflect actual work or initial assignments that changed
 
 ### Role Discrepancies
 1. **Arshdeep Singh** - Docs assign frontend role, but git shows only tooling/CI work. Which is accurate?
@@ -880,8 +969,8 @@ The following features appear in **design specifications but are NOT fully imple
 #### 3. Desktop AI Assistant
 - **Design:** Desktop AI screen explicitly says **"placeholder responses and pipeline still in development"** (node 12:2)
 - **Mobile design:** Describes KB search, streaming, and citations (more mature)
-- **Implementation:** Chat assistant IS implemented (backend/app/ai/, SSE streaming, RAG retrieval) and functional
-- **Verdict:** Desktop design annotation is outdated; chat assistant exists and works per LLM_INTEGRATION.md and test evidence
+- **Implementation:** Chat assistant code is present (backend/app/ai/, SSE streaming, RAG retrieval, test files exist)
+- **Verdict:** Desktop design annotation is outdated; chat assistant implementation is present with test coverage. Runtime functionality unverified in this audit (tests not executed in review session).
 
 #### 4. Native Mobile Application
 - **Design:** Dedicated mobile student suite labeled "native mobile student, iPhone 14/15 390×844, light mode, Phase 1"

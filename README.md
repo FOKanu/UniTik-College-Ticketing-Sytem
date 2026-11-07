@@ -4,22 +4,22 @@
 > [`archive/scaffold-v1/`](archive/scaffold-v1/) (tag: `scaffold-v1-final`). Do not import from the archive
 > into active code.
 
-A self-hosted, privacy-compliant support ticketing platform for universities, with an AI chatbot front door,
-role-based access (Student / Staff / Admin), intelligent classification, and an FAQ knowledge base.
+A self-hosted support ticketing platform for universities, with an AI chatbot front door,
+role-based access (Student / Staff / Admin), and an FAQ knowledge base.
 
-Built for universities that need GDPR/privacy compliance, multilingual support, and intelligent triage — without vendor lock-in or third-party data sharing.
+Designed for self-hosted deployment with multilingual support and department-based routing.
 
 ---
 
 ## ✨ Highlights
 
-- **🤖 AI-Powered Assistant** — Natural language chat with RAG-based FAQ retrieval, intelligent ticket escalation, and context-aware responses. Supports quick and detailed answer modes.
-- **🔐 Privacy & Compliance** — Self-hosted with on-premises deployment. All data stays within university infrastructure. Role-based access ensures students only see their own tickets.
-- **🌐 Multilingual** — Built-in i18n support (EN/DE) with automatic language detection for diverse student populations.
-- **⚡ Modern Architecture** — FastAPI + React with async SQLAlchemy, pgvector for semantic search, streaming SSE responses, and vertical slice organization for parallel team development.
+- **🤖 AI-Powered Assistant** — Natural language chat with RAG-based FAQ retrieval and ticket escalation. Supports quick and detailed answer modes.
+- **🔐 Self-Hosted** — On-premises deployment option. Role-based access ensures students only see their own tickets.
+- **🌐 Multilingual** — Built-in i18n support (EN/DE) with language switching.
+- **⚡ Modern Stack** — FastAPI + React with async SQLAlchemy, pgvector for semantic search, SSE streaming, and vertical slice organization for parallel team development.
 - **🔄 Continuous Integration** — Three-gate git workflow (workstream → debugging → PM review → main), automated path guards, Docker Compose orchestration, and Alembic migrations.
-- **🎯 Intelligent Triage** — LLM-assisted categorization (Academics, IT, Finance, Maintenance) with human-in-the-loop validation to ensure accuracy on sensitive matters.
-- **📊 Department-Based Routing** — Keyword-based routing foundation, SLA tracking preparation, and audit logging for institutional accountability.
+- **🎯 Department Routing** — Category-based ticket routing with keyword matching (Academics, IT, Finance, Maintenance). LLM can suggest categories on escalation.
+- **📊 SLA Foundation** — Audit logging and SLA tracking preparation for institutional accountability.
 
 ---
 
@@ -117,19 +117,19 @@ Developer (workstream/feature branch)
 
 ## 🚀 Features
 
-### ✅ Implemented & Functional
-- **Authentication System** — JWT-based auth with role guards (Student, Staff, Admin), rate limiting on login/register
-- **Ticket Management** — Full CRUD, status lifecycle (Open → In Progress → Resolved), department routing
-- **AI Chat Assistant** — Streaming responses via SSE, conversation history, quick/detailed answer modes
-- **Chat-to-Ticket Escalation** — One-click conversion with LLM-suggested subject and category
-- **FAQ Knowledge Base** — Semantic search over markdown documents with pgvector, bilingual content (EN/DE)
-- **Multi-Role Access Control** — Students see only their tickets; internal comments hidden from students
-- **Internationalization** — English and German locales with language switching
-- **Dark Mode** — Theme selector with persistence
-- **Multi-Institution Branding** — Institution picker with theme support
-- **Health Monitoring** — LLM provider health checks with graceful fallback
-- **Audit Logging** — Track ticket lifecycle events for compliance
-- **Docker Deployment** — Postgres (pgvector), Redis, backend, frontend in compose
+### ✅ Implemented (Code Present with Test Coverage)
+- **Authentication System** — JWT-based auth with role guards (Student, Staff, Admin), rate limiting on login/register. Tests: test_auth.py, test_security.py, test_rbac.py (477 lines).
+- **Ticket Management** — Full CRUD, status lifecycle (Open → In Progress → Resolved), category-based department routing with keyword matching. Tests: test_tickets.py, test_ticket_routing.py (447 lines).
+- **AI Chat Assistant** — SSE streaming, conversation history, quick/detailed answer modes. Implementation present with test files (test_chat.py, test_chat_rag.py, 457 lines). **Runtime not verified in this audit.**
+- **Chat-to-Ticket Escalation** — Implementation present with LLM suggestion of subject and category. Test coverage included in chat tests. **Runtime not verified in this audit.**
+- **FAQ Knowledge Base** — Semantic search with pgvector, bilingual markdown content (EN/DE), ingestion pipeline. Tests: test_kb_*.py files (530+ lines). **Runtime not verified in this audit.**
+- **Multi-Role Access Control** — Students see only their tickets; internal comments hidden from students. Enforced in services layer with RBAC tests.
+- **Internationalization** — English and German locales with manual language switching. Tests: i18n.test.tsx (122 lines).
+- **Dark Mode** — Theme selector with persistence (theme store + CSS variables).
+- **Multi-Institution Branding** — Institution picker with theme support (institution store).
+- **Health Monitoring** — LLM provider health check endpoint. Graceful degradation path present.
+- **Audit Logging** — Ticket lifecycle event tracking foundation.
+- **Docker Deployment** — Postgres (pgvector), Redis, backend, frontend in docker-compose.yml.
 
 ### 🚧 Partial / Foundation
 - **Notifications** — Backend route exists; email/push delivery in development
@@ -137,11 +137,11 @@ Developer (workstream/feature branch)
 - **SLA Tracking** — Foundation exists; breach tracking not integrated into workflow
 - **Analytics Dashboard** — UI pages exist; backend aggregation minimal
 
-### 📋 Planned / Design Specifications
-- **University SSO/LDAP** — Architecture docs mark as pending IT coordination (OI-01)
-- **Advanced Analytics** — Wireframes show reports; refined prototype marks "Soon"
-- **Native Mobile App** — Responsive web functional; native iOS/Android planned
-- **Keyword-Based Routing** — Basic category routing implemented; advanced NLP extraction planned
+### 📋 Planned / Design Specifications (Not Yet Implemented)
+- **University SSO/LDAP** — Architecture docs mark as pending IT coordination (OI-01). Service stub present.
+- **Advanced Analytics** — Wireframes show reports; refined prototype marks "Soon". UI pages present; backend aggregation minimal.
+- **Native Mobile App** — Responsive web implemented; native iOS/Android shown in design artifacts only.
+- **Advanced NLP Routing** — Category-based keyword routing implemented; natural language keyword extraction planned.
 
 ---
 
@@ -149,9 +149,9 @@ Developer (workstream/feature branch)
 
 ### Project Leadership
 
-**Francis Kanu** ([@FOKanu](https://github.com/FOKanu)) — **Project Manager, Lead Engineer, and AI/RAG Architect**
+**Francis Kanu** ([@FOKanu](https://github.com/FOKanu)) — **Main Project Owner, Project Manager, and Lead Engineer Throughout Development**
 
-Francis founded and leads the UniTik project, serving as Project Manager and Lead Engineer throughout development. His contributions include:
+Francis is the main project owner who founded and leads the UniTik project, serving as Project Manager and Lead Engineer throughout development. His contributions include:
 - Designed and implemented the AI chat assistant with RAG-based FAQ retrieval
 - Architected the LLM integration layer supporting Ollama, OpenAI, and Gemini providers
 - Created the three-gate git workflow (workstream → debugging → PM → main) that enabled parallel team development
@@ -175,7 +175,7 @@ Francis founded and leads the UniTik project, serving as Project Manager and Lea
 
 **Agrima Sharma** — Testing and rate limiting specialist. Designed and implemented comprehensive rate limiting system with 5 test suites (486 lines covering concurrency, failure modes, integration, timing, and unit tests), created Q&A regression set for KB testing, migrated i18next v3→v4 with German localization tests, and fixed user response department resolution.
 
-**Hunain** — Testing & QA lead, project documentation. Co-authored the project report with Francis Kanu. Contributed to E2E test coordination, integration testing strategy, RAG quality verification, and merge conflict resolution support.
+**Hunain Khan** — Testing & QA lead, project documentation. Co-authored the project report with Francis Kanu (report delivery 3 August 2026, submission 14 August 2026). Contributed to QA and documentation work throughout development.
 
 ### Frontend Development
 
@@ -185,17 +185,27 @@ Francis founded and leads the UniTik project, serving as Project Manager and Lea
 
 ### Backend & Security
 
-**Kinga Kowalewska** — Backend auth lead. Implemented JWT issuance, RBAC middleware, initial rate limiting on login/register, comprehensive security tests (168 lines), RBAC boundary tests (248 lines), users router with department-scoped tickets, and backend tooling setup (Black, mypy).
+**Kinga Kowalewska** — Backend auth lead. Implemented JWT issuance, RBAC middleware, initial rate limiting on login/register, security tests (168 lines), RBAC boundary tests (248 lines), users router with department-scoped tickets, and backend tooling setup (Black, mypy).
 
 ### Tooling & CI
 
-**Arshdeep Singh** — Tooling specialist. Enhanced workstream path guard with merge conflict detection, database branch guards, and multi-university branch protection (158 lines of path guard tests).
+**Arshdeep Singh** — UI/UX prototyping and QA audit (report-documented, August 2026). Git evidence shows tooling contributions: enhanced workstream path guard with merge conflict detection, database branch guards, and multi-university branch protection (158 lines of path guard tests).
 
-**sunilkumar / Vivek (SIRVK22)** — Backend testing. Fixed department model test suite, implemented ticket routing engine service, and contributed to test infrastructure. (Note: Identity overlap between sunilkumar/Vivek needs clarification.)
+**sunilkumar** — Backend testing and routing (git evidence: 7 commits). Fixed department model test suite and implemented ticket routing engine service. Report-documented (August 2026): Debugging and monitoring work.
+
+**Vivek (SIRVK22)** — Debugging and observability (report-documented, August 2026). Git shows 1 PR merge; contributions may include monitoring setup, observability tooling, or work on un-merged branches.
 
 ### Additional Contributors
 
-Several team members contributed to planning, design, testing coordination, and architecture discussions. Specific code attribution for Shahnas (Frontend/Backend), Shahriar (E2E testing), Anmol (API testing), Adrian (debugging/observability), and Sunil (monitoring) is being finalized and will be updated in a future revision.
+**Report-documented contributions** (project report, August 2026):
+
+- **Milena** — Frontend student portal and design system contributions (report-documented). Note: Git handle "minarichan" shows 12 commits with similar scope (dark mode, theme system, i18n, CSS) but identity linkage unconfirmed.
+- **Shahnas** — Frontend staff/admin interfaces and backend ticket/SLA components (report-documented).
+- **Shahriar** — Regression testing (12 August 2026 regression phase) and load testing (report-documented).
+- **Anmol** — API integration testing (report-documented).
+- **Adrian** — Debugging and observability work (report-documented). Git shows 1 PR merge.
+
+**Note:** Report documented these contributions (delivery 3 August 2026, submission 14 August 2026). Absence of git evidence does not indicate absence of contribution; work may be in testing coordination, manual QA, un-merged branches, or pair programming.
 
 ---
 
