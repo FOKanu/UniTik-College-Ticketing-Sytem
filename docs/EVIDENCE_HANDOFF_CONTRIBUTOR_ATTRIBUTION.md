@@ -642,10 +642,19 @@ Frontend pages (frontend/src/pages/):
 The following names appear in docs/CONTRIBUTORS.md with assigned roles but have **no attributable commits** in the analyzed git history. **Absence of commits is not evidence of no contribution.** Documented work preserved below:
 
 #### Shahnas
-**Documented role** (docs/CONTRIBUTORS.md line 18):
+**Report-documented contributions** (project report, August 2026):
+- Frontend: Staff/admin interfaces
+- Backend: Ticket management and SLA tracking components
+
+**Planning docs role** (docs/CONTRIBUTORS.md line 18):
 - Primary: Frontend (staff/admin), Backend tickets & SLA
-- Responsibilities: "Departments router; notifications; SLA breach views"
-- Git evidence: **None found**
+- Listed responsibilities: "Departments router; notifications; SLA breach views"
+
+**Git evidence:** None found
+
+**Note:** Contributions documented in submitted report (August 2026) as frontend staff/admin and backend ticket/SLA work.
+
+---
 
 #### Hunain Khan (listed as "Khan" in docs/CONTRIBUTORS.md)
 **Full name:** Hunain Khan
