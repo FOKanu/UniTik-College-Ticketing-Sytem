@@ -1062,11 +1062,12 @@ The following features appear in **design specifications but are NOT fully imple
 
 **Uncertainty for report editor:**
 
-1. **Historical report period vs. current repository state**
-   - Evidence handoff analyzes current `main` branch (November 2026)
-   - Original uploaded report is binary (unreadable)
-   - Unknown if report documents an earlier project phase (July-September) vs. current state
-   - User must clarify report timeframe and reconcile with latest code
+1. **Report period vs. current repository state**
+   - Report dates (confirmed): Delivery 3 August 2026, Regression 12 August 2026, Submission 14 August 2026
+   - Evidence handoff analyzes current `main` branch (7 November 2026)
+   - Report documents project state as of August 2026
+   - Current audit reflects November 2026 implementation state
+   - Preserve report's historical data separately; note implementation changes between periods
 
 2. **Analytics implementation**
    - Wireframes show full analytics screen
