@@ -1,6 +1,6 @@
 # Evidence Handoff: UniTik Implementation & Contributor Attribution
 
-**Generated:** 2026-11-07  
+**Generated:** 2026-11-07 UTC (2026-11-08 Europe/Berlin)
 **Purpose:** Comprehensive evidence base for updating project report and README with accurate individual contributor attribution  
 **Repository:** git@github.com:FOKanu/College-Ticketing-Sytem.git
 
@@ -8,14 +8,13 @@
 
 ## Executive Summary
 
-### Project Leadership (USER CONFIRMED)
+### Project Leadership
 
 **Francis Kanu** — **Main Project Owner, Project Manager, and Lead Engineer Throughout Development**
 - **GitHub:** @FOKanu
-- **Git identities** (user-confirmed): Francis Okorie, FOKanu, Francis Kanu, Sage Eye
-- **Commit count:** 101 commits across confirmed identities
+- **User confirmations:** Main project owner; Project Manager and Lead Engineer throughout development; co-authored project report with Hunain Khan
 - **Documentation:** Explicitly named as PM in docs/CONTRIBUTORS.md line 15
-- **User confirmation:** Main project owner; PM and Lead Engineer roles throughout development; co-authored project report with Hunain
+- **Git identity note:** Multiple git commit identities observed (Francis Okorie, FOKanu, Francis Kanu, Sage Eye) with name/email variations. Identity mappings are inferred from name similarity, not independently confirmed.
 - **Key contributions:** 
   - AI/RAG chatbot system (backend/app/ai/, backend/app/services/chat.py)
   - LLM integration with Ollama/OpenAI/Gemini (docs/LLM_INTEGRATION.md authored)
@@ -255,14 +254,20 @@ Frontend pages (frontend/src/pages/):
 
 **IMPORTANT:** Do not infer real names from GitHub handles. Only use names from git commit author fields or documentation where explicitly stated.
 
-#### Francis Kanu (CONFIRMED - Main Project Owner, PM, Lead Engineer Throughout Development)
-**Git identities confirmed by user:**
+#### Francis Kanu (Main Project Owner, PM, Lead Engineer Throughout Development)
+
+**User confirmations:**
+- Main project owner
+- Project Manager and Lead Engineer throughout development
+- Co-authored project report with Hunain Khan
+
+**Git identities observed** (identity mapping inferred, not confirmed):
 - Francis Okorie <friyekekanu@stud.mediadesign.de> - 50 commits
 - FOKanu <kanufavour.o@gmail.com> - 26 commits  
 - Francis Kanu <franciskanu@Franciss-MacBook-Pro.local> - 14 commits
 - Sage Eye <Francisokore15@gmail.com> - 11 commits
 
-**Total: 101 commits** (user-confirmed these identities represent Francis Kanu)
+**Note:** These git identities share name elements and are presumed to represent Francis Kanu based on name similarity and @FOKanu GitHub association, but this mapping was not explicitly confirmed by user.
 
 **GitHub:** @FOKanu (confirmed in docs/CONTRIBUTORS.md)
 
@@ -294,9 +299,9 @@ Frontend pages (frontend/src/pages/):
    - Institution page theming (recent commits to InstitutionPage.module.css)
    - Git evidence: commits on frontend/src/pages/, frontend/src/lib/api/
 
-**Role confirmed:** docs/CONTRIBUTORS.md line 15: "**Francis Kanu** | [@FOKanu](https://github.com/FOKanu) | Project Manager and Lead Engineer; AI/RAG LLM + chatbot; Tooling/DevOps"
+**Role documented:** docs/CONTRIBUTORS.md line 15: "**Francis Kanu** | [@FOKanu](https://github.com/FOKanu) | Project Manager and Lead Engineer; AI/RAG LLM + chatbot; Tooling/DevOps"
 
-**User confirmation:** Main project owner, Project Manager, and Lead Engineer throughout development. Co-authored project report with Hunain.
+**User confirmations:** Main project owner, Project Manager, and Lead Engineer throughout development. Co-authored project report with Hunain Khan.
 
 ---
 
@@ -577,7 +582,7 @@ Frontend pages (frontend/src/pages/):
 - Primary: "Debugging / monitoring"
 - Listed responsibilities: "Uptime checks; OpenTelemetry (with Adrian)"
 
-**Note:** Report documents debugging/monitoring contributions. Git shows backend testing and routing work; documented monitoring role may represent additional non-code work (uptime monitoring, observability setup).
+**Note:** Report documents debugging/monitoring contributions. Git shows backend testing and routing work; documented monitoring role may represent additional non-code work (uptime monitoring, observability setup). Kept separate from Vivek per report's distinct naming, not based on email addresses alone.
 
 ---
 
@@ -598,7 +603,7 @@ Frontend pages (frontend/src/pages/):
 - Primary: "Debugging / observability; logging"
 - Listed responsibilities: "Structured logs; Sentry; API contract tests; correlation IDs"
 
-**Note:** Report documents debugging/observability contributions. Git shows 1 merge; additional work may be on un-merged branches or non-code (monitoring setup, observability tooling).
+**Note:** Report documents debugging/observability contributions. Git shows 1 merge; additional work may be on un-merged branches or non-code (monitoring setup, observability tooling). Kept separate from sunilkumar per report's distinct naming, not based on email addresses alone.
 
 ---
 
@@ -1064,7 +1069,7 @@ The following features appear in **design specifications but are NOT fully imple
 
 1. **Report period vs. current repository state**
    - Report dates (confirmed): Delivery 3 August 2026, Regression 12 August 2026, Submission 14 August 2026
-   - Evidence handoff analyzes current `main` branch (7 November 2026)
+   - Evidence handoff analyzes current `main` branch (7 November 2026 UTC / 8 November 2026 Europe/Berlin)
    - Report documents project state as of August 2026
    - Current audit reflects November 2026 implementation state
    - Preserve report's historical data separately; note implementation changes between periods

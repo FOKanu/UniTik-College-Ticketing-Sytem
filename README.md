@@ -117,19 +117,21 @@ Developer (workstream/feature branch)
 
 ## 🚀 Features
 
-### ✅ Implemented (Code Present with Test Coverage)
-- **Authentication System** — JWT-based auth with role guards (Student, Staff, Admin), rate limiting on login/register. Tests: test_auth.py, test_security.py, test_rbac.py (477 lines).
-- **Ticket Management** — Full CRUD, status lifecycle (Open → In Progress → Resolved), category-based department routing with keyword matching. Tests: test_tickets.py, test_ticket_routing.py (447 lines).
-- **AI Chat Assistant** — SSE streaming, conversation history, quick/detailed answer modes. Implementation present with test files (test_chat.py, test_chat_rag.py, 457 lines). **Runtime not verified in this audit.**
-- **Chat-to-Ticket Escalation** — Implementation present with LLM suggestion of subject and category. Test coverage included in chat tests. **Runtime not verified in this audit.**
-- **FAQ Knowledge Base** — Semantic search with pgvector, bilingual markdown content (EN/DE), ingestion pipeline. Tests: test_kb_*.py files (530+ lines). **Runtime not verified in this audit.**
-- **Multi-Role Access Control** — Students see only their tickets; internal comments hidden from students. Enforced in services layer with RBAC tests.
-- **Internationalization** — English and German locales with manual language switching. Tests: i18n.test.tsx (122 lines).
+### ✅ Implemented (Code Present with Test Files)
+- **Authentication System** — JWT-based auth with role guards (Student, Staff, Admin), rate limiting on login/register. Test files: test_auth.py, test_security.py, test_rbac.py (477 lines).
+- **Ticket Management** — Full CRUD, status lifecycle (Open → In Progress → Resolved), category-based department routing with keyword matching. Test files: test_tickets.py, test_ticket_routing.py (447 lines).
+- **AI Chat Assistant** — SSE streaming, conversation history, quick/detailed answer modes. Implementation present with test files (test_chat.py, test_chat_rag.py, 457 lines). **Tests not run in this audit; runtime not verified.**
+- **Chat-to-Ticket Escalation** — Implementation present with LLM suggestion of subject and category. Test files included in chat tests. **Tests not run in this audit; runtime not verified.**
+- **FAQ Knowledge Base** — Semantic search with pgvector, bilingual markdown content (EN/DE), ingestion pipeline. Test files: test_kb_*.py files (530+ lines). **Tests not run in this audit; runtime not verified.**
+- **Multi-Role Access Control** — Students see only their tickets; internal comments hidden from students. Enforced in services layer with RBAC test files.
+- **Internationalization** — English and German locales with manual language switching. Test files: i18n.test.tsx (122 lines).
 - **Dark Mode** — Theme selector with persistence (theme store + CSS variables).
 - **Multi-Institution Branding** — Institution picker with theme support (institution store).
 - **Health Monitoring** — LLM provider health check endpoint. Graceful degradation path present.
 - **Audit Logging** — Ticket lifecycle event tracking foundation.
 - **Docker Deployment** — Postgres (pgvector), Redis, backend, frontend in docker-compose.yml.
+
+**Note:** Test file line counts indicate file size, not measured code coverage. Tests were not executed in this audit session.
 
 ### 🚧 Partial / Foundation
 - **Notifications** — Backend route exists; email/push delivery in development
@@ -151,14 +153,15 @@ Developer (workstream/feature branch)
 
 **Francis Kanu** ([@FOKanu](https://github.com/FOKanu)) — **Main Project Owner, Project Manager, and Lead Engineer Throughout Development**
 
-Francis is the main project owner who founded and leads the UniTik project, serving as Project Manager and Lead Engineer throughout development. His contributions include:
+Francis Kanu is the main project owner who founded and leads the UniTik project, serving as Project Manager and Lead Engineer throughout development. Co-authored the project report with Hunain Khan (report delivery 3 August 2026, submission 14 August 2026).
+
+**Git-evidenced contributions** (attributable to git identities "Francis Okorie", "FOKanu", "Francis Kanu"; mapping to Francis Kanu inferred from name similarity and @FOKanu association):
 - Designed and implemented the AI chat assistant with RAG-based FAQ retrieval
 - Architected the LLM integration layer supporting Ollama, OpenAI, and Gemini providers
 - Created the three-gate git workflow (workstream → debugging → PM → main) that enabled parallel team development
-- Built the chat-to-ticket escalation system with intelligent LLM-based categorization
+- Built the chat-to-ticket escalation system with LLM-based category suggestion
 - Led DevOps setup: Docker orchestration, CI/CD pipelines, and workstream path guards
 - Contributed to frontend chat UI, API client adapters, and design system foundations
-- Co-authored the project report with Hunain
 
 ### Core Development Team
 
@@ -191,9 +194,9 @@ Francis is the main project owner who founded and leads the UniTik project, serv
 
 **Arshdeep Singh** — UI/UX prototyping and QA audit (report-documented, August 2026). Git evidence shows tooling contributions: enhanced workstream path guard with merge conflict detection, database branch guards, and multi-university branch protection (158 lines of path guard tests).
 
-**sunilkumar** — Backend testing and routing (git evidence: 7 commits). Fixed department model test suite and implemented ticket routing engine service. Report-documented (August 2026): Debugging and monitoring work.
+**sunilkumar** — Backend testing and routing (git evidence: 7 commits under sunilkumar/sunilkumar387388-rgb identities). Fixed department model test suite and implemented ticket routing engine service. Report-documented (August 2026): Debugging and monitoring work. Kept separate from Vivek per report's distinct naming.
 
-**Vivek (SIRVK22)** — Debugging and observability (report-documented, August 2026). Git shows 1 PR merge; contributions may include monitoring setup, observability tooling, or work on un-merged branches.
+**Vivek (SIRVK22)** — Debugging and observability (report-documented, August 2026). Git shows 1 PR merge (SIRVK22 identity); contributions may include monitoring setup, observability tooling, or work on un-merged branches. Kept separate from sunilkumar per report's distinct naming.
 
 ### Additional Contributors
 
@@ -327,7 +330,7 @@ npm test
 npm run lint
 ```
 
-**Test Coverage:**
+**Test Files Present:**
 - **29 backend test files**, 3,715 lines total
 - Rate limiting: 486 lines (5 test files covering concurrency, failures, integration, timing, unit)
 - Security & RBAC: 416 lines
@@ -335,6 +338,8 @@ npm run lint
 - Chat & RAG: 457 lines
 - KB ingestion: 530+ lines
 - Frontend: i18n tests, API client tests, component tests
+
+**Note:** Line counts indicate test file size, not measured code coverage. Tests were not executed in this audit session.
 
 ---
 
