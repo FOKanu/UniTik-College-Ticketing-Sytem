@@ -3,7 +3,11 @@
 Aligned to the Studierendenportal look (steel/sky blues, medium gray nav, dark text, white ground).
 
 Source reference: mdh University of Applied Sciences student portal.
-Figma file: [College Ticketing System - Wireframes](https://www.figma.com/design/eMdAoJ0lMeFkwPk8TAZviQ/College-Ticketing-System---Wireframes?node-id=85-4)
+Figma file: 
+
+1. [University Ticketing App - Prototype UI Design](https://www.figma.com/design/VOVfOFvi2yGnlkOOr0krqr/University-Ticketing-App---Prototype-UI-Design?node-id=13-3&m=dev)
+
+2. [College Ticketing System - Frontend and Backend Workflow](https://www.figma.com/board/9zP8dqNtutIKOyErAioB10/College-Ticketing-System---Frontend-and-Backend-Workflow?node-id=0-1&t=lOJRVy7GSZmoGcES-1)
 
 ## Color tokens
 
