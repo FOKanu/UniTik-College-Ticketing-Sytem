@@ -19,7 +19,7 @@ if [ ! -d backend/.venv ]; then
 fi
 # shellcheck disable=SC1091
 source backend/.venv/bin/activate
-pip install -r requirements-dev.txt
+pip install -r backend/requirements-dev.txt
 
 echo "Installing frontend dependencies..."
 (cd frontend && npm install)
