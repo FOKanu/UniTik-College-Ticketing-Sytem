@@ -1,3 +1,5 @@
+import logging
+
 from sqlalchemy import select
 from sqlalchemy.ext.asyncio import AsyncSession
 from sqlalchemy.orm import selectinload
@@ -34,13 +36,18 @@ def _user_to_response(user: User) -> UserResponse:
     )
 
 
+security_log = logging.getLogger("security")
+
+
 async def login(db: AsyncSession, data: LoginRequest) -> AuthTokenResponse:
     result = await db.execute(
         select(User).options(selectinload(User.department)).where(User.email == data.email)
     )
     user = result.scalar_one_or_none()
     if not user or not user.passwordHash or not verify_password(data.password, user.passwordHash):
+        security_log.warning("login failed email=%s", data.email)
         raise UnauthorizedError("Invalid email or password")
+    security_log.info("login ok user_id=%s role=%s", user.id, user.role.value)
     token = create_access_token(user.id, {"role": user.role.value})
     return AuthTokenResponse(token=token, user=_user_to_response(user))
 

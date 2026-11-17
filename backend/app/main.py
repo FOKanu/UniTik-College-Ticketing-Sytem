@@ -1,3 +1,5 @@
+import logging
+
 from fastapi import FastAPI, Request
 from fastapi.middleware.cors import CORSMiddleware
 from fastapi.responses import JSONResponse
@@ -8,6 +10,7 @@ from app.core.exceptions import AppError
 from app.core.responses import error_response, success_response
 
 API_PREFIX = "/api/v1"
+logging.basicConfig(level=logging.INFO, format="%(asctime)s %(name)s %(levelname)s %(message)s")
 
 
 def create_app() -> FastAPI:
@@ -34,6 +37,15 @@ def create_app() -> FastAPI:
 
     @app.exception_handler(AppError)
     async def app_error_handler(_request: Request, exc: AppError) -> JSONResponse:
+        if exc.status_code in (401, 403):
+            client = _request.client.host if _request.client else "unknown"
+            logging.getLogger("security").warning(
+                "access denied status=%s method=%s path=%s ip=%s",
+                exc.status_code,
+                _request.method,
+                _request.url.path,
+                client,
+            )
         return error_response(exc.message, status_code=exc.status_code, details=exc.details)
 
     @app.exception_handler(Exception)
