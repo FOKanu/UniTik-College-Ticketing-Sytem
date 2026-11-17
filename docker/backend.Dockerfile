@@ -15,6 +15,12 @@ COPY scripts ./scripts
 
 RUN pip install --no-cache-dir -r requirements-dev.txt
 
+# Run as a non-root user
+RUN useradd --create-home --uid 1000 appuser \
+    && mkdir -p /app/uploads \
+    && chown -R appuser:appuser /app
+USER appuser
+
 EXPOSE 4000
 
 CMD ["sh", "-c", "alembic upgrade head && python -m scripts.seed && uvicorn app.main:app --host 0.0.0.0 --port 4000 --reload"]
