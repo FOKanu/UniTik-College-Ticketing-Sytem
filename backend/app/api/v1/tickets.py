@@ -2,6 +2,7 @@ from fastapi import APIRouter, File, UploadFile
 from fastapi.responses import FileResponse
 
 from app.core.deps import CurrentUser, DbSession
+from app.core.rate_limit import rate_limit
 from app.core.responses import success_response
 from app.schemas.tickets import CommentCreate, TicketCreate, TicketUpdate
 from app.services import attachments as attachment_service
@@ -70,7 +71,10 @@ async def list_attachments(db: DbSession, user: CurrentUser, ticket_id: str):
     )
 
 
-@router.post("/{ticket_id}/attachments")
+@router.post(
+    "/{ticket_id}/attachments",
+    dependencies=[rate_limit(max_requests=10, window_seconds=60)],
+)
 async def upload_attachment(
     db: DbSession,
     user: CurrentUser,
@@ -85,12 +89,8 @@ async def upload_attachment(
 
 
 @router.get("/{ticket_id}/attachments/{attachment_id}")
-async def download_attachment(
-    db: DbSession, user: CurrentUser, ticket_id: str, attachment_id: str
-):
-    attachment = await attachment_service.get_attachment(
-        db, ticket_id, attachment_id, user
-    )
+async def download_attachment(db: DbSession, user: CurrentUser, ticket_id: str, attachment_id: str):
+    attachment = await attachment_service.get_attachment(db, ticket_id, attachment_id, user)
     path = attachment_service.resolve_download_path(attachment)
     response = attachment_service.attachment_to_response(attachment)
     return FileResponse(
@@ -101,8 +101,6 @@ async def download_attachment(
 
 
 @router.delete("/{ticket_id}/attachments/{attachment_id}")
-async def delete_attachment(
-    db: DbSession, user: CurrentUser, ticket_id: str, attachment_id: str
-):
+async def delete_attachment(db: DbSession, user: CurrentUser, ticket_id: str, attachment_id: str):
     await attachment_service.delete_attachment(db, ticket_id, attachment_id, user)
     return success_response({"deleted": True})

@@ -1,19 +1,22 @@
 from pathlib import Path
 
 from fastapi import UploadFile
-from sqlalchemy import select
+from sqlalchemy import func, select
 from sqlalchemy.ext.asyncio import AsyncSession
 
-from app.core.exceptions import NotFoundError
+from app.core.config import get_settings
+from app.core.exceptions import BadRequestError, NotFoundError
 from app.models import Attachment, User
 from app.schemas.tickets import AttachmentResponse
 from app.services import storage as storage_service
 from app.services import tickets as ticket_service
 
+MAX_FILES_PER_TICKET = 10
+MAX_BYTES_PER_TICKET = 30 * 1024 * 1024
+CHUNK_SIZE = 1024 * 1024
 
-async def list_attachments(
-    db: AsyncSession, ticket_id: str, user: User
-) -> list[Attachment]:
+
+async def list_attachments(db: AsyncSession, ticket_id: str, user: User) -> list[Attachment]:
     await ticket_service.get_ticket(db, ticket_id, user)
     result = await db.execute(
         select(Attachment)
@@ -28,9 +31,7 @@ async def get_attachment(
 ) -> Attachment:
     await ticket_service.get_ticket(db, ticket_id, user)
     result = await db.execute(
-        select(Attachment).where(
-            Attachment.id == attachment_id, Attachment.ticketId == ticket_id
-        )
+        select(Attachment).where(Attachment.id == attachment_id, Attachment.ticketId == ticket_id)
     )
     attachment = result.scalar_one_or_none()
     if not attachment:
@@ -45,7 +46,31 @@ async def create_attachment(
     # their own ticket; staff/admin on any).
     await ticket_service.get_ticket(db, ticket_id, user)
 
-    payload = await upload.read()
+    # quota: files and bytes already stored for this ticket
+    quota = await db.execute(
+        select(
+            func.count(Attachment.id),
+            func.coalesce(func.sum(Attachment.fileSizeBytes), 0),
+        ).where(Attachment.ticketId == ticket_id)
+    )
+    file_count, total_bytes = quota.one()
+    if file_count >= MAX_FILES_PER_TICKET:
+        raise BadRequestError(f"This ticket already has {MAX_FILES_PER_TICKET} attachments")
+
+    # read in chunks and stop as soon as the upload is too big
+    settings = get_settings()
+    payload = b""
+    while True:
+        chunk = await upload.read(CHUNK_SIZE)
+        if not chunk:
+            break
+        payload += chunk
+        if len(payload) > settings.max_upload_bytes:
+            raise BadRequestError(f"File exceeds the {settings.max_upload_mb} MB upload limit")
+
+    if total_bytes + len(payload) > MAX_BYTES_PER_TICKET:
+        raise BadRequestError("Attachment storage limit for this ticket reached")
+
     relative_path, file_type = storage_service.save_ticket_bytes(
         ticket_id, upload.filename or "upload", payload
     )
