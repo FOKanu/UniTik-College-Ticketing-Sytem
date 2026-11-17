@@ -14,6 +14,10 @@ COPY frontend/ ./
 COPY docker/frontend-entrypoint.sh /usr/local/bin/frontend-entrypoint.sh
 RUN chmod +x /usr/local/bin/frontend-entrypoint.sh
 
+# Run as the non-root user that ships with the node image
+RUN chown -R node:node /app
+USER node
+
 EXPOSE 5173
 
 ENTRYPOINT ["/usr/local/bin/frontend-entrypoint.sh"]
