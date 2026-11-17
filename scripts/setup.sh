@@ -5,6 +5,7 @@ echo "Setting up University Support Ticketing System (FastAPI v2)..."
 
 cp -n backend/.env.example backend/.env || true
 cp -n frontend/.env.example frontend/.env || true
+[ -f .env ] || echo "POSTGRES_PASSWORD=$(openssl rand -hex 24)" > .env
 
 echo "Installing root dependencies (husky/lint-staged)..."
 npm install
