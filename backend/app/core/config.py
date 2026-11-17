@@ -1,12 +1,13 @@
 from functools import lru_cache
 
+from pydantic import model_validator
 from pydantic_settings import BaseSettings, SettingsConfigDict
 
 
 class Settings(BaseSettings):
     model_config = SettingsConfigDict(env_file=".env", extra="ignore")
 
-    environment: str = "development"
+    environment: str = "production"
     port: int = 4000
     database_url: str = (
         "postgresql+asyncpg://uts_user:CHANGE_ME@localhost:5432/university_ticketing"
@@ -33,6 +34,12 @@ class Settings(BaseSettings):
     @property
     def is_development(self) -> bool:
         return self.environment == "development"
+
+    @model_validator(mode="after")
+    def reject_default_jwt_secret_outside_development(self):
+        if not self.is_development and self.jwt_secret == "replace-me-with-a-strong-secret":
+            raise ValueError("JWT_SECRET must be set when ENVIRONMENT is not 'development'")
+        return self
 
     @property
     def max_upload_bytes(self) -> int:
