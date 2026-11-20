@@ -200,3 +200,45 @@ async def test_garbage_token_is_rejected(client):
         "/api/v1/users/me", headers={"Authorization": "Bearer not-a-real-token"}
     )
     assert response.status_code == 401
+
+
+@pytest.mark.asyncio
+@integration
+async def test_admin_cannot_change_role_in_another_tenant(client):
+    import uuid
+
+    from app.db.base import Role
+    from app.db.session import async_session_factory
+    from app.models import Tenant, User
+
+    suffix = uuid.uuid4().hex[:10]
+    foreign_tenant_id = f"tenant-role-{suffix}"
+    async with async_session_factory() as db:
+        db.add(
+            Tenant(
+                id=foreign_tenant_id,
+                name=f"Role isolation {suffix}",
+                shortCode=f"role-{suffix}",
+            )
+        )
+        target = User(
+            tenantId=foreign_tenant_id,
+            email=f"target-{suffix}@foreign.example",
+            displayName="Foreign target",
+            role=Role.STUDENT,
+        )
+        db.add(target)
+        await db.commit()
+        target_id = target.id
+
+    admin_token, _ = await _register_and_login(client, role="ADMIN")
+    response = await client.patch(
+        f"/api/v1/users/{target_id}/role",
+        json={"role": "ADMIN"},
+        headers={"Authorization": f"Bearer {admin_token}"},
+    )
+    assert response.status_code == 404
+
+    async with async_session_factory() as db:
+        unchanged = await db.get(User, target_id)
+        assert unchanged.role is Role.STUDENT

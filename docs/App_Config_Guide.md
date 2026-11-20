@@ -18,8 +18,8 @@ cd College-Ticketing-Sytem
 npm run setup
 ```
 
-`npm run setup` copies `.env.example` → `.env` when missing and installs root, backend, and
-frontend dependencies.
+`npm run setup` copies the root, backend, and frontend `.env.example` files to their local `.env`
+files when missing, then installs root, backend, and frontend dependencies.
 
 ## 2. Start the database
 
@@ -33,22 +33,25 @@ docker compose up -d postgres
 
 ## 3. Backend env (`backend/.env`)
 
-Open `backend/.env` (created from `.env.example`) and set at least:
+Open the root `.env` and `backend/.env` (created from their `.env.example` files). Set a strong
+`POSTGRES_PASSWORD` in the root `.env`, and use the same password in `DATABASE_URL` in `backend/.env`.
+Then configure the backend values below:
 
 ```bash
 LLM_PROVIDER=ollama
 OLLAMA_OPENAI_BASE_URL=https://muc-a-3099.tail129a23.ts.net/v1
-OLLAMA_API_KEY=<ask the team / GPU runbook — PUBLIC key, NOT "replace-me">
+OLLAMA_API_KEY=<real PUBLIC key from the GPU runbook>
 OLLAMA_MODEL=qwen3:8b
 OLLAMA_KEEP_ALIVE=10m
 
-JWT_SECRET=any-long-random-string-for-local-dev
-DATABASE_URL=postgresql+asyncpg://uts_user:uts_password@localhost:5432/university_ticketing
+JWT_SECRET=<long random secret generated for this environment>
+DATABASE_URL=postgresql+asyncpg://uts_user:<same root POSTGRES_PASSWORD>@localhost:5432/university_ticketing
 CORS_ORIGIN=http://localhost:5173
 ```
 
-**Important:** without a real `OLLAMA_API_KEY`, chat will say the assistant is unavailable.
-Never commit `backend/.env` — keep the key only on your machine.
+**Important:** the shared remote Funnel endpoint requires a real `OLLAMA_API_KEY`. For local
+unauthenticated Ollama, leave it empty. Never commit either `.env` file — keep credentials only on
+your machine.
 
 Get the PUBLIC key from the GPU runbook (`print-credentials.sh` PUBLIC section) or ask Francis
 in the team chat.

@@ -40,9 +40,11 @@ async def list_all_users(db: DbSession, user: StaffOrAdmin):
 
 @router.patch("/{user_id}/role")
 async def update_user_role(
-    db: DbSession, _user: AdminOnly, user_id: str, body: RoleUpdateRequest
+    db: DbSession, user: AdminOnly, user_id: str, body: RoleUpdateRequest
 ):
-    updated = await users_service.update_role(db, user_id, body)
+    updated = await users_service.update_role(
+        db, user_id, body, tenant_id=user.tenantId
+    )
     return success_response(
         users_service.user_to_response(updated).model_dump(mode="json")
     )

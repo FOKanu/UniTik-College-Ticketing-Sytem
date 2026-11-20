@@ -42,7 +42,9 @@ async def test_retrieve_marks_strong_hits(monkeypatch):
         "search_faq_vector",
         AsyncMock(return_value=hits),
     )
-    bundle = await chat_service.retrieve_for_query(SimpleNamespace(), "password reset")
+    bundle = await chat_service.retrieve_for_query(
+        SimpleNamespace(), "password reset", tenant_id="tenant-test"
+    )
     assert bundle.retrieval_weak is False
     assert bundle.citations[0].id == "faq-it-support-001"
     assert "faq-it-support-001" in bundle.kb_context
@@ -62,11 +64,11 @@ async def test_retrieve_uses_authoritative_german_locale(monkeypatch):
     monkeypatch.setattr(chat_service.kb_service, "search_faq_vector", search)
 
     bundle = await chat_service.retrieve_for_query(
-        SimpleNamespace(), "Passwort vergessen", language="de"
+        SimpleNamespace(), "Passwort vergessen", tenant_id="tenant-test", language="de"
     )
 
     search.assert_awaited_once_with(
-        ANY, [0.1] * 8, limit=chat_service.RAG_TOP_K, language="de"
+        ANY, [0.1] * 8, limit=chat_service.RAG_TOP_K, tenant_id="tenant-test", language="de"
     )
     assert bundle.citations == [
         chat_service.Citation(
@@ -100,7 +102,9 @@ async def test_retrieve_falls_back_to_text_search(monkeypatch):
         "search_faq",
         AsyncMock(return_value=hits),
     )
-    bundle = await chat_service.retrieve_for_query(SimpleNamespace(), "tuition")
+    bundle = await chat_service.retrieve_for_query(
+        SimpleNamespace(), "tuition", tenant_id="tenant-test"
+    )
     assert bundle.retrieval_weak is False
     assert bundle.citations[0].id == "faq-finance-001"
 
@@ -109,7 +113,9 @@ async def test_retrieve_falls_back_to_text_search(monkeypatch):
 async def test_retrieve_skips_chitchat_without_embedding(monkeypatch):
     embed = AsyncMock()
     monkeypatch.setattr(chat_service, "embed_text", embed)
-    bundle = await chat_service.retrieve_for_query(SimpleNamespace(), "Hello there")
+    bundle = await chat_service.retrieve_for_query(
+        SimpleNamespace(), "Hello there", tenant_id="tenant-test"
+    )
     assert bundle.retrieval_weak is False
     assert bundle.citations == []
     assert bundle.kb_context == chat_service.CHITCHAT_KB_CONTEXT
@@ -148,7 +154,7 @@ async def test_retrieve_weak_when_scores_low(monkeypatch):
         AsyncMock(return_value=hits),
     )
     bundle = await chat_service.retrieve_for_query(
-        SimpleNamespace(), "How do I fix something obscure?"
+        SimpleNamespace(), "How do I fix something obscure?", tenant_id="tenant-test"
     )
     assert bundle.retrieval_weak is True
     assert bundle.citations == []
@@ -174,7 +180,7 @@ async def test_retrieve_weak_non_support_stays_quiet(monkeypatch):
         AsyncMock(return_value=hits),
     )
     bundle = await chat_service.retrieve_for_query(
-        SimpleNamespace(), "Just wondering about the weather today overall"
+        SimpleNamespace(), "Just wondering about the weather today overall", tenant_id="tenant-test"
     )
     assert bundle.retrieval_weak is False
     assert bundle.citations == []

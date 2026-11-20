@@ -6,6 +6,7 @@ this module, which owns credentials, timeouts, and reasoning-token stripping.
 
 import json
 import logging
+import secrets
 from collections.abc import AsyncIterator, Iterable
 
 import httpx
@@ -94,7 +95,10 @@ def _get_client(config: ResolvedLLMConfig) -> AsyncOpenAI:
         http_client = httpx.AsyncClient(trust_env=False, timeout=config.timeout)
         client = AsyncOpenAI(
             base_url=config.base_url,
-            api_key=config.api_key,
+            # Ollama can run without authentication. The OpenAI SDK still requires
+            # a non-empty api_key, so provide an ephemeral value that is never
+            # stored in configuration or treated as a real credential.
+            api_key=config.api_key or secrets.token_urlsafe(32),
             timeout=config.timeout,
             max_retries=1,
             http_client=http_client,

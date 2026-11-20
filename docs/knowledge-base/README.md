@@ -73,7 +73,7 @@ language; matching English and German entries intentionally share a logical ID.
 
 ## Runtime architecture and validation
 
-The active application uses FastAPI with SQLAlchemy. The administrative ingester parses the canonical
+The active application uses FastAPI with SQLAlchemy. FAQ list, detail, and search endpoints require a valid access token and derive tenant scope from the authenticated user; callers cannot select another tenant. Chat RAG retrieval is scoped to the chat user's tenant. The administrative ingester parses the canonical
 Markdown, builds embeddings through the shared OpenAI-compatible LLM client in ``app.ai`` (same Funnel /
 OpenAI / Gemini credentials as chat), and stores FAQ rows in PostgreSQL with pgvector. Vectors must be
 exactly **768** finite floats to match ``FaqEntry.embedding`` (Ollama ``nomic-embed-text``; OpenAI
@@ -109,7 +109,7 @@ The pgvector column width is **768** (aligned with Ollama `nomic-embed-text`).
 | Embedding adapter | Implemented via ``app.ai.create_embedding`` (OpenAI-compatible ``/v1/embeddings``); enforces **768** dims |
 | Database ingestion | Implemented as explicit, atomic insert-or-update ingestion into PostgreSQL/pgvector |
 | Vector similarity query | Implemented in the service layer using cosine distance (`<=>`) |
-| Public `POST /api/v1/kb/search` | **Text search only**; it currently searches question/answer text with `ILIKE` |
+| Authenticated `POST /api/v1/kb/search` | **Tenant-scoped text search**; searches only the authenticated user's tenant question/answer text with `ILIKE` |
 | Chatbot RAG orchestration | Implemented with citations, score threshold, text fallback, and UI-language filtering |
 | Student and staff KB screens | May still use fixtures in `hybrid`/`mock` modes; live `/kb` exists for API mode |
 | Re-ranking, citations, score threshold, evaluation set | Not implemented |

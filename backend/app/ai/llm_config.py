@@ -13,6 +13,7 @@ Switch providers with ``LLM_PROVIDER``; nothing else in the codebase changes.
 from dataclasses import dataclass, field
 from enum import StrEnum
 from functools import lru_cache
+from urllib.parse import urlsplit
 
 from pydantic_settings import BaseSettings, SettingsConfigDict
 
@@ -44,11 +45,25 @@ class ResolvedLLMConfig:
 
     @property
     def is_configured(self) -> bool:
-        return bool(self.base_url and self.api_key and self.model)
+        if self.provider is LLMProvider.OLLAMA:
+            hostname = urlsplit(self.base_url).hostname
+            has_required_key = hostname in {"localhost", "127.0.0.1", "::1"} or bool(
+                self.api_key
+            )
+        else:
+            has_required_key = bool(self.api_key)
+        return bool(self.base_url and has_required_key and self.model)
 
     @property
     def embeddings_configured(self) -> bool:
-        return bool(self.base_url and self.api_key and self.embedding_model)
+        if self.provider is LLMProvider.OLLAMA:
+            hostname = urlsplit(self.base_url).hostname
+            has_required_key = hostname in {"localhost", "127.0.0.1", "::1"} or bool(
+                self.api_key
+            )
+        else:
+            has_required_key = bool(self.api_key)
+        return bool(self.base_url and has_required_key and self.embedding_model)
 
     def public_summary(self) -> dict:
         """Safe to return over HTTP — never includes the API key."""
@@ -86,7 +101,7 @@ class LLMSettings(BaseSettings):
     ollama_host: str = OLLAMA_BASE_URL
     ollama_base_url: str = ""
     ollama_openai_base_url: str = ""
-    ollama_api_key: str = "ollama"
+    ollama_api_key: str = ""
     ollama_model: str = "qwen3:8b"
     ollama_keep_alive: str = "10m"
 
@@ -146,7 +161,7 @@ class LLMSettings(BaseSettings):
         return ResolvedLLMConfig(
             provider=LLMProvider.OLLAMA,
             base_url=self._ollama_openai_url(),
-            api_key=self.ollama_api_key or "ollama",
+            api_key=self.ollama_api_key,
             model=self.ollama_model,
             # keep_alive: keep the model resident between turns.
             # think=false: qwen3-style models otherwise burn the token budget

@@ -202,7 +202,9 @@ def _format_kb_context(hits: list[FaqSearchResult], language: str = "en") -> str
     )
 
 
-async def retrieve_for_query(db: AsyncSession, query: str, language: str = "en") -> RetrievalBundle:
+async def retrieve_for_query(
+    db: AsyncSession, query: str, *, tenant_id: str, language: str = "en"
+) -> RetrievalBundle:
     """Vector search with text fallback. Skips RAG chrome for chitchat.
 
     Weak hits no longer surface "closest articles" — empty citations keep the
@@ -218,10 +220,14 @@ async def retrieve_for_query(db: AsyncSession, query: str, language: str = "en")
     hits: list[FaqSearchResult] = []
     try:
         vector = await embed_text(query)
-        hits = await kb_service.search_faq_vector(db, vector, limit=RAG_TOP_K, language=language)
+        hits = await kb_service.search_faq_vector(
+            db, vector, limit=RAG_TOP_K, tenant_id=tenant_id, language=language
+        )
     except EmbeddingProviderError as exc:
         logger.warning("Embedding retrieval failed; falling back to text search: %s", exc)
-        hits = await kb_service.search_faq(db, query, limit=RAG_TOP_K, language=language)
+        hits = await kb_service.search_faq(
+            db, query, limit=RAG_TOP_K, tenant_id=tenant_id, language=language
+        )
 
     strong = [hit for hit in hits if hit.score >= RAG_MIN_SCORE]
     if strong:
@@ -254,7 +260,9 @@ async def start_user_turn(
     await db.commit()
     await db.refresh(user_message)
 
-    retrieval = await retrieve_for_query(db, data.content, data.language)
+    retrieval = await retrieve_for_query(
+        db, data.content, tenant_id=user.tenantId, language=data.language
+    )
     history = await _recent_history(db, conversation.id)
     prompt = build_messages(history, data.mode, kb_context=retrieval.kb_context)
     return user_message, prompt, retrieval

@@ -11,19 +11,19 @@ from app.services.tenants import DEFAULT_TENANT_ID
 
 
 async def list_faq(
-    db: AsyncSession, *, tenant_id: str | None = None, language: str | None = None
+    db: AsyncSession, *, tenant_id: str, language: str | None = None
 ) -> list[FaqEntry]:
-    stmt = select(FaqEntry).order_by(FaqEntry.createdAt)
-    if tenant_id is not None:
-        stmt = stmt.where(FaqEntry.tenantId == tenant_id)
+    stmt = select(FaqEntry).where(FaqEntry.tenantId == tenant_id).order_by(FaqEntry.createdAt)
     if language is not None:
         stmt = stmt.where(FaqEntry.language == language)
     result = await db.execute(stmt)
     return list(result.scalars().all())
 
 
-async def get_faq(db: AsyncSession, faq_id: str) -> FaqEntry:
-    result = await db.execute(select(FaqEntry).where(FaqEntry.id == faq_id))
+async def get_faq(db: AsyncSession, faq_id: str, *, tenant_id: str) -> FaqEntry:
+    result = await db.execute(
+        select(FaqEntry).where(FaqEntry.id == faq_id, FaqEntry.tenantId == tenant_id)
+    )
     entry = result.scalar_one_or_none()
     if not entry:
         raise NotFoundError("FAQ entry not found")
@@ -50,13 +50,14 @@ async def create_faq(db: AsyncSession, data: FaqCreate, *, user: User) -> FaqEnt
 
 
 async def search_faq(
-    db: AsyncSession, query: str, limit: int = 5, language: str = "en"
+    db: AsyncSession, query: str, limit: int = 5, *, tenant_id: str, language: str = "en"
 ) -> list[FaqSearchResult]:
     """Text search fallback when embeddings are not yet populated."""
     pattern = f"%{query}%"
     result = await db.execute(
         select(FaqEntry)
         .where(
+            FaqEntry.tenantId == tenant_id,
             FaqEntry.language == language,
             FaqEntry.question.ilike(pattern) | FaqEntry.answer.ilike(pattern),
         )
@@ -76,18 +77,29 @@ async def search_faq(
 
 
 async def search_faq_vector(
-    db: AsyncSession, embedding: list[float], limit: int = 5, language: str = "en"
+    db: AsyncSession,
+    embedding: list[float],
+    limit: int = 5,
+    *,
+    tenant_id: str,
+    language: str = "en",
 ) -> list[FaqSearchResult]:
     sql = text("""
         SELECT "documentId" AS id, question, answer, category,
                1 - (embedding <=> :embedding) AS score
         FROM "FaqEntry"
-        WHERE embedding IS NOT NULL AND language = :language
+        WHERE embedding IS NOT NULL AND language = :language AND "tenantId" = :tenant_id
         ORDER BY embedding <=> :embedding
         LIMIT :limit
         """)
     result = await db.execute(
-        sql, {"embedding": str(embedding), "limit": limit, "language": language}
+        sql,
+        {
+            "embedding": str(embedding),
+            "limit": limit,
+            "language": language,
+            "tenant_id": tenant_id,
+        },
     )
     rows = result.mappings().all()
     return [
@@ -145,10 +157,11 @@ async def upsert_faq_entry(
 async def enqueue_reembed(
     db: AsyncSession,
     *,
+    tenant_id: str,
     missing_only: bool = False,
 ) -> int:
-    """Enqueue embedding jobs for FAQ rows. Returns number of jobs enqueued/reset."""
-    stmt = select(FaqEntry.id)
+    """Enqueue embedding jobs for FAQ rows belonging to one tenant."""
+    stmt = select(FaqEntry.id).where(FaqEntry.tenantId == tenant_id)
     if missing_only:
         stmt = stmt.where(FaqEntry.embedding.is_(None))
     result = await db.execute(stmt)

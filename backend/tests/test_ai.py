@@ -90,6 +90,24 @@ def test_provider_without_api_key_is_not_configured():
     assert not config.is_configured
 
 
+def test_local_ollama_does_not_need_a_placeholder_api_key():
+    config = LLMSettings(
+        ollama_host="http://127.0.0.1:11434",
+        ollama_openai_base_url="",
+        ollama_api_key="",
+    ).resolve()
+    assert config.api_key == ""
+    assert config.is_configured
+
+
+def test_remote_ollama_requires_a_real_api_key():
+    config = LLMSettings(
+        ollama_openai_base_url="https://ollama.example.com/v1",
+        ollama_api_key="",
+    ).resolve()
+    assert not config.is_configured
+
+
 def test_public_summary_never_leaks_the_api_key():
     config = LLMSettings(llm_provider=LLMProvider.OPENAI, openai_api_key="sk-secret").resolve()
     assert "sk-secret" not in str(config.public_summary())

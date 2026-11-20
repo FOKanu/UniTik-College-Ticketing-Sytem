@@ -3,6 +3,7 @@ set -e
 
 echo "Setting up University Support Ticketing System (FastAPI v2)..."
 
+cp -n .env.example .env || true
 cp -n backend/.env.example backend/.env || true
 cp -n frontend/.env.example frontend/.env || true
 

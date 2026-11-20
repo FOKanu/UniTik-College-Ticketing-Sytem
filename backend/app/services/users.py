@@ -113,9 +113,13 @@ async def list_users(db: AsyncSession, *, tenant_id: str) -> list[User]:
     return list(result.scalars().all())
 
 
-async def update_role(db: AsyncSession, user_id: str, data: RoleUpdateRequest) -> User:
+async def update_role(
+    db: AsyncSession, user_id: str, data: RoleUpdateRequest, *, tenant_id: str
+) -> User:
     result = await db.execute(
-        select(User).options(selectinload(User.department)).where(User.id == user_id)
+        select(User)
+        .options(selectinload(User.department))
+        .where(User.id == user_id, User.tenantId == tenant_id)
     )
     target = result.scalar_one_or_none()
     if not target:
