@@ -29,7 +29,7 @@
 .panel {
   width: min(360px, calc(100vw - 2rem));
   height: min(480px, calc(100vh - 8rem));
-  background: #fff;
+  background: var(--color-surface);
   border-radius: var(--radius-xl);
   box-shadow: var(--shadow-overlay);
   border: 1px solid var(--neutral-200);
@@ -193,7 +193,7 @@
   gap: 0.45rem;
   padding: 0.75rem 0.85rem 0.35rem;
   border-top: 1px solid var(--neutral-200);
-  background: #fff;
+  background: var(--color-surface);
 }
 
 .inputWrap {

@@ -155,7 +155,7 @@
   border: 1px solid var(--color-border);
   border-radius: var(--radius-sm);
   padding: 0.35rem 0.45rem;
-  background: #fff;
+  background: var(--color-surface);
   color: var(--color-text);
   max-width: 11rem;
 }

@@ -1,10 +1,14 @@
 import { createMockJwt } from '@/lib/auth'
-import { findMockAccount } from '@/mocks/data'
+import {
+  findMockAccount,
+  findMockAccountSecret,
+  registerMockAccount,
+} from '@/mocks/data'
 import { useAuthStore } from '@/stores/authStore'
-import type { Department, User, UserRole } from '@/types'
+import type { User, UserRole } from '@/types'
+import { type Envelope, toDepartment, unwrap } from './adapters'
 import { get, mockLatency, post, usesLiveAuth } from './client'
 import { ApiError } from './errors'
-import { type Envelope, unwrap } from './adapters'
 import type { LoginPayload, LoginResponse } from './types'
 
 interface BackendUser {
@@ -23,20 +27,20 @@ const ROLE_MAP: Record<string, UserRole> = {
   ADMIN: 'admin',
 }
 
-const DEPARTMENTS: Department[] = ['Academics', 'IT', 'Finance', 'Maintenance']
-
 function toUser(raw: BackendUser): User {
-  // Backend departments are free text ("IT Support — Tier 1"), the UI expects
-  // one of four buckets — anything else is left unset rather than guessed.
-  const department = DEPARTMENTS.find(
-    (known) => known.toLowerCase() === raw.department?.trim().toLowerCase(),
-  )
+  const role = ROLE_MAP[raw.role?.toUpperCase()] ?? 'student'
+  // Map free-text staff departments ("IT Support — Tier 1") into UI buckets.
+  // Students keep academic majors off the support-department field.
+  const department =
+    role === 'agent' || role === 'admin'
+      ? toDepartment(raw.department)
+      : undefined
 
   return {
     id: raw.id,
     email: raw.email,
     displayName: raw.displayName,
-    role: ROLE_MAP[raw.role?.toUpperCase()] ?? 'student',
+    role,
     ...(department ? { department } : {}),
   }
 }
@@ -46,7 +50,16 @@ export const authApi = {
     if (!usesLiveAuth()) {
       await mockLatency()
       const account = findMockAccount(payload.email)
+      const secret = findMockAccountSecret(payload.email)
       if (!account || !payload.password) {
+        throw new ApiError('Invalid email or password.', {
+          code: 'UNAUTHORIZED',
+          status: 401,
+        })
+      }
+      // Seeded fixtures accept any non-empty password; registered accounts
+      // must match the password chosen at sign-up.
+      if (secret !== undefined && secret !== payload.password) {
         throw new ApiError('Invalid email or password.', {
           code: 'UNAUTHORIZED',
           status: 401,
@@ -95,12 +108,19 @@ export const authApi = {
   }): Promise<LoginResponse> {
     if (!usesLiveAuth()) {
       await mockLatency()
+      if (findMockAccount(payload.email)) {
+        throw new ApiError('An account with this email already exists.', {
+          code: 'VALIDATION',
+          status: 400,
+        })
+      }
       const user = {
         id: `user-${Date.now()}`,
         email: payload.email,
         displayName: payload.displayName || 'New Student',
         role: 'student' as const,
       }
+      registerMockAccount(user, payload.password)
       return {
         accessToken: createMockJwt(user),
         user,

@@ -1,3 +1,5 @@
+import logging
+
 from sqlalchemy import select
 from sqlalchemy.ext.asyncio import AsyncSession
 from sqlalchemy.orm import selectinload
@@ -8,6 +10,8 @@ from app.models import Department, User
 from app.schemas.auth import UserResponse
 from app.schemas.users import ProfileUpdateRequest, RoleUpdateRequest, StaffMemberResponse
 from app.services import departments as departments_service
+
+security_log = logging.getLogger("security")
 
 STAFF_ROLES = (Role.STAFF, Role.ADMIN)
 
@@ -62,9 +66,7 @@ async def list_staff_departments(db: AsyncSession, *, tenant_id: str) -> list[st
     return [row[0] for row in result.all() if row[0]]
 
 
-async def get_assignable_user(
-    db: AsyncSession, user_id: str, *, tenant_id: str
-) -> User:
+async def get_assignable_user(db: AsyncSession, user_id: str, *, tenant_id: str) -> User:
     """Load a user that is allowed to own tickets (STAFF or ADMIN) in the tenant."""
     result = await db.execute(
         select(User)
@@ -106,9 +108,7 @@ async def update_profile(db: AsyncSession, user: User, data: ProfileUpdateReques
 
 async def list_users(db: AsyncSession, *, tenant_id: str) -> list[User]:
     result = await db.execute(
-        select(User)
-        .options(selectinload(User.department))
-        .where(User.tenantId == tenant_id)
+        select(User).options(selectinload(User.department)).where(User.tenantId == tenant_id)
     )
     return list(result.scalars().all())
 
@@ -120,6 +120,9 @@ async def update_role(db: AsyncSession, user_id: str, data: RoleUpdateRequest) -
     target = result.scalar_one_or_none()
     if not target:
         raise NotFoundError("User not found")
+    security_log.warning(
+        "role change target_id=%s old=%s new=%s", target.id, target.role.value, data.role.value
+    )
     target.role = data.role
     await db.commit()
     await db.refresh(target, ["department"])

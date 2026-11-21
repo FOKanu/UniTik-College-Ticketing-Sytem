@@ -10,7 +10,7 @@
 }
 
 .formCard {
-  background: #fff;
+  background: var(--color-surface);
   border: 1px solid var(--color-border);
   border-radius: 12px;
   padding: 1.3rem;
@@ -60,7 +60,7 @@
 .pill,
 .pillActive {
   border: 1px solid var(--color-border);
-  background: #fff;
+  background: var(--color-surface);
   border-radius: var(--radius-pill);
   padding: 0.45rem 0.85rem;
   font: inherit;

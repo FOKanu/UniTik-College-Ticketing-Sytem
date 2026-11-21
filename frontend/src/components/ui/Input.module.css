@@ -38,11 +38,11 @@
 }
 
 .inputError {
-  border-color: #a22633;
+  border-color: var(--color-danger);
 }
 
 .inputError:focus {
-  border-color: #a22633;
+  border-color: var(--color-danger);
   box-shadow: 0 0 0 3px rgba(162, 38, 51, 0.12);
 }
 
@@ -54,6 +54,6 @@
 
 .error {
   font-size: var(--text-caption);
-  color: #a22633;
+  color: var(--color-danger);
   font-weight: 600;
 }

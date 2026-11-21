@@ -103,6 +103,55 @@
   -moz-osx-font-smoothing: grayscale;
 }
 
+html[data-theme='dark'] {
+  color-scheme: dark;
+
+  /* Soft brand tints for dark surfaces */
+  --brand-50: #122636;
+  --brand-100: #173247;
+  --brand-200: #1f4660;
+
+  /* Remap neutrals so existing --neutral-* usages flip with the theme.
+     0 stays the elevated “paper” surface; 50 stays the page wash. */
+  --neutral-0: #161b22;
+  --neutral-50: #0d1117;
+  --neutral-100: #1c2430;
+  --neutral-200: #2a3444;
+  --neutral-300: #3d4a5c;
+  --neutral-400: #8b95a5;
+  --neutral-500: #9aa3b2;
+  --neutral-600: #c2c8d1;
+  --neutral-700: #d5dae2;
+  --neutral-800: #e8ebf0;
+  --neutral-900: #f4f6f8;
+
+  --color-primary: var(--brand-400);
+  --color-primary-hover: var(--brand-300);
+  --color-primary-soft: var(--brand-50);
+  --color-primary-deep: var(--brand-200);
+
+  --color-bg: var(--neutral-50);
+  --color-bg-accent: var(--neutral-100);
+  --color-surface: var(--neutral-0);
+  --color-surface-muted: #1a222d;
+  --color-text: var(--neutral-900);
+  --color-text-muted: var(--neutral-500);
+  --color-border: var(--neutral-200);
+
+  --color-danger: #f07178;
+  --color-danger-bg: #3a1c22;
+  --color-warning: #e6b450;
+  --color-warning-bg: #3a2e14;
+  --color-success: #6bcf8e;
+  --color-success-bg: #173526;
+  --color-info: var(--brand-300);
+  --color-info-bg: #152536;
+
+  --shadow-card: 0 1px 2px rgba(0, 0, 0, 0.35);
+  --shadow-raised: 0 4px 14px rgba(0, 0, 0, 0.4);
+  --shadow-overlay: 0 12px 32px rgba(0, 0, 0, 0.55);
+}
+
 *,
 *::before,
 *::after {

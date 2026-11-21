@@ -32,10 +32,26 @@ export const mockAccounts: User[] = [
 ]
 
 export function findMockAccount(email: string): User | undefined {
-  return mockAccounts.find(
-    (account) => account.email.toLowerCase() === email.trim().toLowerCase(),
+  const normalized = email.trim().toLowerCase()
+  return (
+    mockAccounts.find((account) => account.email.toLowerCase() === normalized) ??
+    registeredMockAccounts.find((account) => account.email.toLowerCase() === normalized)
   )
 }
+
+/** Password for accounts created via Sign Up in mock mode; undefined for fixtures. */
+export function findMockAccountSecret(email: string): string | undefined {
+  const normalized = email.trim().toLowerCase()
+  return registeredMockSecrets.get(normalized)
+}
+
+export function registerMockAccount(user: User, password: string): void {
+  registeredMockAccounts.push({ ...user })
+  registeredMockSecrets.set(user.email.trim().toLowerCase(), password)
+}
+
+const registeredMockAccounts: User[] = []
+const registeredMockSecrets = new Map<string, string>()
 
 export type StaffMemberStatus = 'Active' | 'Invited'
 

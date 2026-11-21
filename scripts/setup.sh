@@ -5,6 +5,7 @@ echo "Setting up University Support Ticketing System (FastAPI v2)..."
 
 cp -n backend/.env.example backend/.env || true
 cp -n frontend/.env.example frontend/.env || true
+[ -f .env ] || echo "POSTGRES_PASSWORD=$(openssl rand -hex 24)" > .env
 
 echo "Installing root dependencies (husky/lint-staged)..."
 npm install
@@ -19,7 +20,7 @@ if [ ! -d backend/.venv ]; then
 fi
 # shellcheck disable=SC1091
 source backend/.venv/bin/activate
-pip install -r requirements-dev.txt
+pip install -r backend/requirements-dev.txt
 
 echo "Installing frontend dependencies..."
 (cd frontend && npm install)

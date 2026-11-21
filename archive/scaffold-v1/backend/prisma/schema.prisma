@@ -32,15 +32,16 @@ enum TicketPriority {
 }
 
 model User {
-  id           String   @id @default(uuid())
-  email        String   @unique
+  id           String      @id @default(uuid())
+  email        String      @unique
   displayName  String
-  role         Role     @default(STUDENT)
-  department   String?
+  role         Role        @default(STUDENT)
+  department   Department? @relation(fields: [departmentId], references: [id])
+  departmentId String?
   passwordHash String?
   externalId   String? // TODO: LDAP/SSO subject id — pending OI-01
-  createdAt    DateTime @default(now())
-  updatedAt    DateTime @updatedAt
+  createdAt    DateTime    @default(now())
+  updatedAt    DateTime    @updatedAt
 
   ticketsCreated    Ticket[]           @relation("TicketCreatedBy")
   ticketsAssigned   Ticket[]           @relation("TicketAssignedTo")
@@ -58,7 +59,8 @@ model Ticket {
   status       TicketStatus   @default(OPEN)
   priority     TicketPriority @default(MEDIUM)
   category     String? // TODO: set by ai module classification
-  department   String?
+  department   Department?    @relation(fields: [departmentId], references: [id])
+  departmentId String?
   createdBy    User           @relation("TicketCreatedBy", fields: [createdById], references: [id])
   createdById  String
   assignedTo   User?          @relation("TicketAssignedTo", fields: [assignedToId], references: [id])
@@ -81,6 +83,14 @@ model Attachment {
   fileType      String // pdf | png | jpg
   fileSizeBytes Int // enforce 10MB cap (1.2.3) at the application layer
   uploadedAt    DateTime @default(now())
+}
+
+model Department {
+  id        String   @id @default(uuid())
+  name      String   @unique
+  users     User[]
+  tickets   Ticket[]
+  createdAt DateTime @default(now())
 }
 
 model Problem {

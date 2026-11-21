@@ -13,7 +13,7 @@
   position: absolute;
   left: -9999px;
   top: 0;
-  background: #fff;
+  background: var(--color-surface);
   color: var(--neutral-900);
   padding: 0.5rem 1rem;
   z-index: 100;
@@ -26,7 +26,7 @@
 }
 
 .sidebar {
-  background: #fff;
+  background: var(--color-surface);
   border-right: 1px solid var(--neutral-200);
   display: flex;
   flex-direction: column;
@@ -228,7 +228,7 @@
 .collapseBtn {
   display: none;
   border: 1px solid var(--neutral-200);
-  background: #fff;
+  background: var(--color-surface);
   border-radius: var(--radius-sm);
   padding: 0.25rem;
   cursor: pointer;
@@ -237,6 +237,8 @@
 
 .langInDrawer {
   display: none;
+  flex-direction: column;
+  gap: 0.5rem;
 }
 
 .mainCol {
@@ -252,7 +254,7 @@
   align-items: center;
   justify-content: space-between;
   padding: 0 1.25rem;
-  background: #fff;
+  background: var(--color-surface);
   border-bottom: 1px solid var(--neutral-200);
   position: sticky;
   top: 0;
@@ -292,6 +294,12 @@
   display: flex;
   align-items: center;
   gap: 0.55rem;
+}
+
+.langDesktop {
+  display: flex;
+  align-items: center;
+  gap: 0.45rem;
 }
 
 .avatarBtn {
@@ -383,7 +391,7 @@
   }
 
   .langInDrawer {
-    display: block;
+    display: flex;
   }
 
   .langDesktop {
@@ -422,7 +430,7 @@
     left: 0;
     right: 0;
     bottom: 0;
-    background: #fff;
+    background: var(--color-surface);
     border-top: 1px solid var(--neutral-200);
     z-index: 50;
     padding: 0.35rem 0.25rem calc(0.35rem + env(safe-area-inset-bottom));
