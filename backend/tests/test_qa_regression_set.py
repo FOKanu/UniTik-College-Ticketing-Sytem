@@ -21,7 +21,7 @@ def _load_cases():
 
 
 def _entries_by_id():
-    return {e.id: e for e in validate_corpus(load_corpus(CONTENT_DIR))}
+    return {e.id: e for e in validate_corpus(load_corpus(CONTENT_DIR)) if e.language == "en"}
 
 
 def test_regression_set_is_non_empty():
