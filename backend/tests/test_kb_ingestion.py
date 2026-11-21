@@ -76,10 +76,7 @@ async def test_sync_embeddings_finish_before_one_db_session_and_commit(monkeypat
     entries = [entry("faq-test-001"), entry("faq-test-002")]
     embedder, session_factory = configure(monkeypatch, events, entries)
     assert (
-        await ingest_kb.ingest(
-            embedder=embedder, session_factory=session_factory, sync=True
-        )
-        == 2
+        await ingest_kb.ingest(embedder=embedder, session_factory=session_factory, sync=True) == 2
     )
     assert events == [
         "embed",
@@ -117,9 +114,7 @@ async def test_provider_failure_prevents_database_access(monkeypatch):
         monkeypatch, events, [entry()], embedding_error=RuntimeError("provider secret")
     )
     with pytest.raises(RuntimeError):
-        await ingest_kb.ingest(
-            embedder=embedder, session_factory=session_factory, sync=True
-        )
+        await ingest_kb.ingest(embedder=embedder, session_factory=session_factory, sync=True)
     assert events == ["embed"]
 
 

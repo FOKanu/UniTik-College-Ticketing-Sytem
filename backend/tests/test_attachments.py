@@ -34,9 +34,7 @@ def test_rejects_empty_and_oversized_and_bad_type():
 
 
 def test_save_and_delete_roundtrip(tmp_path):
-    rel, file_type = storage_service.save_ticket_bytes(
-        "ticket-1", "login error.png", b"png-bytes"
-    )
+    rel, file_type = storage_service.save_ticket_bytes("ticket-1", "login error.png", b"png-bytes")
     assert file_type == "png"
     abs_path = storage_service.absolute_path(rel)
     assert abs_path.is_file()
@@ -82,9 +80,7 @@ async def _register_and_login(client, *, role: str, department: str | None = Non
             )
             await db.commit()
 
-    login_res = await client.post(
-        "/api/v1/auth/login", json={"email": email, "password": password}
-    )
+    login_res = await client.post("/api/v1/auth/login", json={"email": email, "password": password})
     assert login_res.status_code == 200, login_res.text
     body = login_res.json()["data"]
     return body["token"], body["user"]["id"]
@@ -116,9 +112,7 @@ async def test_attachment_upload_list_download_delete(client):
     assert attachment["fileSizeBytes"] == len(b"fake-png-content")
     attachment_id = attachment["id"]
 
-    list_res = await client.get(
-        f"/api/v1/tickets/{ticket_id}/attachments", headers=headers
-    )
+    list_res = await client.get(f"/api/v1/tickets/{ticket_id}/attachments", headers=headers)
     assert list_res.status_code == 200
     assert len(list_res.json()["data"]) == 1
 
@@ -136,9 +130,7 @@ async def test_attachment_upload_list_download_delete(client):
     assert delete_res.status_code == 200
     assert delete_res.json()["data"]["deleted"] is True
 
-    empty = await client.get(
-        f"/api/v1/tickets/{ticket_id}/attachments", headers=headers
-    )
+    empty = await client.get(f"/api/v1/tickets/{ticket_id}/attachments", headers=headers)
     assert empty.json()["data"] == []
 
 

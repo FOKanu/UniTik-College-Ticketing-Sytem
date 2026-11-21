@@ -17,8 +17,16 @@ class StaffMemberResponse(BaseModel):
 
 class ProfileUpdateRequest(BaseModel):
     displayName: str | None = None
+    # Students may update academic affiliation. Staff/admin department
+    # changes are rejected in the service (S6) — use admin reassignment.
     department: str | None = None
 
 
 class RoleUpdateRequest(BaseModel):
     role: Role
+
+
+class DepartmentUpdateRequest(BaseModel):
+    """Admin-only staff/admin department reassignment (S6)."""
+
+    department: str | None = None

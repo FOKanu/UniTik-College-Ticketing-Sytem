@@ -81,10 +81,9 @@ async def list_tickets(db: AsyncSession, user: User) -> list[Ticket]:
         await db.commit()
     return tickets
 
+
 async def get_ticket(db: AsyncSession, ticket_id: str, user: User) -> Ticket:
-    result = await db.execute(
-        select(Ticket).options(*_WITH_PEOPLE).where(Ticket.id == ticket_id)
-    )
+    result = await db.execute(select(Ticket).options(*_WITH_PEOPLE).where(Ticket.id == ticket_id))
     ticket = result.scalar_one_or_none()
     if not ticket:
         raise NotFoundError("Ticket not found")

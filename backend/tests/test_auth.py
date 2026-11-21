@@ -22,6 +22,7 @@ async def test_me_requires_auth(client):
     response = await client.get("/api/v1/auth/me")
     assert response.status_code == 401
 
+
 @pytest.mark.asyncio
 async def test_sso_stub_returns_not_implemented(client):
     response = await client.post(

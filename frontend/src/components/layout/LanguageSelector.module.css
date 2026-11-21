@@ -7,7 +7,7 @@
   align-items: center;
   gap: 0.3rem;
   border: 1px solid var(--neutral-200);
-  background: #fff;
+  background: var(--color-surface);
   border-radius: var(--radius-md);
   padding: 0.35rem 0.55rem;
   color: var(--neutral-700);
@@ -31,7 +31,7 @@
   top: calc(100% + 0.4rem);
   right: 0;
   min-width: 180px;
-  background: #fff;
+  background: var(--color-surface);
   border: 1px solid var(--neutral-200);
   border-radius: var(--radius-lg);
   box-shadow: var(--shadow-overlay);

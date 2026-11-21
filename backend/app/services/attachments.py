@@ -11,9 +11,7 @@ from app.services import storage as storage_service
 from app.services import tickets as ticket_service
 
 
-async def list_attachments(
-    db: AsyncSession, ticket_id: str, user: User
-) -> list[Attachment]:
+async def list_attachments(db: AsyncSession, ticket_id: str, user: User) -> list[Attachment]:
     await ticket_service.get_ticket(db, ticket_id, user)
     result = await db.execute(
         select(Attachment)
@@ -28,9 +26,7 @@ async def get_attachment(
 ) -> Attachment:
     await ticket_service.get_ticket(db, ticket_id, user)
     result = await db.execute(
-        select(Attachment).where(
-            Attachment.id == attachment_id, Attachment.ticketId == ticket_id
-        )
+        select(Attachment).where(Attachment.id == attachment_id, Attachment.ticketId == ticket_id)
     )
     attachment = result.scalar_one_or_none()
     if not attachment:

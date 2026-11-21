@@ -1,11 +1,14 @@
 from datetime import UTC, datetime, timedelta
 
-from jose import JWTError, jwt
+import jwt
+from jwt.exceptions import InvalidTokenError
 from passlib.context import CryptContext
 
 from app.core.config import get_settings
 
 pwd_context = CryptContext(schemes=["bcrypt"], deprecated="auto")
+
+ALGORITHM = "HS256"
 
 
 def hash_password(password: str) -> str:
@@ -22,12 +25,12 @@ def create_access_token(subject: str, extra: dict | None = None) -> str:
     payload: dict = {"sub": subject, "exp": expire}
     if extra:
         payload.update(extra)
-    return jwt.encode(payload, settings.jwt_secret, algorithm="HS256")
+    return jwt.encode(payload, settings.jwt_secret, algorithm=ALGORITHM)
 
 
 def decode_access_token(token: str) -> dict:
     settings = get_settings()
     try:
-        return jwt.decode(token, settings.jwt_secret, algorithms=["HS256"])
-    except JWTError as exc:
+        return jwt.decode(token, settings.jwt_secret, algorithms=[ALGORITHM])
+    except InvalidTokenError as exc:
         raise ValueError("Invalid token") from exc

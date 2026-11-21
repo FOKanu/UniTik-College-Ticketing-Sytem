@@ -2,11 +2,16 @@ from sqlalchemy import select
 from sqlalchemy.ext.asyncio import AsyncSession
 from sqlalchemy.orm import selectinload
 
-from app.core.exceptions import BadRequestError, NotFoundError
+from app.core.exceptions import BadRequestError, ForbiddenError, NotFoundError
 from app.db.base import Role
 from app.models import Department, User
 from app.schemas.auth import UserResponse
-from app.schemas.users import ProfileUpdateRequest, RoleUpdateRequest, StaffMemberResponse
+from app.schemas.users import (
+    DepartmentUpdateRequest,
+    ProfileUpdateRequest,
+    RoleUpdateRequest,
+    StaffMemberResponse,
+)
 from app.services import departments as departments_service
 
 STAFF_ROLES = (Role.STAFF, Role.ADMIN)
@@ -62,9 +67,7 @@ async def list_staff_departments(db: AsyncSession, *, tenant_id: str) -> list[st
     return [row[0] for row in result.all() if row[0]]
 
 
-async def get_assignable_user(
-    db: AsyncSession, user_id: str, *, tenant_id: str
-) -> User:
+async def get_assignable_user(db: AsyncSession, user_id: str, *, tenant_id: str) -> User:
     """Load a user that is allowed to own tickets (STAFF or ADMIN) in the tenant."""
     result = await db.execute(
         select(User)
@@ -92,6 +95,11 @@ def staff_to_response(user: User) -> StaffMemberResponse:
 async def update_profile(db: AsyncSession, user: User, data: ProfileUpdateRequest) -> User:
     updates = data.model_dump(exclude_unset=True)
     if "department" in updates:
+        # S6: staff/admin department is an access-control boundary for ticket queues.
+        if user.role in STAFF_ROLES:
+            raise ForbiddenError(
+                "Staff and admin department changes must be performed by an administrator"
+            )
         dept_label = updates.pop("department")
         dept = await departments_service.get_or_create_department(
             db, dept_label, tenant_id=user.tenantId
@@ -106,9 +114,7 @@ async def update_profile(db: AsyncSession, user: User, data: ProfileUpdateReques
 
 async def list_users(db: AsyncSession, *, tenant_id: str) -> list[User]:
     result = await db.execute(
-        select(User)
-        .options(selectinload(User.department))
-        .where(User.tenantId == tenant_id)
+        select(User).options(selectinload(User.department)).where(User.tenantId == tenant_id)
     )
     return list(result.scalars().all())
 
@@ -121,6 +127,31 @@ async def update_role(db: AsyncSession, user_id: str, data: RoleUpdateRequest) -
     if not target:
         raise NotFoundError("User not found")
     target.role = data.role
+    await db.commit()
+    await db.refresh(target, ["department"])
+    return target
+
+
+async def update_department(
+    db: AsyncSession,
+    user_id: str,
+    data: DepartmentUpdateRequest,
+    *,
+    tenant_id: str,
+) -> User:
+    """Admin-only department reassignment within the admin's tenant (S6)."""
+    result = await db.execute(
+        select(User)
+        .options(selectinload(User.department))
+        .where(User.id == user_id, User.tenantId == tenant_id)
+    )
+    target = result.scalar_one_or_none()
+    if not target:
+        raise NotFoundError("User not found")
+    dept = await departments_service.get_or_create_department(
+        db, data.department, tenant_id=tenant_id
+    )
+    target.departmentId = dept.id if dept else None
     await db.commit()
     await db.refresh(target, ["department"])
     return target

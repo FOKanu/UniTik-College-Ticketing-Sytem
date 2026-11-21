@@ -42,6 +42,10 @@ function messageFromBody(data: unknown): string | undefined {
   const record = data as Record<string, unknown>
   if (typeof record.message === 'string') return record.message
   if (typeof record.error === 'string') return record.error
+  if (record.error && typeof record.error === 'object') {
+    const nested = record.error as Record<string, unknown>
+    if (typeof nested.message === 'string') return nested.message
+  }
   if (typeof record.detail === 'string') return record.detail
   return undefined
 }
@@ -104,12 +108,17 @@ export function toApiError(error: unknown): ApiError {
       })
     }
     if (status >= 500) {
-      return new ApiError(message || 'The server encountered an error.', {
-        code: 'SERVER',
-        status,
-        details,
-        cause: error,
-      })
+      return new ApiError(
+        status === 502 || status === 503
+          ? 'Cannot reach the API server. Check that the backend is running.'
+          : message || 'The server encountered an error.',
+        {
+          code: 'SERVER',
+          status,
+          details,
+          cause: error,
+        },
+      )
     }
 
     return new ApiError(message, {

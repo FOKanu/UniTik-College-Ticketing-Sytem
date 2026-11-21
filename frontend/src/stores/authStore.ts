@@ -1,5 +1,5 @@
 import { create } from 'zustand'
-import { persist } from 'zustand/middleware'
+import { createJSONStorage, persist, type StateStorage } from 'zustand/middleware'
 import {
   createMockJwt,
   decodeJwtPayload,
@@ -22,6 +22,56 @@ interface AuthState {
 }
 
 const UI_ROLES: UserRole[] = ['student', 'agent', 'admin']
+const STAY_LOGGED_IN_KEY = 'tss-stay-logged-in'
+const AUTH_STORAGE_KEY = 'tss-auth'
+
+export function getStayLoggedInPreference(): boolean {
+  if (typeof window === 'undefined') return true
+  return window.localStorage.getItem(STAY_LOGGED_IN_KEY) !== '0'
+}
+
+/** Call before setSession so persist writes to the right browser store. */
+export function setStayLoggedInPreference(stay: boolean): void {
+  if (typeof window === 'undefined') return
+  window.localStorage.setItem(STAY_LOGGED_IN_KEY, stay ? '1' : '0')
+  if (stay) {
+    const sessionValue = window.sessionStorage.getItem(AUTH_STORAGE_KEY)
+    if (sessionValue) {
+      window.localStorage.setItem(AUTH_STORAGE_KEY, sessionValue)
+      window.sessionStorage.removeItem(AUTH_STORAGE_KEY)
+    }
+  } else {
+    const localValue = window.localStorage.getItem(AUTH_STORAGE_KEY)
+    if (localValue) {
+      window.sessionStorage.setItem(AUTH_STORAGE_KEY, localValue)
+      window.localStorage.removeItem(AUTH_STORAGE_KEY)
+    }
+  }
+}
+
+const authStorage: StateStorage = {
+  getItem: (name) => {
+    if (typeof window === 'undefined') return null
+    return (
+      window.localStorage.getItem(name) ?? window.sessionStorage.getItem(name)
+    )
+  },
+  setItem: (name, value) => {
+    if (typeof window === 'undefined') return
+    if (getStayLoggedInPreference()) {
+      window.localStorage.setItem(name, value)
+      window.sessionStorage.removeItem(name)
+    } else {
+      window.sessionStorage.setItem(name, value)
+      window.localStorage.removeItem(name)
+    }
+  },
+  removeItem: (name) => {
+    if (typeof window === 'undefined') return
+    window.localStorage.removeItem(name)
+    window.sessionStorage.removeItem(name)
+  },
+}
 
 function isUiRole(role: unknown): role is UserRole {
   return typeof role === 'string' && UI_ROLES.includes(role as UserRole)
@@ -100,8 +150,9 @@ export const useAuthStore = create<AuthState>()(
       },
     }),
     {
-      name: 'tss-auth',
+      name: AUTH_STORAGE_KEY,
       version: 2,
+      storage: createJSONStorage(() => authStorage),
       partialize: (state) => ({
         accessToken: state.accessToken,
         user: state.user,

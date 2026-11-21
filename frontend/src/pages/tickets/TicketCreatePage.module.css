@@ -82,7 +82,7 @@
 }
 
 .aiCard :global(a) {
-  background: #fff;
+  background: var(--color-surface);
   color: #0f3145;
 }
 

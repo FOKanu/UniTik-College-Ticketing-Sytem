@@ -62,7 +62,7 @@ const CATEGORY_KEYWORDS: Array<[Department, string[]]> = [
   ['Academics', ['academic', 'exam', 'grade', 'course', 'enrol', 'registration', 'library']],
   ['Finance', ['financ', 'fee', 'billing', 'refund', 'payment', 'scholarship', 'invoice']],
   ['Maintenance', ['maintenance', 'facilit', 'repair', 'building', 'room', 'cleaning', 'heating']],
-  ['IT', ['network', 'access', 'wifi', 'email', 'password', 'hardware', 'software', 'portal']],
+  ['IT', ['network', 'access', 'wifi', 'email', 'password', 'hardware', 'software', 'portal', 'support', 'tier']],
 ]
 
 export function toDepartment(raw: string | null | undefined): Department {

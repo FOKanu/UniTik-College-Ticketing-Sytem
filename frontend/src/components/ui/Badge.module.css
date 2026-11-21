@@ -11,18 +11,18 @@
 }
 
 .open {
-  color: #a22633;
-  background: #fdebec;
+  color: var(--color-danger);
+  background: var(--color-danger-bg);
 }
 
 .inProgress {
-  color: #8a5a08;
-  background: #fdf3e2;
+  color: var(--color-warning);
+  background: var(--color-warning-bg);
 }
 
 .resolved {
-  color: #1b6e3c;
-  background: #e7f5ec;
+  color: var(--color-success);
+  background: var(--color-success-bg);
 }
 
 .closed {
@@ -31,18 +31,18 @@
 }
 
 .department {
-  color: var(--brand-700);
-  background: #eaf3fb;
+  color: var(--color-info);
+  background: var(--color-info-bg);
 }
 
 .high {
-  color: #a22633;
-  background: #fdebec;
+  color: var(--color-danger);
+  background: var(--color-danger-bg);
 }
 
 .medium {
-  color: #8a5a08;
-  background: #fdf3e2;
+  color: var(--color-warning);
+  background: var(--color-warning-bg);
 }
 
 .low {
@@ -51,23 +51,23 @@
 }
 
 .urgent {
-  color: #a22633;
-  background: #fdebec;
+  color: var(--color-danger);
+  background: var(--color-danger-bg);
 }
 
 .info {
-  color: var(--brand-700);
-  background: #eaf3fb;
+  color: var(--color-info);
+  background: var(--color-info-bg);
 }
 
 .warn {
-  color: #8a5a08;
-  background: #fdf3e2;
+  color: var(--color-warning);
+  background: var(--color-warning-bg);
 }
 
 .success {
-  color: #1b6e3c;
-  background: #e7f5ec;
+  color: var(--color-success);
+  background: var(--color-success-bg);
 }
 
 .neutral {
@@ -76,6 +76,6 @@
 }
 
 .danger {
-  color: #a22633;
-  background: #fdebec;
+  color: var(--color-danger);
+  background: var(--color-danger-bg);
 }

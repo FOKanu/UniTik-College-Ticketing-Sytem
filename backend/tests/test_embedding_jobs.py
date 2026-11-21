@@ -39,9 +39,7 @@ async def test_enqueue_coalesces_active_jobs():
         assert first.id == second.id
         assert second.status == "pending"
 
-        result = await db.execute(
-            select(EmbeddingJob).where(EmbeddingJob.faqEntryId == faq_id)
-        )
+        result = await db.execute(select(EmbeddingJob).where(EmbeddingJob.faqEntryId == faq_id))
         assert len(list(result.scalars().all())) == 1
 
         await db.delete(second)
@@ -120,9 +118,7 @@ async def test_worker_once_embeds_pending_job():
         entry = await db.get(FaqEntry, faq_id)
         assert entry is not None
         assert list(entry.embedding) == vector
-        job_result = await db.execute(
-            select(EmbeddingJob).where(EmbeddingJob.faqEntryId == faq_id)
-        )
+        job_result = await db.execute(select(EmbeddingJob).where(EmbeddingJob.faqEntryId == faq_id))
         job = job_result.scalar_one()
         assert job.status == "done"
 
@@ -145,9 +141,7 @@ async def _admin_token(client) -> str:
             )
         )
         await db.commit()
-    login = await client.post(
-        "/api/v1/auth/login", json={"email": email, "password": password}
-    )
+    login = await client.post("/api/v1/auth/login", json={"email": email, "password": password})
     assert login.status_code == 200, login.text
     return login.json()["data"]["token"]
 
@@ -184,11 +178,7 @@ async def test_reembed_requires_admin_and_enqueues(client):
 
     async with async_session_factory() as db:
         jobs = list(
-            (
-                await db.execute(
-                    select(EmbeddingJob).where(EmbeddingJob.faqEntryId == faq_id)
-                )
-            )
+            (await db.execute(select(EmbeddingJob).where(EmbeddingJob.faqEntryId == faq_id)))
             .scalars()
             .all()
         )

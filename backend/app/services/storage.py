@@ -49,9 +49,7 @@ def validate_upload(filename: str, size_bytes: int) -> str:
     if size_bytes <= 0:
         raise BadRequestError("Empty uploads are not allowed")
     if size_bytes > settings.max_upload_bytes:
-        raise BadRequestError(
-            f"File exceeds the {settings.max_upload_mb} MB upload limit"
-        )
+        raise BadRequestError(f"File exceeds the {settings.max_upload_mb} MB upload limit")
     ext = extension_of(filename)
     if ext not in ALLOWED_EXTENSIONS:
         raise BadRequestError(
@@ -61,9 +59,7 @@ def validate_upload(filename: str, size_bytes: int) -> str:
     return ext.lstrip(".")
 
 
-def save_ticket_bytes(
-    ticket_id: str, filename: str, payload: bytes
-) -> tuple[str, str]:
+def save_ticket_bytes(ticket_id: str, filename: str, payload: bytes) -> tuple[str, str]:
     """Persist bytes under uploads/attachments/{ticket_id}/… → (rel_path, file_type)."""
     original = sanitize_filename(filename)
     file_type = validate_upload(original, len(payload))

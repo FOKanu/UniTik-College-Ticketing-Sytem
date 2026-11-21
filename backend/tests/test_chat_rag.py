@@ -65,9 +65,7 @@ async def test_retrieve_uses_authoritative_german_locale(monkeypatch):
         SimpleNamespace(), "Passwort vergessen", language="de"
     )
 
-    search.assert_awaited_once_with(
-        ANY, [0.1] * 8, limit=chat_service.RAG_TOP_K, language="de"
-    )
+    search.assert_awaited_once_with(ANY, [0.1] * 8, limit=chat_service.RAG_TOP_K, language="de")
     assert bundle.citations == [
         chat_service.Citation(
             id="faq-it-support-001",

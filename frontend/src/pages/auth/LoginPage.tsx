@@ -11,6 +11,10 @@ import { findInstitution, institutionEmailHint } from '@/lib/institutions'
 import { loginSchema, type LoginFormValues } from '@/lib/validation'
 import { mockAccounts } from '@/mocks/data'
 import { useAuthStore, useInstitutionStore } from '@/stores'
+import {
+  getStayLoggedInPreference,
+  setStayLoggedInPreference,
+} from '@/stores/authStore'
 import type { User } from '@/types'
 import styles from './AuthPages.module.css'
 
@@ -51,6 +55,7 @@ export function LoginPage() {
   const institution = findInstitution(institutionId)
   const emailHint = institutionEmailHint(institution)
   const [apiError, setApiError] = useState<string | null>(null)
+  const [stayLoggedIn, setStayLoggedIn] = useState(getStayLoggedInPreference)
 
   const {
     register,
@@ -68,6 +73,7 @@ export function LoginPage() {
   async function onSubmit(values: LoginFormValues) {
     setApiError(null)
     try {
+      setStayLoggedInPreference(stayLoggedIn)
       const session = await authApi.login(values)
       setSession(session)
 
@@ -122,6 +128,17 @@ export function LoginPage() {
             {t('auth.forgot')}
           </button>
         </div>
+        <label className={styles.remember}>
+          <input
+            type="checkbox"
+            checked={stayLoggedIn}
+            onChange={(e) => setStayLoggedIn(e.target.checked)}
+          />
+          <span>
+            <strong>{t('auth.stayLoggedIn')}</strong>
+            <em>{t('auth.stayLoggedInHint')}</em>
+          </span>
+        </label>
         {apiError ? (
           <p className={styles.error} role="alert">
             {apiError}

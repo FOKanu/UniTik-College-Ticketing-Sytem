@@ -11,10 +11,12 @@ COPY frontend/package*.json ./
 RUN npm install
 
 COPY frontend/ ./
+COPY docker/frontend-entrypoint.sh /usr/local/bin/frontend-entrypoint.sh
+RUN chmod +x /usr/local/bin/frontend-entrypoint.sh
 
 EXPOSE 5173
 
-CMD ["npm", "run", "dev", "--", "--host"]
+ENTRYPOINT ["/usr/local/bin/frontend-entrypoint.sh"]
 
 
 FROM node:20-alpine AS build

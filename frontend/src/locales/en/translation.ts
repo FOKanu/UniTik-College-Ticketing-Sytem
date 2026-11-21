@@ -1,5 +1,19 @@
 export const en = {
   language: { label: 'Language', english: 'English', german: 'Deutsch', more: 'More languages are enabled per institution.' },
+  theme: {
+    label: 'Theme',
+    light: 'Light',
+    dark: 'Dark',
+    system: 'System',
+    lightShort: 'Light',
+    darkShort: 'Dark',
+    systemShort: 'Auto',
+  },
+  attach: {
+    addFile: 'Add screenshot or file',
+    hint: 'Max 10 MB. Accepted formats: images and documents.',
+    uploadingShort: 'Uploading…',
+  },
   common: {
     save: 'Save changes', cancel: 'Cancel', close: 'Close', search: 'Search', loading: 'Loading…', retry: 'Try again',
     all: 'All', open: 'Open', resolved: 'Resolved', inProgress: 'In Progress', unassigned: 'Unassigned', soon: 'Soon',
@@ -40,6 +54,8 @@ export const en = {
     sso: 'Continue with University SSO', demo: 'Demo accounts (work for any selected campus)', confirmPassword: 'Confirm Password',
     campusEmail: 'Use an @{{domains}} email for this campus. Student and staff accounts are verified via your university email domain.',
     already: 'Already have an account?', fillDemo: 'Fill demo credentials for {{role}}',
+    stayLoggedIn: 'Stay logged in',
+    stayLoggedInHint: 'Keep me signed in on this device',
   },
   chatbot: {
     greeting: 'Hi! Ask anything about academics, IT, finance, or maintenance.', quick: 'Quick Answer', detailed: 'Detailed',

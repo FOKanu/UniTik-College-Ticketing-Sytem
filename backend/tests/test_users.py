@@ -38,9 +38,7 @@ async def _register_and_login(client, *, role: str, department: str | None = Non
             db.add(user)
             await db.commit()
 
-    login_res = await client.post(
-        "/api/v1/auth/login", json={"email": email, "password": password}
-    )
+    login_res = await client.post("/api/v1/auth/login", json={"email": email, "password": password})
     assert login_res.status_code == 200, login_res.text
     body = login_res.json()["data"]
     return body["token"], body["user"]["id"]
@@ -130,3 +128,74 @@ async def test_reassign_rejects_student_assignee(client):
     )
     assert bad.status_code == 400
     assert bad.json()["success"] is False
+
+
+@pytest.mark.asyncio
+@integration
+async def test_staff_cannot_self_assign_department(client):
+    """S6: staff must not move themselves into another department via PATCH /me."""
+    staff_token, _ = await _register_and_login(
+        client, role="STAFF", department="IT Support — Tier 1"
+    )
+    headers = {"Authorization": f"Bearer {staff_token}"}
+
+    before = await client.get("/api/v1/users/me", headers=headers)
+    assert before.status_code == 200
+    assert before.json()["data"]["department"] == "IT Support — Tier 1"
+
+    denied = await client.patch(
+        "/api/v1/users/me",
+        json={"department": "Finance Office"},
+        headers=headers,
+    )
+    assert denied.status_code == 403
+    assert denied.json()["success"] is False
+
+    after = await client.get("/api/v1/users/me", headers=headers)
+    assert after.status_code == 200
+    assert after.json()["data"]["department"] == "IT Support — Tier 1"
+
+
+@pytest.mark.asyncio
+@integration
+async def test_student_can_update_academic_department(client):
+    """Students may still set academic affiliation on their profile."""
+    student_token, _ = await _register_and_login(
+        client, role="STUDENT", department="Computer Science"
+    )
+    headers = {"Authorization": f"Bearer {student_token}"}
+
+    ok = await client.patch(
+        "/api/v1/users/me",
+        json={"department": "Biology"},
+        headers=headers,
+    )
+    assert ok.status_code == 200, ok.text
+    assert ok.json()["data"]["department"] == "Biology"
+
+
+@pytest.mark.asyncio
+@integration
+async def test_admin_can_reassign_staff_department(client):
+    """S6: only admins may reassign department via PATCH /users/{id}/department."""
+    admin_token, _ = await _register_and_login(client, role="ADMIN", department="IT")
+    staff_token, staff_id = await _register_and_login(
+        client, role="STAFF", department="IT Support — Tier 1"
+    )
+    admin_headers = {"Authorization": f"Bearer {admin_token}"}
+    staff_headers = {"Authorization": f"Bearer {staff_token}"}
+
+    staff_denied = await client.patch(
+        f"/api/v1/users/{staff_id}/department",
+        json={"department": "Finance Office"},
+        headers=staff_headers,
+    )
+    assert staff_denied.status_code == 403
+
+    admin_ok = await client.patch(
+        f"/api/v1/users/{staff_id}/department",
+        json={"department": "Finance Office"},
+        headers=admin_headers,
+    )
+    assert admin_ok.status_code == 200, admin_ok.text
+    assert admin_ok.json()["data"]["department"] == "Finance Office"

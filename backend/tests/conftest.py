@@ -1,5 +1,8 @@
 import os
 
+# Match CI JWT_SECRET so Settings() loads without a local .env (D1/S2).
+os.environ.setdefault("JWT_SECRET", "test-secret-do-not-use-in-production")
+
 import pytest
 from httpx import ASGITransport, AsyncClient
 from sqlalchemy.ext.asyncio import AsyncSession
@@ -23,9 +26,7 @@ async def department_id_for(
     tenant_id: str = DEFAULT_TENANT_ID,
 ) -> str | None:
     """Resolve a free-text label to Department.id (get-or-create)."""
-    dept = await departments_service.get_or_create_department(
-        db, name, tenant_id=tenant_id
-    )
+    dept = await departments_service.get_or_create_department(db, name, tenant_id=tenant_id)
     return dept.id if dept else None
 
 

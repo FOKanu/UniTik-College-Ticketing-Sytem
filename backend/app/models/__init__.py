@@ -38,9 +38,7 @@ class Tenant(Base):
     domains: Mapped[list["TenantDomain"]] = relationship(
         "TenantDomain", back_populates="tenant", cascade="all, delete-orphan"
     )
-    departments: Mapped[list["Department"]] = relationship(
-        "Department", back_populates="tenant"
-    )
+    departments: Mapped[list["Department"]] = relationship("Department", back_populates="tenant")
     users: Mapped[list["User"]] = relationship("User", back_populates="tenant")
 
 
@@ -115,9 +113,7 @@ class User(Base):
     ticket_comments: Mapped[list["TicketComment"]] = relationship(
         "TicketComment", back_populates="author"
     )
-    department: Mapped[Optional["Department"]] = relationship(
-        "Department", back_populates="users"
-    )
+    department: Mapped[Optional["Department"]] = relationship("Department", back_populates="users")
 
 
 class Ticket(Base):
@@ -151,9 +147,7 @@ class Ticket(Base):
     )
     # First-response SLA clock (set on create / priority change / reopen).
     slaDueAt: Mapped[datetime | None] = mapped_column(DateTime(timezone=False), nullable=True)
-    slaBreachedAt: Mapped[datetime | None] = mapped_column(
-        DateTime(timezone=False), nullable=True
-    )
+    slaBreachedAt: Mapped[datetime | None] = mapped_column(DateTime(timezone=False), nullable=True)
 
     created_by: Mapped["User"] = relationship(
         "User", foreign_keys=[createdById], back_populates="tickets_created"

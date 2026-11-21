@@ -74,9 +74,7 @@ async def test_ticket_hooks_enqueue_notify_jobs(client):
         },
     )
     assert register_res.status_code == 201, register_res.text
-    login_res = await client.post(
-        "/api/v1/auth/login", json={"email": email, "password": password}
-    )
+    login_res = await client.post("/api/v1/auth/login", json={"email": email, "password": password})
     student_token = login_res.json()["data"]["token"]
     student_id = login_res.json()["data"]["user"]["id"]
 
@@ -119,11 +117,7 @@ async def test_ticket_hooks_enqueue_notify_jobs(client):
 
     async with async_session_factory() as db:
         jobs = list(
-            (
-                await db.execute(
-                    select(NotifyJob).where(NotifyJob.ticketId == ticket_id)
-                )
-            )
+            (await db.execute(select(NotifyJob).where(NotifyJob.ticketId == ticket_id)))
             .scalars()
             .all()
         )
@@ -148,11 +142,7 @@ async def test_ticket_hooks_enqueue_notify_jobs(client):
 
     async with async_session_factory() as db:
         refreshed = list(
-            (
-                await db.execute(
-                    select(NotifyJob).where(NotifyJob.ticketId == ticket_id)
-                )
-            )
+            (await db.execute(select(NotifyJob).where(NotifyJob.ticketId == ticket_id)))
             .scalars()
             .all()
         )
