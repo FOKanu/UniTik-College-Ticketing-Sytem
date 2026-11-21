@@ -1,6 +1,21 @@
 from functools import lru_cache
 
+from pydantic import field_validator
 from pydantic_settings import BaseSettings, SettingsConfigDict
+
+# Known insecure values that must never ship (D1 / S2).
+INSECURE_JWT_SECRETS = frozenset(
+    {
+        "",
+        "replace-me-with-a-strong-secret",
+        "changeme",
+        "secret",
+        "jwt-secret",
+        "your-secret-here",
+    }
+)
+
+MIN_JWT_SECRET_LENGTH = 32
 
 
 class Settings(BaseSettings):
@@ -11,7 +26,8 @@ class Settings(BaseSettings):
     database_url: str = (
         "postgresql+asyncpg://uts_user:uts_password@localhost:5432/university_ticketing"
     )
-    jwt_secret: str = "replace-me-with-a-strong-secret"
+    # Required — no insecure default. Generate with: openssl rand -hex 32
+    jwt_secret: str
     jwt_expires_in: int = 86400
     cors_origin: str = "http://localhost:5173"
     # Local attachment storage (S3/MinIO deferred). Paths are relative to the
@@ -29,6 +45,22 @@ class Settings(BaseSettings):
     redis_url: str = ""
     rate_limit_enabled: bool = True
     # LLM settings live in app.ai.llm_config
+
+    @field_validator("jwt_secret")
+    @classmethod
+    def validate_jwt_secret(cls, value: str) -> str:
+        secret = (value or "").strip()
+        if secret in INSECURE_JWT_SECRETS or secret.lower() in INSECURE_JWT_SECRETS:
+            raise ValueError(
+                "JWT_SECRET is missing or uses a known placeholder. "
+                "Generate a per-environment secret with: openssl rand -hex 32"
+            )
+        if len(secret) < MIN_JWT_SECRET_LENGTH:
+            raise ValueError(
+                f"JWT_SECRET must be at least {MIN_JWT_SECRET_LENGTH} characters "
+                "(use: openssl rand -hex 32)"
+            )
+        return secret
 
     @property
     def is_development(self) -> bool:

@@ -2,8 +2,8 @@ import base64
 import json
 import time
 
+import jwt
 import pytest
-from jose import jwt
 
 from app.core.config import get_settings
 from app.core.rate_limit import clear_memory_store
@@ -76,9 +76,7 @@ async def test_alg_none_attack_is_rejected(client):
         .decode()
     )
     payload = (
-        base64.urlsafe_b64encode(
-            json.dumps({"sub": "some-fake-user-id", "role": "ADMIN"}).encode()
-        )
+        base64.urlsafe_b64encode(json.dumps({"sub": "some-fake-user-id", "role": "ADMIN"}).encode())
         .rstrip(b"=")
         .decode()
     )

@@ -4,6 +4,7 @@ Does not run retrieval (that lands later) — it guarantees the golden set stays
 consistent with the corpus: every case points to a real FAQ, with the right
 department and answer. Regenerate with tests/data/build_qa_regression_set.py.
 """
+
 import json
 from pathlib import Path
 
@@ -14,7 +15,8 @@ CONTENT_DIR = Path(__file__).resolve().parents[2] / "docs" / "knowledge-base"
 
 
 def _load_cases():
-    return [json.loads(line) for line in DATA.read_text(encoding="utf-8").splitlines() if line.strip()]
+    lines = DATA.read_text(encoding="utf-8").splitlines()
+    return [json.loads(line) for line in lines if line.strip()]
 
 
 def _entries_by_id():

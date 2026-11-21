@@ -15,8 +15,8 @@
   },
   "lint-staged": {
     "backend/**/*.py": [
-      "bash -c 'cd backend && black .'",
-      "bash -c 'cd backend && ruff check --fix'"
+      "bash -c 'cd backend && black app tests'",
+      "bash -c 'cd backend && ruff check --fix app tests'"
     ],
     "frontend/**/*.{ts,tsx,js,jsx}": [
       "npm --prefix frontend run lint -- --fix"

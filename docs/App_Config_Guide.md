@@ -42,10 +42,15 @@ OLLAMA_API_KEY=<ask the team / GPU runbook — PUBLIC key, NOT "replace-me">
 OLLAMA_MODEL=qwen3:8b
 OLLAMA_KEEP_ALIVE=10m
 
-JWT_SECRET=any-long-random-string-for-local-dev
+# Generate a unique secret per environment (required; ≥32 chars):
+#   openssl rand -hex 32
+JWT_SECRET=<paste output of openssl rand -hex 32>
 DATABASE_URL=postgresql+asyncpg://uts_user:uts_password@localhost:5432/university_ticketing
 CORS_ORIGIN=http://localhost:5173
 ```
+
+The backend **refuses to start** if `JWT_SECRET` is missing, a known placeholder, or shorter than
+32 characters. Do not reuse the same secret across machines or environments.
 
 **Important:** without a real `OLLAMA_API_KEY`, chat will say the assistant is unavailable.
 Never commit `backend/.env` — keep the key only on your machine.
@@ -96,10 +101,10 @@ Open: [http://localhost:5173](http://localhost:5173)
 
 ## 7. Log in (demo account)
 
-| Field | Value |
-| --- | --- |
-| Email | `jordan.alvarez@student.university.edu` |
-| Password | `demo1234` |
+| Field    | Value                                   |
+| -------- | --------------------------------------- |
+| Email    | `jordan.alvarez@student.university.edu` |
+| Password | `demo1234`                              |
 
 Then open the AI Assistant page or the floating chat bubble and send a message.
 
@@ -118,12 +123,12 @@ You want `"status": "online"` and `"modelAvailable": true`.
 
 ## Troubleshooting
 
-| Symptom | Fix |
-| --- | --- |
-| Placeholder reply | Set `VITE_DATA_SOURCE=hybrid` in `frontend/.env`, restart Vite |
-| “Assistant unavailable” / offline banner | Fix `OLLAMA_API_KEY`, or GPU/Funnel is down |
-| Can’t log in / API errors | Postgres up? Ran migrations + seed? Backend on `:4000`? |
-| Weird Mac connection issues | Use `127.0.0.1` instead of `localhost` in proxy/API URLs |
+| Symptom                                  | Fix                                                            |
+| ---------------------------------------- | -------------------------------------------------------------- |
+| Placeholder reply                        | Set `VITE_DATA_SOURCE=hybrid` in `frontend/.env`, restart Vite |
+| “Assistant unavailable” / offline banner | Fix `OLLAMA_API_KEY`, or GPU/Funnel is down                    |
+| Can’t log in / API errors                | Postgres up? Ran migrations + seed? Backend on `:4000`?        |
+| Weird Mac connection issues              | Use `127.0.0.1` instead of `localhost` in proxy/API URLs       |
 
 ## Related docs
 
