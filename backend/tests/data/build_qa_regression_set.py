@@ -2,10 +2,11 @@
 
 For every FAQ entry, emit one golden test case per 'Related phrasing' (a paraphrase
 of the question). Each case records the query, the FAQ it should retrieve, its
-department, and the expected answer. Re-run this whenever the corpus changes.
+department/language, and the expected answer. Re-run this whenever the corpus changes.
 
     python -m tests.data.build_qa_regression_set
 """
+
 import json
 from pathlib import Path
 
@@ -22,22 +23,28 @@ def main() -> None:
     cases = []
     for e in entries:
         # the exact question itself
-        cases.append({
-            "query": e.question,
-            "expected_faq_id": e.id,
-            "expected_department": e.department,
-            "expected_answer": e.answer,
-            "query_type": "question",
-        })
-        # each paraphrase
-        for phrasing in e.related_phrasings:
-            cases.append({
-                "query": phrasing,
+        cases.append(
+            {
+                "query": e.question,
                 "expected_faq_id": e.id,
+                "expected_language": e.language,
                 "expected_department": e.department,
                 "expected_answer": e.answer,
-                "query_type": "related_phrasing",
-            })
+                "query_type": "question",
+            }
+        )
+        # each paraphrase
+        for phrasing in e.related_phrasings:
+            cases.append(
+                {
+                    "query": phrasing,
+                    "expected_faq_id": e.id,
+                    "expected_language": e.language,
+                    "expected_department": e.department,
+                    "expected_answer": e.answer,
+                    "query_type": "related_phrasing",
+                }
+            )
 
     with OUT.open("w", encoding="utf-8") as f:
         for c in cases:
@@ -45,7 +52,9 @@ def main() -> None:
 
     print(f"Wrote {len(cases)} golden cases from {len(entries)} FAQ entries -> {OUT.name}")
     from collections import Counter
+
     print("By department:", dict(Counter(c["expected_department"] for c in cases)))
+    print("By language:", dict(Counter(c["expected_language"] for c in cases)))
 
 
 if __name__ == "__main__":
