@@ -37,9 +37,7 @@ async def test_concurrency_parallel_requests_memory_store(monkeypatch):
         return {"status": "ok"}
 
     transport = ASGITransport(app=app)
-    async with AsyncClient(
-        transport=transport, base_url="http://testserver"
-    ) as client:
+    async with AsyncClient(transport=transport, base_url="http://testserver") as client:
         tasks = [client.get("/concurrent") for _ in range(total_reqs)]
         responses = await asyncio.gather(*tasks)
 
@@ -68,9 +66,7 @@ async def test_concurrency_high_volume_parallel_requests(monkeypatch):
         return {"status": "ok"}
 
     transport = ASGITransport(app=app)
-    async with AsyncClient(
-        transport=transport, base_url="http://testserver"
-    ) as client:
+    async with AsyncClient(transport=transport, base_url="http://testserver") as client:
         tasks = [client.get("/high-load") for _ in range(total_reqs)]
         responses = await asyncio.gather(*tasks)
 

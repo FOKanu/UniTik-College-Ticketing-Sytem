@@ -40,6 +40,7 @@ class AuthTokenResponse(BaseModel):
     token: str
     user: UserResponse
 
+
 class RefreshRequest(BaseModel):
     token: str
 

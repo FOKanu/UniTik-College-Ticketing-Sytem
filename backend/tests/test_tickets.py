@@ -116,9 +116,7 @@ async def test_ticket_response_carries_people_names(client):
     from the user relationships — not just return bare ids. Regression: every
     row read "Unassigned" because only assignedToId was serialized."""
     student_token, student_id = await _register_and_login(client, role="STUDENT")
-    staff_token, staff_id = await _register_and_login(
-        client, role="STAFF", department="IT"
-    )
+    staff_token, staff_id = await _register_and_login(client, role="STAFF", department="IT")
     student_headers = {"Authorization": f"Bearer {student_token}"}
     staff_headers = {"Authorization": f"Bearer {staff_token}"}
 

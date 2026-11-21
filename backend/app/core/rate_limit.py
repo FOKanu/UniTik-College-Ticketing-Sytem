@@ -176,9 +176,7 @@ def rate_limit(
                         headers={"Retry-After": str(window_seconds)},
                     ) from exc
         else:
-            allowed, count, reset_in = await _check_memory(
-                key, max_requests, window_seconds, now
-            )
+            allowed, count, reset_in = await _check_memory(key, max_requests, window_seconds, now)
 
         remaining = max(0, max_requests - count)
         reset_time = int(now + reset_in)

@@ -47,6 +47,7 @@ LLM_OFFLINE_REPLY_DE = (
 def offline_reply(language: str) -> str:
     return LLM_OFFLINE_REPLY_DE if language == "de" else LLM_OFFLINE_REPLY
 
+
 # Soft prompts — avoid forcing "escalate" / FAQ chrome on greetings.
 CHITCHAT_KB_CONTEXT = (
     "The user sent a greeting or small-talk message. Reply briefly and warmly. "

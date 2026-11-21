@@ -52,9 +52,7 @@ FORBIDDEN = (
 def _protected_values(text: str) -> set[str]:
     return {
         value.rstrip(".,;:!?\"'`")
-        for value in re.findall(
-            r"https?://[^\s,)]+|[\w.+-]+@[\w.-]+|faq-[a-z-]+-\d{3}", text
-        )
+        for value in re.findall(r"https?://[^\s,)]+|[\w.+-]+@[\w.-]+|faq-[a-z-]+-\d{3}", text)
     }
 
 

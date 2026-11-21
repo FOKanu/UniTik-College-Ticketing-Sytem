@@ -40,9 +40,7 @@ async def test_failure_mode_fail_open_policy(monkeypatch):
         return {"status": "success"}
 
     transport = ASGITransport(app=app)
-    async with AsyncClient(
-        transport=transport, base_url="http://testserver"
-    ) as client:
+    async with AsyncClient(transport=transport, base_url="http://testserver") as client:
         res1 = await client.get("/fail-open")
         assert res1.status_code == 200
         assert res1.json() == {"status": "success"}
@@ -68,9 +66,7 @@ async def test_failure_mode_fail_closed_policy(monkeypatch):
         return {"status": "success"}
 
     transport = ASGITransport(app=app)
-    async with AsyncClient(
-        transport=transport, base_url="http://testserver"
-    ) as client:
+    async with AsyncClient(transport=transport, base_url="http://testserver") as client:
         res = await client.get("/fail-closed")
         assert res.status_code == 429
         assert res.json() == {"detail": "Rate limiter service unavailable"}

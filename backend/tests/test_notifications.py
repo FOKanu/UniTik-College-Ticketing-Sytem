@@ -23,9 +23,7 @@ async def _register_student(client):
         },
     )
     assert register_res.status_code == 201, register_res.text
-    login_res = await client.post(
-        "/api/v1/auth/login", json={"email": email, "password": password}
-    )
+    login_res = await client.post("/api/v1/auth/login", json={"email": email, "password": password})
     assert login_res.status_code == 200, login_res.text
     data = login_res.json()["data"]
     return data["token"], data["user"]["id"]
@@ -46,9 +44,7 @@ async def _insert_staff(client, *, label: str = "Staff"):
         db.add(user)
         await db.commit()
         staff_id = user.id
-    login_res = await client.post(
-        "/api/v1/auth/login", json={"email": email, "password": password}
-    )
+    login_res = await client.post("/api/v1/auth/login", json={"email": email, "password": password})
     assert login_res.status_code == 200, login_res.text
     return login_res.json()["data"]["token"], staff_id
 
